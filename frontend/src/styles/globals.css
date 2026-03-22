@@ -2315,3 +2315,96 @@ textarea.form-input {
 .right-widget-footer a:hover {
   text-decoration: underline;
 }
+
+/* ========== Redesigned PostCard (Reddit-inspired) ========== */
+.post-employer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.post-employer-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--purple);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.post-employer-name:hover {
+  text-decoration: underline;
+}
+
+.post-employer-sep {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.post-meta-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.post-byline {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.post-byline-user {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.post-byline-sep {
+  margin: 0 4px;
+}
+
+.post-title-large {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+/* Vote pill */
+.vote-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border-radius: 20px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+}
+
+.vote-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--transition);
+  padding: 2px;
+}
+
+.vote-btn:hover, .vote-btn.active {
+  color: #22C55E;
+}
+
+.vote-btn.active-down {
+  color: #EF4444;
+}
+
+.vote-score {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
