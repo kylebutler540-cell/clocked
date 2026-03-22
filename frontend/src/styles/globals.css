@@ -2398,8 +2398,18 @@ textarea.form-input {
   color: #22C55E;
 }
 
-.vote-btn.active-down {
+.vote-btn.active-down, .vote-btn.active-down:hover {
   color: #EF4444;
+}
+
+/* Dislike hover — red, not green */
+.vote-pill .vote-btn:last-child:hover {
+  color: #EF4444;
+}
+
+/* Flag hover — orange */
+.post-actions .action-btn[aria-label="Flag"]:hover {
+  color: #F97316 !important;
 }
 
 .vote-score {
