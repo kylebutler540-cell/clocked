@@ -2466,3 +2466,10 @@ textarea.form-input {
     width: 100%;
   }
 }
+
+/* Make sidebar visually distinct from content so centering is apparent */
+@media (min-width: 768px) {
+  .left-sidebar {
+    background: var(--bg-elevated) !important;
+  }
+}
