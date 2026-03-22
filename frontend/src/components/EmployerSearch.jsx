@@ -1,6 +1,32 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
+// Company logo using Google's Places photo or Clearbit logo fallback
+function CompanyLogo({ name }) {
+  const [err, setErr] = useState(false);
+  // Extract domain-like name for Clearbit (e.g. "Walmart" -> walmart.com)
+  const slug = name?.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/\s+/g, '') || '';
+  const src = `https://logo.clearbit.com/${slug}.com`;
+
+  if (err) {
+    return (
+      <div style={{
+        width: 36, height: 36, borderRadius: 8, background: 'var(--bg-elevated)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 18, flexShrink: 0,
+      }}>🏢</div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={name}
+      onError={() => setErr(true)}
+      style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 2 }}
+    />
+  );
+}
+
 function getDistanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -26,16 +52,17 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
       const res = await api.get('/employers/search', { params: { query: q, location: userLocation } });
       let predictions = res.data.predictions || [];
 
-      // Add distance if we have user's exact coords and result has coords
+      // Add distance + sort by closest if we have user coords
       if (userLatLng) {
         const [uLat, uLng] = userLatLng.split(',').map(Number);
         predictions = predictions.map(p => {
           if (p.lat && p.lng) {
             const miles = getDistanceMiles(uLat, uLng, p.lat, p.lng);
-            return { ...p, distance: miles < 1 ? '< 1 mi' : `${miles.toFixed(1)} mi` };
+            return { ...p, distanceNum: miles, distance: miles < 1 ? '< 1 mi' : `${miles.toFixed(1)} mi` };
           }
-          return p;
+          return { ...p, distanceNum: 9999 };
         });
+        predictions.sort((a, b) => a.distanceNum - b.distanceNum);
       }
 
       setResults(predictions);
@@ -95,7 +122,7 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
               className="search-result-item"
               onMouseDown={() => handleSelect(place)}
             >
-              <span className="search-result-icon">🏢</span>
+              <CompanyLogo name={place.name} placeId={place.place_id} />
               <div className="search-result-info" style={{ flex: 1, minWidth: 0 }}>
                 <div className="search-result-name">{place.name}</div>
                 <div className="search-result-address">{place.address}</div>
