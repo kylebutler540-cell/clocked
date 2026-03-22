@@ -2450,3 +2450,19 @@ textarea.form-input {
   width: 100%;
   max-width: 400px;
 }
+
+/* On desktop, break out of the 740px column to use full app-main width */
+@media (min-width: 768px) {
+  .auth-page-wrapper {
+    position: fixed;
+    top: 52px;
+    left: 240px;
+    right: 0;
+    bottom: 0;
+    padding: 80px 24px 24px;
+    background: var(--bg-primary);
+    z-index: 10;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+}
