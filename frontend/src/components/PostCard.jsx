@@ -64,7 +64,7 @@ export default function PostCard({ post: initialPost, onUpdate }) {
     try {
       const res = await api.post(`/posts/${post.id}/dislike`);
       setPost(p => ({ ...p, dislikes: res.data.dislikes }));
-    } catch { addToast('Failed to react to post'); }
+    } catch { addToast('Failed to dislike post'); }
   }
 
   async function handleSave() {
