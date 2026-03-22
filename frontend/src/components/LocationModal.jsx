@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const GOOGLE_API_KEY = 'AIzaSyDVTt1iv8oqd9ziIMyqs_jCo6et5iucc2s';
 
 export default function LocationModal({ onClose }) {
   const [cityInput, setCityInput] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const [error, setError] = useState(null);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    if (cityInput.length < 2) { setSuggestions([]); return; }
+
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(cityInput)}&types=(cities)&language=en&key=${GOOGLE_API_KEY}`
+        );
+        const data = await res.json();
+        if (data.status === 'OK') {
+          setSuggestions(data.predictions.map(p => ({
+            description: p.description,
+            place_id: p.place_id,
+          })));
+        } else {
+          setSuggestions([]);
+        }
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [cityInput]);
 
   async function handleUseLocation() {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
+      setError('Geolocation not supported.');
       return;
     }
-    setLoading(true);
+    setGeoLoading(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -23,49 +55,40 @@ export default function LocationModal({ onClose }) {
           );
           const data = await res.json();
           let city = '';
-          if (data.results && data.results.length > 0) {
+          if (data.results?.length > 0) {
             const components = data.results[0].address_components;
             const locality = components.find(c => c.types.includes('locality'));
             const state = components.find(c => c.types.includes('administrative_area_level_1'));
-            if (locality && state) {
-              city = `${locality.long_name}, ${state.short_name}`;
-            } else if (locality) {
-              city = locality.long_name;
-            } else {
-              city = data.results[0].formatted_address.split(',').slice(0, 2).join(',').trim();
-            }
+            city = locality && state
+              ? `${locality.long_name}, ${state.short_name}`
+              : data.results[0].formatted_address.split(',').slice(0, 2).join(',').trim();
           }
           if (city) {
             localStorage.setItem('userLocation', city);
             onClose(city);
           } else {
-            setError('Could not determine your city. Please type it manually.');
+            setError('Could not detect your city. Please type it manually.');
           }
         } catch {
-          setError('Failed to reverse geocode. Please type your city manually.');
+          setError('Failed to detect location. Please type manually.');
         }
-        setLoading(false);
+        setGeoLoading(false);
       },
       () => {
-        setError('Location access denied. Please type your city manually.');
-        setLoading(false);
+        setError('Location access denied. Please type your city.');
+        setGeoLoading(false);
       }
     );
   }
 
-  function handleManualSubmit() {
-    const city = cityInput.trim();
-    if (!city) return;
+  function handleSelect(description) {
+    const city = description.split(',').slice(0, 2).join(',').trim();
     localStorage.setItem('userLocation', city);
     onClose(city);
   }
 
-  function handleSkip() {
-    onClose(null);
-  }
-
   return (
-    <div className="modal-overlay" onClick={handleSkip}>
+    <div className="modal-overlay" onClick={() => onClose(null)}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
         <h2 className="modal-title">Where are you located?</h2>
@@ -76,35 +99,48 @@ export default function LocationModal({ onClose }) {
         <button
           className="btn btn-primary btn-full"
           onClick={handleUseLocation}
-          disabled={loading}
+          disabled={geoLoading}
           style={{ marginBottom: 12 }}
         >
-          {loading ? 'Getting location…' : '📍 Use my location'}
+          {geoLoading ? 'Getting location…' : '📍 Use my location'}
         </button>
 
         {error && (
           <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{error}</p>
         )}
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ position: 'relative', marginBottom: 16 }}>
           <input
             className="form-input"
-            placeholder="Or type your city…"
+            placeholder="Search city or zip code…"
             value={cityInput}
-            onChange={e => setCityInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
+            onChange={e => { setCityInput(e.target.value); }}
+            autoComplete="off"
           />
-          <button
-            className="btn btn-secondary"
-            onClick={handleManualSubmit}
-            disabled={!cityInput.trim()}
-            style={{ flexShrink: 0 }}
-          >
-            Set
-          </button>
+          {(suggestions.length > 0 || loading) && (
+            <div className="search-results" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100 }}>
+              {loading && (
+                <div style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: 14 }}>
+                  Searching…
+                </div>
+              )}
+              {suggestions.map(s => (
+                <div
+                  key={s.place_id}
+                  className="search-result-item"
+                  onMouseDown={() => handleSelect(s.description)}
+                >
+                  <span className="search-result-icon">📍</span>
+                  <div className="search-result-info">
+                    <div className="search-result-name">{s.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <button className="btn btn-ghost btn-full" onClick={handleSkip}>
+        <button className="btn btn-ghost btn-full" onClick={() => onClose(null)}>
           Skip for now
         </button>
       </div>
