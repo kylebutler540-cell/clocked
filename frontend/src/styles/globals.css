@@ -2418,3 +2418,11 @@ textarea.form-input {
   min-width: 20px;
   text-align: center;
 }
+
+/* Center signup/profile/etc pages on desktop */
+@media (min-width: 768px) {
+  .page-content > div:not(.feed):not(.home-layout):not(.profile-page):not(.company-header):not([class]) {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+}

@@ -76,7 +76,8 @@ export default function Signup() {
   }
 
   return (
-    <div style={{ padding: '40px 24px', maxWidth: 400, margin: '0 auto' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '60px 24px' }}>
+    <div style={{ width: '100%', maxWidth: 400 }}>
       <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>
         {mode === 'signup' ? 'Create Account' : 'Welcome Back'}
       </h1>
@@ -146,6 +147,7 @@ export default function Signup() {
       >
         Skip for now
       </button>
+    </div>
     </div>
   );
 }
