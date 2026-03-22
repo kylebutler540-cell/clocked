@@ -1,6 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
+function getDistanceMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 export default function EmployerSearch({ onSelect, placeholder = 'Search employer...' }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -10,15 +18,27 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
   const wrapperRef = useRef(null);
 
   const search = useCallback(async (q) => {
-    if (q.length < 2) {
-      setResults([]);
-      return;
-    }
+    if (q.length < 2) { setResults([]); return; }
     setLoading(true);
     try {
       const userLocation = localStorage.getItem('userLocation') || 'Grand Rapids, MI';
+      const userLatLng = localStorage.getItem('userLatLng'); // "lat,lng" if GPS used
       const res = await api.get('/employers/search', { params: { query: q, location: userLocation } });
-      setResults(res.data.predictions || []);
+      let predictions = res.data.predictions || [];
+
+      // Add distance if we have user's exact coords and result has coords
+      if (userLatLng) {
+        const [uLat, uLng] = userLatLng.split(',').map(Number);
+        predictions = predictions.map(p => {
+          if (p.lat && p.lng) {
+            const miles = getDistanceMiles(uLat, uLng, p.lat, p.lng);
+            return { ...p, distance: miles < 1 ? '< 1 mi' : `${miles.toFixed(1)} mi` };
+          }
+          return p;
+        });
+      }
+
+      setResults(predictions);
     } catch {
       setResults([]);
     } finally {
@@ -34,9 +54,7 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
 
   useEffect(() => {
     function handleClick(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -78,10 +96,15 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
               onMouseDown={() => handleSelect(place)}
             >
               <span className="search-result-icon">🏢</span>
-              <div className="search-result-info">
+              <div className="search-result-info" style={{ flex: 1, minWidth: 0 }}>
                 <div className="search-result-name">{place.name}</div>
                 <div className="search-result-address">{place.address}</div>
               </div>
+              {place.distance && (
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0, marginLeft: 8 }}>
+                  {place.distance}
+                </span>
+              )}
             </div>
           ))}
         </div>

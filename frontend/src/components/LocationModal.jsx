@@ -50,6 +50,8 @@ export default function LocationModal({ onClose }) {
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
+          // Save exact coords for distance calculations
+          localStorage.setItem('userLatLng', `${latitude},${longitude}`);
           const res = await fetch(
             `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`
           );
@@ -102,7 +104,7 @@ export default function LocationModal({ onClose }) {
           disabled={geoLoading}
           style={{ marginBottom: 12 }}
         >
-          {geoLoading ? 'Getting location…' : '📍 Use my location'}
+          {geoLoading ? 'Getting location…' : '📍 Use my exact location'}
         </button>
 
         {error && (

@@ -342,9 +342,10 @@ img, video {
 }
 
 .header-search-wrapper .search-results {
-  min-width: 260px;
+  min-width: unset;
   right: 0;
-  left: auto;
+  left: 0;
+  width: 100%;
   z-index: 200;
 }
 

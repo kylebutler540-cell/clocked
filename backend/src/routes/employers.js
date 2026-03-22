@@ -44,11 +44,26 @@ router.get('/search', async (req, res) => {
       return res.status(502).json({ error: 'Places API error', details: data.status });
     }
 
-    const predictions = (data.predictions || []).map(p => ({
-      place_id: p.place_id,
-      name: p.structured_formatting?.main_text || p.description,
-      address: p.structured_formatting?.secondary_text || '',
-      description: p.description,
+    // Fetch lat/lng for each prediction so frontend can show distance
+    const predictions = await Promise.all((data.predictions || []).slice(0, 5).map(async p => {
+      let lat = null, lng = null;
+      try {
+        const details = await axios.get(`${GOOGLE_PLACES_BASE}/details/json`, {
+          params: { place_id: p.place_id, fields: 'geometry', key: process.env.GOOGLE_MAPS_API_KEY },
+        });
+        if (details.data.status === 'OK') {
+          lat = details.data.result.geometry.location.lat;
+          lng = details.data.result.geometry.location.lng;
+        }
+      } catch { /* skip */ }
+      return {
+        place_id: p.place_id,
+        name: p.structured_formatting?.main_text || p.description,
+        address: p.structured_formatting?.secondary_text || '',
+        description: p.description,
+        lat,
+        lng,
+      };
     }));
 
     res.json({ predictions });
