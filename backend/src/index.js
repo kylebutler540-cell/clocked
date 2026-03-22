@@ -17,7 +17,18 @@ const PORT = process.env.PORT || 3001;
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    const allowed = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
+    ].filter(Boolean);
+    if (!origin || allowed.includes(origin) || origin.endsWith('.up.railway.app') || origin.endsWith('.railway.app')) {
+      callback(null, true);
+    } else {
+      callback(null, true); // allow all for now, restrict after domain is set
+    }
+  },
   credentials: true,
 }));
 
