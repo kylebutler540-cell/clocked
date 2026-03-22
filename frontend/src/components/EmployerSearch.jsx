@@ -16,7 +16,8 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
     }
     setLoading(true);
     try {
-      const res = await api.get('/employers/search', { params: { query: q } });
+      const userLocation = localStorage.getItem('userLocation') || 'Grand Rapids, MI';
+      const res = await api.get('/employers/search', { params: { query: q, location: userLocation } });
       setResults(res.data.predictions || []);
     } catch {
       setResults([]);

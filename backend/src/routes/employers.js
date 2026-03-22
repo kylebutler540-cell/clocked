@@ -12,13 +12,29 @@ router.get('/search', async (req, res) => {
     const { query, location } = req.query;
     if (!query) return res.status(400).json({ error: 'Query required' });
 
+    // Default bias to Grand Rapids, MI
+    const locationBias = location || 'Grand Rapids, MI';
+
+    // Geocode the location string to lat/lng for Places API biasing
+    let latLng = '42.9634,-85.6681'; // Grand Rapids default
+    try {
+      const geoRes = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+        params: { address: locationBias, key: process.env.GOOGLE_MAPS_API_KEY },
+      });
+      if (geoRes.data.status === 'OK' && geoRes.data.results[0]) {
+        const loc = geoRes.data.results[0].geometry.location;
+        latLng = `${loc.lat},${loc.lng}`;
+      }
+    } catch { /* use default */ }
+
     const params = {
       input: query,
       key: process.env.GOOGLE_MAPS_API_KEY,
       types: 'establishment',
       language: 'en',
+      location: latLng,
+      radius: 50000, // 50km radius bias
     };
-    if (location) params.location = location;
 
     const response = await axios.get(`${GOOGLE_PLACES_BASE}/autocomplete/json`, { params });
     const data = response.data;
