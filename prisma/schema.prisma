@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(cuid())
+  anonymous_id      String         @unique @default(cuid())
+  email             String?        @unique
+  password_hash     String?
+  created_at        DateTime       @default(now())
+  subscription_status SubscriptionStatus @default(FREE)
+
+  posts         Post[]
+  comments      Comment[]
+  saves         Save[]
+  flags         Flag[]
+  subscription  Subscription?
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Post {
+  id               String   @id @default(cuid())
+  anonymous_user_id String
+  employer_place_id String
+  employer_name    String
+  employer_address String
+  rating_emoji     RatingEmoji
+  header           String?
+  body             String
+  media_urls       String[]
+  likes            Int      @default(0)
+  dislikes         Int      @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  user     User      @relation(fields: [anonymous_user_id], references: [id])
+  comments Comment[]
+  saves    Save[]
+  flags    Flag[]
+
+  @@index([employer_place_id])
+  @@index([created_at(sort: Desc)])
+  @@map("posts")
+}
+
+model Comment {
+  id               String   @id @default(cuid())
+  post_id          String
+  anonymous_user_id String
+  body             String
+  created_at       DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [anonymous_user_id], references: [id])
+
+  @@index([post_id])
+  @@map("comments")
+}
+
+model Save {
+  id      String @id @default(cuid())
+  user_id String
+  post_id String
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@map("saves")
+}
+
+model Flag {
+  id      String @id @default(cuid())
+  user_id String
+  post_id String
+  reason  String
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@map("flags")
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  user_id            String             @unique
+  stripe_customer_id String             @unique
+  stripe_sub_id      String?
+  status             SubscriptionStatus @default(FREE)
+  trial_end          DateTime?
+  current_period_end DateTime?
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  user_id    String
+  type       String
+  message    String
+  read       Boolean  @default(false)
+  data       Json?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("notifications")
+}
+
+enum RatingEmoji {
+  BAD
+  NEUTRAL
+  GOOD
+}
+
+enum SubscriptionStatus {
+  FREE
+  TRIALING
+  ACTIVE
+  CANCELED
+  PAST_DUE
+}
