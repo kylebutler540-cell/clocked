@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext';
 
 import BottomNav from './components/BottomNav';
 import SideDrawer from './components/SideDrawer';
+import LeftSidebar from './components/LeftSidebar';
 import EmployerSearch from './components/EmployerSearch';
 
 import Home from './pages/Home';
@@ -91,6 +92,8 @@ function AppInner() {
   return (
     <BrowserRouter>
       <div className="app-layout">
+        <LeftSidebar />
+        <div className="app-main">
         <PageHeader onOpenDrawer={() => setDrawerOpen(true)} />
         <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
         <main className="page-content">
@@ -110,6 +113,7 @@ function AppInner() {
           </Routes>
         </main>
         <BottomNav />
+        </div>
       </div>
     </BrowserRouter>
   );
