@@ -1900,3 +1900,228 @@ textarea.form-input {
     min-width: 0;
   }
 }
+
+/* ========== Onboarding ========== */
+.onboarding-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 28px;
+  background: var(--bg-primary);
+  text-align: center;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+.onboarding-logo-wrap {
+  margin-bottom: 16px;
+}
+
+.onboarding-logo-icon {
+  width: 76px;
+  height: 76px;
+  background: linear-gradient(135deg, #A855F7, #7C3AED);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: 900;
+  color: white;
+  margin: 0 auto;
+  box-shadow: 0 12px 32px rgba(168,85,247,0.4);
+}
+
+.onboarding-wordmark {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--purple);
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.onboarding-tagline {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.onboarding-body {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 300px;
+  margin-bottom: 40px;
+}
+
+.onboarding-actions {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.onboarding-btn {
+  font-size: 16px;
+  padding: 14px 0 !important;
+}
+
+.onboarding-features-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 28px;
+  color: var(--text-primary);
+}
+
+.onboarding-features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 36px;
+}
+
+.onboarding-feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--bg-elevated);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: left;
+}
+
+.onboarding-feature-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: var(--purple-glow);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-feature-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.onboarding-feature-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.onboarding-offer-badge {
+  background: linear-gradient(135deg, #A855F7, #7C3AED);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.onboarding-offer-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.onboarding-offer-body {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 300px;
+  margin-bottom: 24px;
+}
+
+.onboarding-offer-card {
+  background: var(--purple-glow);
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 16px;
+  padding: 20px 28px;
+  margin-bottom: 28px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.onboarding-offer-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.onboarding-price-original {
+  font-size: 18px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.onboarding-price-new {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--purple);
+}
+
+.onboarding-price-new span {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.onboarding-offer-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ========== Skeleton Cards ========== */
+.skeleton-card {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--border) 50%, var(--bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ========== Feed Empty / First CTA ========== */
+.feed-first-cta {
+  margin: 20px 12px;
+  padding: 40px 24px;
+  text-align: center;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.feed-first-cta h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.feed-first-cta p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 280px;
+  margin: 0 auto;
+}

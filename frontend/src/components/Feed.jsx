@@ -2,6 +2,24 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../lib/api';
 import PostCard from './PostCard';
 
+function SkeletonCard() {
+  return (
+    <div className="post-card skeleton-card">
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center' }}>
+        <div className="skeleton-block" style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div className="skeleton-block" style={{ width: '40%', height: 12, borderRadius: 6, marginBottom: 6 }} />
+          <div className="skeleton-block" style={{ width: '60%', height: 10, borderRadius: 6 }} />
+        </div>
+      </div>
+      <div className="skeleton-block" style={{ width: '70%', height: 14, borderRadius: 6, marginBottom: 8 }} />
+      <div className="skeleton-block" style={{ width: '100%', height: 10, borderRadius: 6, marginBottom: 5 }} />
+      <div className="skeleton-block" style={{ width: '85%', height: 10, borderRadius: 6, marginBottom: 5 }} />
+      <div className="skeleton-block" style={{ width: '55%', height: 10, borderRadius: 6 }} />
+    </div>
+  );
+}
+
 const MOCK_POST = {
   id: 'mock-seed-post-1',
   anonymous_user_id: '00000000-0000-0000-0000-000000000d3f',
@@ -106,8 +124,10 @@ export default function Feed({ filters = {} }) {
 
   if (loading) {
     return (
-      <div className="loading-spinner">
-        <div className="spinner" />
+      <div className="feed">
+        <PostCard key={MOCK_POST.id} post={MOCK_POST} />
+        <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />
+        {[1,2,3].map(i => <SkeletonCard key={i} />)}
       </div>
     );
   }
@@ -126,6 +146,19 @@ export default function Feed({ filters = {} }) {
       {loadingMore && (
         <div className="loading-spinner">
           <div className="spinner" />
+        </div>
+      )}
+
+      {!nextCursor && posts.length === 0 && (
+        <div className="feed-first-cta">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+          <h3>Be the first to review a workplace near you</h3>
+          <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
+          <a href="/create" className="btn btn-primary" style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}>
+            Write a Review
+          </a>
         </div>
       )}
 
