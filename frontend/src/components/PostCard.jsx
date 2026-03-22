@@ -89,7 +89,7 @@ export default function PostCard({ post: initialPost, onUpdate }) {
 
   return (
     <>
-      <article className="post-card" onClick={() => navigate(`/post/${post.id}`)}>
+      <article className="post-card" onClick={() => { if (!post.id?.startsWith('mock-')) navigate(`/post/${post.id}`); }}>
         {/* Header */}
         <div className="post-header">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1, minWidth: 0 }}>
