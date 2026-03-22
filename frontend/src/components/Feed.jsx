@@ -24,7 +24,7 @@ const MOCK_POST = {
   id: 'mock-seed-post-1',
   anonymous_user_id: '00000000-0000-0000-0000-000000000d3f',
   employer_name: 'Walmart Supercenter',
-  employer_address: '3221 28th St SE, Grand Rapids, MI',
+  employer_address: '5859 28th St SE, Grand Rapids, MI 49546',
   employer_place_id: 'ChIJgUYJpuBNGIgR8PGiUfuZkEs',
   rating_emoji: 'BAD',
   header: 'Management is an absolute joke',
