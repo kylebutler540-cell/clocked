@@ -2451,18 +2451,17 @@ textarea.form-input {
   max-width: 400px;
 }
 
-/* On desktop, break out of the 740px column to use full app-main width */
+/* On desktop, stretch auth wrapper to full app-main (not just 740px column) */
 @media (min-width: 768px) {
+  /* Make page-content full width when it contains auth-page-wrapper */
+  .page-content:has(.auth-page-wrapper) {
+    max-width: 100% !important;
+    background: var(--bg-secondary);
+  }
+
   .auth-page-wrapper {
-    position: fixed;
-    top: 52px;
-    left: 240px;
-    right: 0;
-    bottom: 0;
+    min-height: calc(100dvh - 52px);
     padding: 80px 24px 24px;
-    background: var(--bg-primary);
-    z-index: 10;
-    align-items: flex-start;
-    overflow-y: auto;
+    background: var(--bg-secondary);
   }
 }
