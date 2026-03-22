@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg9" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F0F0F"/>
+      <stop offset="100%" style="stop-color:#0A0A0A"/>
+    </linearGradient>
+    <linearGradient id="clockRing9" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4B5563"/>
+      <stop offset="100%" style="stop-color:#374151"/>
+    </linearGradient>
+    <linearGradient id="innerGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB" stop-opacity="0.8"/>
+      <stop offset="50%" style="stop-color:#1D4ED8" stop-opacity="0.6"/>
+      <stop offset="100%" style="stop-color:#60A5FA" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="crackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#2563EB"/>
+    </linearGradient>
+    <radialGradient id="innerLight" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#3B82F6" stop-opacity="0.9"/>
+      <stop offset="40%" style="stop-color:#2563EB" stop-opacity="0.6"/>
+      <stop offset="100%" style="stop-color:#1E3A8A" stop-opacity="0.1"/>
+    </radialGradient>
+    <filter id="crackGlow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="innerGlowFilter">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="clockClip">
+      <circle cx="200" cy="180" r="118"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="72" fill="url(#bg9)"/>
+
+  <!-- Clock outer ring (cracked/worn) -->
+  <circle cx="200" cy="180" r="124" fill="#1A1A1A" stroke="url(#clockRing9)" stroke-width="8"/>
+
+  <!-- Clock face, darker -->
+  <circle cx="200" cy="180" r="116" fill="#141414"/>
+
+  <!-- Crack glow (light bleeding through cracks from inside) -->
+  <g clip-path="url(#clockClip)" filter="url(#innerGlowFilter)">
+    <!-- Main crack lines filled with blue glow -->
+    <!-- Central glow source -->
+    <circle cx="200" cy="180" r="50" fill="url(#innerLight)" opacity="0.7"/>
+  </g>
+
+  <!-- Crack lines (the truth bleeding through) -->
+  <g filter="url(#crackGlow)" clip-path="url(#clockClip)">
+    <!-- Main crack from center radiating out -->
+    <polyline points="200,180 218,150 230,115 240,88" fill="none" stroke="url(#crackGrad)" stroke-width="2.5" stroke-linecap="round"/>
+    <polyline points="200,180 170,155 148,138 118,118" fill="none" stroke="url(#crackGrad)" stroke-width="2" stroke-linecap="round"/>
+    <polyline points="200,180 230,195 255,220 270,255" fill="none" stroke="url(#crackGrad)" stroke-width="2.5" stroke-linecap="round"/>
+    <polyline points="200,180 178,208 160,240 148,268" fill="none" stroke="url(#crackGrad)" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- Branch cracks -->
+    <polyline points="218,150 238,158 252,148" fill="none" stroke="url(#crackGrad)" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+    <polyline points="170,155 162,172 148,168" fill="none" stroke="url(#crackGrad)" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+    <polyline points="230,195 248,188 262,200" fill="none" stroke="url(#crackGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+    <polyline points="178,208 165,200 155,212" fill="none" stroke="url(#crackGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- Clock hour marks (degraded) -->
+  <g stroke="rgba(255,255,255,0.2)" stroke-width="2.5">
+    <line x1="200" y1="66" x2="200" y2="80"/>
+    <line x1="200" y1="280" x2="200" y2="294"/>
+    <line x1="87" y1="180" x2="101" y2="180"/>
+    <line x1="299" y1="180" x2="313" y2="180"/>
+  </g>
+
+  <!-- Clock hands (stopped / broken time) -->
+  <line x1="200" y1="180" x2="200" y2="125" stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-linecap="round"/>
+  <line x1="200" y1="180" x2="245" y2="165" stroke="rgba(255,255,255,0.35)" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="200" cy="180" r="8" fill="#2A2A2A" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+  <!-- "TRUTH" text inside glow (subtle) -->
+  <text x="200" y="185" font-family="'Arial', sans-serif" font-size="10" font-weight="700" fill="rgba(96,165,250,0.6)" text-anchor="middle" letter-spacing="4">TRUTH</text>
+
+  <!-- Wordmark -->
+  <text x="200" y="358" font-family="'Arial Black', 'Impact', sans-serif" font-size="34" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">CLOCKED</text>
+</svg>

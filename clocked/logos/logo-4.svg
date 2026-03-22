@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F0F0F"/>
+      <stop offset="100%" style="stop-color:#0A0F1E"/>
+    </linearGradient>
+    <linearGradient id="faceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A2540"/>
+      <stop offset="100%" style="stop-color:#111827"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#2563EB"/>
+      <stop offset="100%" style="stop-color:#60A5FA"/>
+    </linearGradient>
+    <linearGradient id="ringG4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6"/>
+      <stop offset="100%" style="stop-color:#1D4ED8"/>
+    </linearGradient>
+    <filter id="arrowGlow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="72" fill="url(#bg4)"/>
+
+  <!-- Clock outer ring -->
+  <circle cx="200" cy="185" r="130" fill="url(#faceGrad)" stroke="url(#ringG4)" stroke-width="7"/>
+
+  <!-- Rating arc segments (like a gauge) -->
+  <circle cx="200" cy="185" r="105" fill="none" stroke="#1E3A6E" stroke-width="12" stroke-dasharray="330 330" stroke-dashoffset="0" opacity="0.5"/>
+  <!-- Filled portion (good rating) -->
+  <circle cx="200" cy="185" r="105" fill="none" stroke="url(#arrowGrad)" stroke-width="12"
+    stroke-dasharray="220 440" stroke-dashoffset="110"
+    stroke-linecap="round" filter="url(#arrowGlow)" opacity="0.7"/>
+
+  <!-- Hour tick marks -->
+  <g stroke="rgba(255,255,255,0.3)" stroke-width="2">
+    <line x1="200" y1="62" x2="200" y2="76"/>
+    <line x1="200" y1="294" x2="200" y2="308"/>
+    <line x1="77" y1="185" x2="91" y2="185"/>
+    <line x1="309" y1="185" x2="323" y2="185"/>
+  </g>
+
+  <!-- Star rating dots -->
+  <g fill="#2563EB" opacity="0.8">
+    <circle cx="152" cy="229" r="5"/>
+    <circle cx="176" cy="248" r="5"/>
+    <circle cx="200" cy="254" r="5"/>
+    <circle cx="224" cy="248" r="5"/>
+    <circle cx="248" cy="229" r="5"/>
+  </g>
+
+  <!-- Hour hand (pointing up, normal) -->
+  <line x1="200" y1="185" x2="200" y2="120" stroke="rgba(255,255,255,0.5)" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Rating/arrow hand (pointing up-right dramatically) — the key element -->
+  <g filter="url(#arrowGlow)">
+    <!-- Arrow hand shaft -->
+    <line x1="200" y1="185" x2="252" y2="110" stroke="url(#arrowGrad)" stroke-width="7" stroke-linecap="round"/>
+    <!-- Arrowhead -->
+    <polygon points="252,110 237,120 258,130" fill="url(#arrowGrad)"/>
+  </g>
+
+  <!-- Center dot -->
+  <circle cx="200" cy="185" r="10" fill="url(#ringG4)"/>
+  <circle cx="200" cy="185" r="5" fill="white"/>
+
+  <!-- Wordmark -->
+  <text x="200" y="358" font-family="'Arial Black', 'Impact', sans-serif" font-size="34" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">CLOCKED</text>
+</svg>

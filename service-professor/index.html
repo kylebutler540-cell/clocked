@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Service Professor | HVAC, Plumbing & Electrical – Grand Rapids, MI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #222; }
+
+    /* NAV */
+    nav {
+      background: #1a1a2e;
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { color: #fff; font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; }
+    .logo span { color: #e94560; }
+    nav ul { list-style: none; display: flex; gap: 28px; }
+    nav ul a { color: #ccc; text-decoration: none; font-size: 0.95rem; transition: color 0.2s; }
+    nav ul a:hover { color: #e94560; }
+    .nav-cta {
+      background: #e94560;
+      color: #fff !important;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .nav-cta:hover { background: #c73652 !important; color: #fff !important; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: #fff;
+      padding: 100px 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 20px; line-height: 1.2; }
+    .hero h1 span { color: #e94560; }
+    .hero p { font-size: 1.2rem; color: #aac; margin-bottom: 36px; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: #e94560;
+      color: #fff;
+      padding: 16px 36px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #c73652; }
+    .btn-secondary {
+      background: transparent;
+      color: #fff;
+      padding: 16px 36px;
+      border-radius: 8px;
+      border: 2px solid #fff;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #fff; color: #1a1a2e; }
+
+    /* TRUST BAR */
+    .trust-bar {
+      background: #e94560;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      padding: 18px 40px;
+      flex-wrap: wrap;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .trust-bar span::before { margin-right: 8px; }
+
+    /* SERVICES */
+    .section { padding: 80px 40px; }
+    .section-title { text-align: center; font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+    .section-sub { text-align: center; color: #666; margin-bottom: 48px; font-size: 1rem; }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 28px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .service-card {
+      background: #f8f9ff;
+      border-radius: 12px;
+      padding: 36px 28px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+    .service-card:hover { border-color: #e94560; box-shadow: 0 8px 24px rgba(233,69,96,0.12); }
+    .service-icon { font-size: 2.8rem; margin-bottom: 16px; }
+    .service-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+    .service-card p { color: #666; font-size: 0.95rem; line-height: 1.6; }
+
+    /* WHY US */
+    .why-section { background: #1a1a2e; color: #fff; padding: 80px 40px; }
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .why-card { text-align: center; padding: 24px; }
+    .why-num { font-size: 2.5rem; font-weight: 800; color: #e94560; }
+    .why-card h4 { font-size: 1.1rem; font-weight: 700; margin: 8px 0; }
+    .why-card p { color: #aab; font-size: 0.9rem; line-height: 1.6; }
+
+    /* REVIEWS */
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .review-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .stars { color: #f5a623; font-size: 1.2rem; margin-bottom: 12px; }
+    .review-card p { color: #444; font-size: 0.95rem; line-height: 1.7; margin-bottom: 16px; }
+    .reviewer { font-weight: 700; color: #1a1a2e; }
+
+    /* CTA SECTION */
+    .cta-section {
+      background: linear-gradient(135deg, #e94560, #c73652);
+      color: #fff;
+      text-align: center;
+      padding: 80px 40px;
+    }
+    .cta-section h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 16px; }
+    .cta-section p { font-size: 1.1rem; margin-bottom: 36px; opacity: 0.9; }
+    .cta-phone { font-size: 2rem; font-weight: 800; margin-bottom: 24px; display: block; }
+    .btn-white {
+      background: #fff;
+      color: #e94560;
+      padding: 16px 40px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* FOOTER */
+    footer {
+      background: #111;
+      color: #aaa;
+      text-align: center;
+      padding: 32px 40px;
+      font-size: 0.9rem;
+    }
+    footer strong { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">Service <span>Professor</span></div>
+    <ul>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#reviews">Reviews</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="tel:6165551234" class="nav-cta">📞 Call Now</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Grand Rapids' Most Trusted<br/><span>HVAC, Plumbing & Electrical</span></h1>
+    <p>Same-day service. Upfront pricing. 100% satisfaction guarantee. We treat your home like our own.</p>
+    <div class="hero-buttons">
+      <a href="tel:6165551234" class="btn-primary">📞 Call for Same-Day Service</a>
+      <a href="#services" class="btn-secondary">See Our Services</a>
+    </div>
+  </section>
+
+  <!-- TRUST BAR -->
+  <div class="trust-bar">
+    <span>✅ Licensed & Insured</span>
+    <span>⚡ Same-Day Available</span>
+    <span>💰 Upfront Pricing</span>
+    <span>⭐ 500+ 5-Star Reviews</span>
+    <span>🏠 Serving Grand Rapids Since 2001</span>
+  </div>
+
+  <!-- SERVICES -->
+  <section class="section" id="services">
+    <h2 class="section-title">What We Do</h2>
+    <p class="section-sub">From furnace repairs to full installations — we handle it all.</p>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">🌡️</div>
+        <h3>Heating & Furnace</h3>
+        <p>Furnace repair, replacement, and tune-ups. We keep you warm all winter long.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">❄️</div>
+        <h3>Air Conditioning</h3>
+        <p>AC installation, repair, and maintenance. Stay cool when Michigan summers hit.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">💧</div>
+        <h3>Plumbing</h3>
+        <p>Leaks, clogs, water heaters, and full plumbing installs. Fast and reliable.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">⚡</div>
+        <h3>Electrical</h3>
+        <p>Panel upgrades, outlets, lighting, and whole-home electrical services.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🔧</div>
+        <h3>Maintenance Plans</h3>
+        <p>Annual tune-ups and priority service to keep your systems running year-round.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🚨</div>
+        <h3>Emergency Service</h3>
+        <p>No heat in January? We're available when you need us most — 24/7.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="why-section">
+    <h2 class="section-title" style="color:#fff;">Why Grand Rapids Chooses Us</h2>
+    <p class="section-sub" style="color:#aab;">Numbers don't lie.</p>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-num">25+</div>
+        <h4>Years in Business</h4>
+        <p>Serving West Michigan homeowners since 2001.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-num">500+</div>
+        <h4>5-Star Reviews</h4>
+        <p>Real customers, real results.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-num">Same</div>
+        <h4>Day Service</h4>
+        <p>Call before noon, we're there today.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-num">100%</div>
+        <h4>Satisfaction Guaranteed</h4>
+        <p>We don't leave until you're happy.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="section" id="reviews" style="background:#f4f6ff;">
+    <h2 class="section-title">What Our Customers Say</h2>
+    <p class="section-sub">Over 500 five-star reviews across Google and Facebook.</p>
+    <div class="reviews-grid">
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <p>"Furnace went out at 11pm in January. Service Professor had someone at my door within 2 hours. Incredible service, fair price. Will never use anyone else."</p>
+        <span class="reviewer">— Mike T., Grand Rapids</span>
+      </div>
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <p>"I've used them for HVAC and plumbing. Every technician has been professional, clean, and honest about pricing. No surprises on the invoice."</p>
+        <span class="reviewer">— Sarah K., Kentwood</span>
+      </div>
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <p>"Got three quotes for a new AC unit. Service Professor was the most transparent and their price was fair. Installed in one day. Couldn't be happier."</p>
+        <span class="reviewer">— James R., Wyoming, MI</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="contact">
+    <h2>Ready to Schedule?</h2>
+    <p>Same-day appointments available. Upfront pricing, no surprises.</p>
+    <span class="cta-phone">📞 (616) 555-1234</span>
+    <br/>
+    <a href="tel:6165551234" class="btn-white">Book Service Now</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p><strong>Service Professor</strong> — Grand Rapids, Michigan</p>
+    <p style="margin-top:8px;">© 2026 Service Professor. All rights reserved. | Licensed & Insured | HVAC · Plumbing · Electrical</p>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F0F0F"/>
+      <stop offset="100%" style="stop-color:#111520"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E2A45"/>
+      <stop offset="100%" style="stop-color:#162035"/>
+    </linearGradient>
+    <linearGradient id="accentG5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#2563EB"/>
+      <stop offset="100%" style="stop-color:#3B82F6"/>
+    </linearGradient>
+    <filter id="cardShadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="72" fill="url(#bg5)"/>
+
+  <!-- Time card body -->
+  <g filter="url(#cardShadow)">
+    <rect x="90" y="75" width="220" height="255" rx="12" fill="url(#cardGrad)" stroke="rgba(59,130,246,0.3)" stroke-width="2"/>
+  </g>
+
+  <!-- Top punch holes strip -->
+  <rect x="90" y="75" width="220" height="42" rx="12" fill="#2563EB"/>
+  <rect x="90" y="97" width="220" height="20" fill="#2563EB"/>
+
+  <!-- Punch holes -->
+  <circle cx="135" cy="96" r="9" fill="#0F0F0F"/>
+  <circle cx="200" cy="96" r="9" fill="#0F0F0F"/>
+  <circle cx="265" cy="96" r="9" fill="#0F0F0F"/>
+
+  <!-- "CLOCKED" label on card -->
+  <text x="200" y="147" font-family="'Arial Black', sans-serif" font-size="13" font-weight="900" fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="5">TIME CARD</text>
+
+  <!-- Horizontal rule lines (time entry rows) -->
+  <g stroke="rgba(59,130,246,0.2)" stroke-width="1">
+    <line x1="110" y1="168" x2="290" y2="168"/>
+    <line x1="110" y1="195" x2="290" y2="195"/>
+    <line x1="110" y1="222" x2="290" y2="222"/>
+    <line x1="110" y1="249" x2="290" y2="249"/>
+    <line x1="110" y1="276" x2="290" y2="276"/>
+    <line x1="110" y1="303" x2="290" y2="303"/>
+  </g>
+
+  <!-- Vertical dividers on card -->
+  <line x1="165" y1="155" x2="165" y2="310" stroke="rgba(59,130,246,0.2)" stroke-width="1"/>
+  <line x1="235" y1="155" x2="235" y2="310" stroke="rgba(59,130,246,0.2)" stroke-width="1"/>
+
+  <!-- Column headers -->
+  <text x="137" y="165" font-family="Arial, sans-serif" font-size="9" fill="rgba(59,130,246,0.7)" text-anchor="middle" letter-spacing="1">IN</text>
+  <text x="200" y="165" font-family="Arial, sans-serif" font-size="9" fill="rgba(59,130,246,0.7)" text-anchor="middle" letter-spacing="1">OUT</text>
+  <text x="262" y="165" font-family="Arial, sans-serif" font-size="9" fill="rgba(59,130,246,0.7)" text-anchor="middle" letter-spacing="1">HRS</text>
+
+  <!-- Stamped time entries -->
+  <text x="137" y="189" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">8:02</text>
+  <text x="200" y="189" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">4:47</text>
+  <text x="262" y="189" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">8.7</text>
+
+  <text x="137" y="216" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">7:58</text>
+  <text x="200" y="216" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">5:12</text>
+  <text x="262" y="216" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">9.2</text>
+
+  <text x="137" y="243" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.45)" text-anchor="middle">9:15</text>
+  <text x="200" y="243" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.45)" text-anchor="middle">3:30</text>
+  <text x="262" y="243" font-family="'Courier New', monospace" font-size="11" fill="rgba(255,255,255,0.45)" text-anchor="middle">6.2</text>
+
+  <!-- Big blue stamp "CLOCKED" angled across card -->
+  <g transform="rotate(-20, 200, 240)">
+    <rect x="120" y="240" width="160" height="38" rx="4" fill="none" stroke="#2563EB" stroke-width="2.5" opacity="0.85"/>
+    <text x="200" y="264" font-family="'Arial Black', sans-serif" font-size="18" font-weight="900" fill="#2563EB" text-anchor="middle" letter-spacing="5" opacity="0.85">CLOCKED</text>
+  </g>
+
+  <!-- Wordmark below -->
+  <text x="200" y="370" font-family="'Arial Black', 'Impact', sans-serif" font-size="34" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">CLOCKED</text>
+</svg>

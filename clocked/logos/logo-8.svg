@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F0F0F"/>
+      <stop offset="100%" style="stop-color:#111520"/>
+    </linearGradient>
+    <linearGradient id="card1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E293B"/>
+      <stop offset="100%" style="stop-color:#162032"/>
+    </linearGradient>
+    <linearGradient id="card2Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A2540"/>
+      <stop offset="100%" style="stop-color:#111D36"/>
+    </linearGradient>
+    <linearGradient id="card3Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1D2D52"/>
+      <stop offset="100%" style="stop-color:#152248"/>
+    </linearGradient>
+    <linearGradient id="topClockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB"/>
+      <stop offset="100%" style="stop-color:#1D4ED8"/>
+    </linearGradient>
+    <filter id="stackShadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="topShadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#2563EB" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="72" fill="url(#bg8)"/>
+
+  <!-- Card 3 (bottom, rotated left) -->
+  <g filter="url(#stackShadow)">
+    <g transform="rotate(-8, 200, 190)">
+      <rect x="100" y="90" width="200" height="130" rx="14" fill="url(#card1Grad)" stroke="rgba(59,130,246,0.15)" stroke-width="1.5"/>
+      <!-- Review lines -->
+      <rect x="118" y="112" width="120" height="7" rx="3.5" fill="rgba(255,255,255,0.12)"/>
+      <rect x="118" y="126" width="90" height="7" rx="3.5" fill="rgba(255,255,255,0.08)"/>
+      <rect x="118" y="140" width="140" height="7" rx="3.5" fill="rgba(255,255,255,0.08)"/>
+      <!-- Stars -->
+      <g fill="#1D4ED8" opacity="0.6">
+        <polygon points="118,165 121,155 124,165 115,159 127,159" transform="scale(0.8) translate(29,30)"/>
+        <polygon points="130,165 133,155 136,165 127,159 139,159" transform="scale(0.8) translate(29,30)"/>
+        <polygon points="142,165 145,155 148,165 139,159 151,159" transform="scale(0.8) translate(29,30)"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Card 2 (middle, rotated right) -->
+  <g filter="url(#stackShadow)">
+    <g transform="rotate(5, 200, 190)">
+      <rect x="100" y="90" width="200" height="130" rx="14" fill="url(#card2Grad)" stroke="rgba(59,130,246,0.2)" stroke-width="1.5"/>
+      <rect x="118" y="112" width="100" height="7" rx="3.5" fill="rgba(255,255,255,0.15)"/>
+      <rect x="118" y="126" width="130" height="7" rx="3.5" fill="rgba(255,255,255,0.1)"/>
+      <rect x="118" y="140" width="80" height="7" rx="3.5" fill="rgba(255,255,255,0.1)"/>
+    </g>
+  </g>
+
+  <!-- Card 1 (front, straight) -->
+  <g filter="url(#stackShadow)">
+    <rect x="100" y="100" width="200" height="130" rx="14" fill="url(#card3Grad)" stroke="rgba(59,130,246,0.35)" stroke-width="2"/>
+    <!-- Review text lines -->
+    <rect x="118" y="122" width="110" height="7" rx="3.5" fill="rgba(255,255,255,0.2)"/>
+    <rect x="118" y="136" width="140" height="7" rx="3.5" fill="rgba(255,255,255,0.15)"/>
+    <rect x="118" y="150" width="95" height="7" rx="3.5" fill="rgba(255,255,255,0.12)"/>
+    <!-- Stars on front card -->
+    <g fill="#2563EB">
+      <polygon points="122,180 125,170 128,180 119,174 131,174"/>
+      <polygon points="136,180 139,170 142,180 133,174 145,174"/>
+      <polygon points="150,180 153,170 156,180 147,174 159,174"/>
+      <polygon points="164,180 167,170 170,180 161,174 173,174"/>
+      <polygon points="178,180 181,170 184,180 175,174 187,174" opacity="0.4"/>
+    </g>
+    <!-- Rating number -->
+    <text x="272" y="182" font-family="'Arial Black', sans-serif" font-size="14" font-weight="900" fill="#3B82F6" text-anchor="end">4.1</text>
+  </g>
+
+  <!-- Clock on top of stack -->
+  <g filter="url(#topShadow)">
+    <circle cx="200" cy="98" r="42" fill="#0F0F0F" stroke="url(#topClockGrad)" stroke-width="5"/>
+    <circle cx="200" cy="98" r="34" fill="url(#topClockGrad)"/>
+
+    <!-- Clock ticks -->
+    <g stroke="rgba(255,255,255,0.6)" stroke-width="2">
+      <line x1="200" y1="65" x2="200" y2="73"/>
+      <line x1="200" y1="123" x2="200" y2="131"/>
+      <line x1="167" y1="98" x2="175" y2="98"/>
+      <line x1="225" y1="98" x2="233" y2="98"/>
+    </g>
+
+    <!-- Clock hands -->
+    <line x1="200" y1="98" x2="200" y2="74" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <line x1="200" y1="98" x2="218" y2="90" stroke="rgba(255,255,255,0.85)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="200" cy="98" r="4" fill="white"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="200" y="370" font-family="'Arial Black', 'Impact', sans-serif" font-size="34" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">CLOCKED</text>
+</svg>

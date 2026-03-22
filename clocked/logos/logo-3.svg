@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D1117"/>
+      <stop offset="100%" style="stop-color:#0F0F0F"/>
+    </linearGradient>
+    <linearGradient id="cGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6"/>
+      <stop offset="100%" style="stop-color:#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="handGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#93C5FD"/>
+    </linearGradient>
+    <filter id="glow3">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow3">
+      <feDropShadow dx="0" dy="4" stdDeviation="16" flood-color="#2563EB" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="72" fill="url(#bg3)"/>
+
+  <!-- Subtle grid -->
+  <g stroke="rgba(37,99,235,0.06)" stroke-width="1">
+    <line x1="0" y1="100" x2="400" y2="100"/>
+    <line x1="0" y1="200" x2="400" y2="200"/>
+    <line x1="0" y1="300" x2="400" y2="300"/>
+    <line x1="100" y1="0" x2="100" y2="400"/>
+    <line x1="200" y1="0" x2="200" y2="400"/>
+    <line x1="300" y1="0" x2="300" y2="400"/>
+  </g>
+
+  <!-- Bold C lettermark -->
+  <g filter="url(#shadow3)">
+    <path d="M 235 82 A 118 118 0 1 0 235 298" fill="none" stroke="url(#cGrad)" stroke-width="46" stroke-linecap="round"/>
+  </g>
+
+  <!-- Clock hands emerging from center of C -->
+  <!-- Hour hand (pointing up-left, 10 o'clock) -->
+  <line x1="190" y1="190" x2="155" y2="140" stroke="url(#handGrad)" stroke-width="9" stroke-linecap="round" filter="url(#glow3)"/>
+  <!-- Minute hand (pointing right, 3 o'clock) -->
+  <line x1="190" y1="190" x2="250" y2="190" stroke="url(#cGrad)" stroke-width="7" stroke-linecap="round" filter="url(#glow3)"/>
+  <!-- Center pivot -->
+  <circle cx="190" cy="190" r="11" fill="url(#cGrad)" filter="url(#glow3)"/>
+  <circle cx="190" cy="190" r="5" fill="white"/>
+
+  <!-- Small tick arc hint -->
+  <circle cx="190" cy="190" r="62" fill="none" stroke="rgba(59,130,246,0.15)" stroke-width="2" stroke-dasharray="6 8"/>
+
+  <!-- Wordmark -->
+  <text x="200" y="370" font-family="'Arial Black', 'Impact', sans-serif" font-size="34" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">CLOCKED</text>
+</svg>

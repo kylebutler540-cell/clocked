@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <filter id="ink-blur" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+  </defs>
+
+  <!-- Dark background with rounded corners (app icon shape) -->
+  <rect width="400" height="400" rx="72" fill="#0F0F0F"/>
+
+  <!-- Everything tilted -15° from center -->
+  <g transform="translate(200,198) rotate(-15)">
+
+    <!-- === STAMP === -->
+
+    <!-- Handle shaft -->
+    <rect x="-22" y="-162" width="44" height="72" rx="11" fill="#1e3a8a"/>
+    <!-- Handle grip ridges -->
+    <rect x="-14" y="-152" width="28" height="6" rx="3" fill="#2563EB" opacity="0.5"/>
+    <rect x="-14" y="-140" width="28" height="6" rx="3" fill="#2563EB" opacity="0.5"/>
+    <rect x="-14" y="-128" width="28" height="6" rx="3" fill="#2563EB" opacity="0.5"/>
+    <!-- Handle side highlight -->
+    <rect x="-10" y="-162" width="8" height="72" rx="4" fill="#2563EB" opacity="0.25"/>
+
+    <!-- Base plate (wider connector) -->
+    <rect x="-62" y="-93" width="124" height="21" rx="7" fill="#1e3a8a"/>
+    <!-- Base plate highlight -->
+    <rect x="-54" y="-91" width="40" height="7" rx="3" fill="#2563EB" opacity="0.3"/>
+
+    <!-- Stamp rubber body -->
+    <rect x="-104" y="-72" width="208" height="72" rx="7" fill="#2563EB"/>
+    <rect x="-97" y="-65" width="194" height="58" rx="5" fill="#1d4ed8"/>
+
+    <!-- CLOCKED embossed on rubber -->
+    <text x="0" y="-20"
+          text-anchor="middle"
+          font-family="'Arial Black', 'Arial Bold', Impact, 'Helvetica Neue', sans-serif"
+          font-weight="900"
+          font-size="26"
+          fill="#93c5fd"
+          letter-spacing="5">CLOCKED</text>
+
+    <!-- Bottom inked edge of stamp -->
+    <rect x="-104" y="-2" width="208" height="10" rx="3" fill="#1e40af"/>
+
+    <!-- === INK IMPRESSION BELOW === -->
+
+    <!-- Ink bleed / shadow layer for realism -->
+    <text x="2" y="92"
+          text-anchor="middle"
+          font-family="'Arial Black', 'Arial Bold', Impact, 'Helvetica Neue', sans-serif"
+          font-weight="900"
+          font-size="52"
+          fill="#1d4ed8"
+          letter-spacing="2"
+          filter="url(#ink-blur)"
+          opacity="0.7">CLOCKED</text>
+
+    <!-- Main ink impression -->
+    <text x="0" y="90"
+          text-anchor="middle"
+          font-family="'Arial Black', 'Arial Bold', Impact, 'Helvetica Neue', sans-serif"
+          font-weight="900"
+          font-size="52"
+          fill="#2563EB"
+          letter-spacing="2">CLOCKED</text>
+
+    <!-- Border lines above and below ink text (rubber stamp style) -->
+    <rect x="-118" y="97"  width="236" height="5" rx="2.5" fill="#2563EB" opacity="0.55"/>
+    <rect x="-118" y="40" width="236" height="5" rx="2.5" fill="#2563EB" opacity="0.55"/>
+  </g>
+</svg>

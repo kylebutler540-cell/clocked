@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+
+  <!-- Dark background -->
+  <rect width="400" height="400" rx="72" fill="#0F0F0F"/>
+
+  <!-- === SOUND WAVES (drawn first, behind everything) ===
+       Arcing outward from right edge of clock (x≈305, y=200)
+       Each arc: clockwise semicircle, wider each step -->
+
+  <!-- Outer wave -->
+  <path d="M 305,122 A 82,82 0 0,1 305,278"
+        fill="none" stroke="#2563EB" stroke-width="7" stroke-linecap="round"
+        opacity="0.22"/>
+  <!-- Middle wave -->
+  <path d="M 305,148 A 58,58 0 0,1 305,252"
+        fill="none" stroke="#2563EB" stroke-width="7" stroke-linecap="round"
+        opacity="0.45"/>
+  <!-- Inner wave -->
+  <path d="M 305,170 A 38,38 0 0,1 305,230"
+        fill="none" stroke="#2563EB" stroke-width="7" stroke-linecap="round"
+        opacity="0.75"/>
+
+  <!-- === MEGAPHONE BODY ===
+       Trapezoid: narrow at mouthpiece (x=68), flaring to clock tangent points (x=195, y=134/266) -->
+  <polygon points="68,182 195,134 195,266 68,218" fill="#2563EB"/>
+
+  <!-- Mouthpiece cylinder -->
+  <rect x="36" y="184" width="36" height="32" rx="7" fill="#2563EB"/>
+  <!-- Mouthpiece end cap (slightly lighter) -->
+  <rect x="34" y="186" width="8" height="28" rx="4" fill="#1d4ed8" opacity="0.6"/>
+
+  <!-- Megaphone body highlight (top diagonal band) -->
+  <polygon points="68,182 195,134 195,148 68,198" fill="#1d4ed8" opacity="0.5"/>
+
+  <!-- === CLOCK FACE (the bell of the megaphone) ===
+       Center (230, 200), outer radius 75, inner face radius 67 -->
+
+  <!-- Blue clock ring -->
+  <circle cx="230" cy="200" r="75" fill="#2563EB"/>
+  <!-- Dark inner face -->
+  <circle cx="230" cy="200" r="67" fill="#0F0F0F"/>
+
+  <!-- Cardinal tick marks (12, 3, 6, 9) — bold -->
+  <!-- 12 -->
+  <line x1="230" y1="125" x2="230" y2="140" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <!-- 3 -->
+  <line x1="305" y1="200" x2="290" y2="200" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <!-- 6 -->
+  <line x1="230" y1="275" x2="230" y2="260" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <!-- 9 -->
+  <line x1="155" y1="200" x2="170" y2="200" stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Minor tick marks -->
+  <!-- 1 o'clock (30°): outer (267,135), inner (265,139) -->
+  <line x1="267" y1="135" x2="264" y2="140" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 2 o'clock (60°): outer (295,163), inner (292,165) -->
+  <line x1="295" y1="163" x2="291" y2="165" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 4 o'clock (120°): outer (295,237), inner (292,235) -->
+  <line x1="295" y1="237" x2="291" y2="235" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 5 o'clock (150°): outer (267,265), inner (265,261) -->
+  <line x1="267" y1="265" x2="264" y2="260" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 7 o'clock (210°): outer (193,265), inner (196,261) -->
+  <line x1="193" y1="265" x2="196" y2="260" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 8 o'clock (240°): outer (165,237), inner (168,235) -->
+  <line x1="165" y1="237" x2="168" y2="235" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 10 o'clock (300°): outer (165,163), inner (168,165) -->
+  <line x1="165" y1="163" x2="168" y2="165" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 11 o'clock (330°): outer (193,135), inner (196,139) -->
+  <line x1="193" y1="135" x2="196" y2="140" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Clock hands spread wide — 10:10 "wings" position
+       Hour at 10 (300°): end = (230 - 0.866*40, 200 - 0.5*40) = (195, 180)
+       Minute at 2 (60°):  end = (230 + 0.866*50, 200 - 0.5*50) = (273, 175) -->
+  <line x1="230" y1="200" x2="195" y2="180"
+        stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <line x1="230" y1="200" x2="273" y2="175"
+        stroke="#2563EB" stroke-width="4.5" stroke-linecap="round"/>
+
+  <!-- Center cap -->
+  <circle cx="230" cy="200" r="7" fill="white"/>
+
+</svg>

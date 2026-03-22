@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F0F0F"/>
+      <stop offset="100%" style="stop-color:#0A0D18"/>
+    </linearGradient>
+    <linearGradient id="eyeClockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB"/>
+      <stop offset="100%" style="stop-color:#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="irisGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E40AF"/>
+      <stop offset="100%" style="stop-color:#1D4ED8"/>
+    </linearGradient>
+    <radialGradient id="pupilGrad" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="60%" style="stop-color:#2563EB"/>
+      <stop offset="100%" style="stop-color:#1E3A8A"/>
+    </radialGradient>
+    <filter id="eyeGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="eyeClip">
+      <ellipse cx="200" cy="175" rx="130" ry="78"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="72" fill="url(#bg6)"/>
+
+  <!-- Subtle radial glow behind icon -->
+  <circle cx="200" cy="175" r="150" fill="rgba(37,99,235,0.06)"/>
+
+  <!-- Eye shape outline (clock merged with eye) -->
+  <g filter="url(#eyeGlow)">
+    <!-- Eye whites -->
+    <ellipse cx="200" cy="175" rx="132" ry="80" fill="#111827"/>
+    <ellipse cx="200" cy="175" rx="132" ry="80" fill="none" stroke="url(#eyeClockGrad)" stroke-width="6"/>
+  </g>
+
+  <!-- Clock face as iris -->
+  <circle cx="200" cy="175" r="68" fill="url(#irisGrad)" clip-path="url(#eyeClip)"/>
+  <circle cx="200" cy="175" r="68" fill="none" stroke="rgba(96,165,250,0.4)" stroke-width="2"/>
+
+  <!-- Clock tick marks around iris, clipped to eye -->
+  <g stroke="rgba(255,255,255,0.5)" stroke-width="2" clip-path="url(#eyeClip)">
+    <line x1="200" y1="108" x2="200" y2="120"/>
+    <line x1="200" y1="230" x2="200" y2="242"/>
+    <line x1="133" y1="175" x2="145" y2="175"/>
+    <line x1="255" y1="175" x2="267" y2="175"/>
+    <line x1="248" y1="121" x2="242" y2="131" stroke-width="1.5" opacity="0.5"/>
+    <line x1="152" y1="121" x2="158" y2="131" stroke-width="1.5" opacity="0.5"/>
+    <line x1="248" y1="229" x2="242" y2="219" stroke-width="1.5" opacity="0.5"/>
+    <line x1="152" y1="229" x2="158" y2="219" stroke-width="1.5" opacity="0.5"/>
+  </g>
+
+  <!-- Pupil / clock center -->
+  <circle cx="200" cy="175" r="28" fill="url(#pupilGrad)"/>
+
+  <!-- Clock hands -->
+  <line x1="200" y1="175" x2="200" y2="148" stroke="white" stroke-width="4" stroke-linecap="round" clip-path="url(#eyeClip)"/>
+  <line x1="200" y1="175" x2="222" y2="175" stroke="white" stroke-width="3" stroke-linecap="round" clip-path="url(#eyeClip)"/>
+
+  <!-- Center dot -->
+  <circle cx="200" cy="175" r="5" fill="white"/>
+
+  <!-- Eyelash lines top -->
+  <g stroke="url(#eyeClockGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.5">
+    <line x1="150" y1="98" x2="155" y2="114"/>
+    <line x1="175" y1="90" x2="177" y2="106"/>
+    <line x1="200" y1="88" x2="200" y2="104"/>
+    <line x1="225" y1="90" x2="223" y2="106"/>
+    <line x1="250" y1="98" x2="245" y2="114"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="200" y="358" font-family="'Arial Black', 'Impact', sans-serif" font-size="34" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">CLOCKED</text>
+</svg>

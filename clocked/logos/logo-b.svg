@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+
+  <!-- Dark background -->
+  <rect width="400" height="400" rx="72" fill="#0F0F0F"/>
+
+  <!-- === SHOULDERS / BODY === -->
+  <!-- Bold worker silhouette — trapezoid torso fills bottom of frame -->
+  <path d="M52,400 L52,330 Q52,298 90,284 Q140,270 200,268 Q260,270 310,284 Q348,298 348,330 L348,400 Z"
+        fill="#2563EB"/>
+
+  <!-- Neck -->
+  <rect x="183" y="270" width="34" height="22" rx="7" fill="#2563EB"/>
+
+  <!-- === HEAD = CLOCK FACE === -->
+  <!-- Outer ring (blue border) -->
+  <circle cx="200" cy="218" r="68" fill="#2563EB"/>
+  <!-- Inner clock face (dark) -->
+  <circle cx="200" cy="218" r="61" fill="#0F0F0F"/>
+
+  <!-- Hour markers — bold at 12, 3, 6, 9 -->
+  <!-- 12 o'clock -->
+  <line x1="200" y1="150" x2="200" y2="165" stroke="white" stroke-width="5.5" stroke-linecap="round"/>
+  <!-- 3 o'clock -->
+  <line x1="268" y1="218" x2="253" y2="218" stroke="white" stroke-width="5.5" stroke-linecap="round"/>
+  <!-- 6 o'clock -->
+  <line x1="200" y1="286" x2="200" y2="271" stroke="white" stroke-width="5.5" stroke-linecap="round"/>
+  <!-- 9 o'clock -->
+  <line x1="132" y1="218" x2="147" y2="218" stroke="white" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Minor tick marks (every 30°) -->
+  <!-- 1 o'clock: 30° → sin30=0.5, cos30=0.866 → outer (200+61*0.5, 218-61*0.866)=(230.5,165.2), inner at r=56 (228,166.5) -->
+  <line x1="230" y1="157" x2="227" y2="162" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 2 o'clock: 60° → sin60=0.866, cos60=0.5 → (252.8,187.5) / (250.4,189.0) -->
+  <line x1="253" y1="188" x2="249" y2="190" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 4 o'clock: 120° → sin120=0.866, cos120=-0.5 → (252.8,248.5) / (250,247) -->
+  <line x1="253" y1="248" x2="249" y2="246" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 5 o'clock: 150° → (230.5,270.8) / (228,270) -->
+  <line x1="230" y1="279" x2="227" y2="274" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 7 o'clock: 210° → (169.5,270.8) / (172,270) -->
+  <line x1="170" y1="279" x2="173" y2="274" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 8 o'clock: 240° → (147.2,248.5) / (151,247) -->
+  <line x1="147" y1="248" x2="151" y2="246" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 10 o'clock: 300° → (147.2,187.5) / (151,189) -->
+  <line x1="147" y1="188" x2="151" y2="190" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 11 o'clock: 330° → (169.5,165.2) / (172,167) -->
+  <line x1="170" y1="157" x2="173" y2="162" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Clock hands at 10:10 — the "happy face" position, bold V shape -->
+  <!-- Hour hand at 10 o'clock (300°): end = (200 + sin(300°)*38, 218 - cos(300°)*38)
+       sin(300°)=-0.866, cos(300°)=0.5 → (200-32.9, 218-19) = (167, 199) -->
+  <line x1="200" y1="218" x2="167" y2="199" stroke="white" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Minute hand at 2 o'clock (60°): end = (200 + sin(60°)*48, 218 - cos(60°)*48)
+       sin(60°)=0.866, cos(60°)=0.5 → (200+41.6, 218-24) = (242, 194) -->
+  <line x1="200" y1="218" x2="242" y2="194" stroke="#2563EB" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Center cap -->
+  <circle cx="200" cy="218" r="7" fill="white"/>
+
+  <!-- === HARD HAT === -->
+  <!-- Dome (sits on top of clock head) -->
+  <!-- The brim rests at y≈156, dome goes up to y≈74 -->
+  <path d="M112,160 Q110,74 200,68 Q290,74 288,160 Z" fill="#2563EB"/>
+  <!-- Dome inner highlight -->
+  <path d="M132,157 Q131,93 200,88 Q269,93 268,157 Z" fill="#1d4ed8"/>
+
+  <!-- Hard hat brim (wide ellipse, sits at top of head) -->
+  <ellipse cx="200" cy="156" rx="100" ry="14" fill="#2563EB"/>
+  <!-- Brim underside shadow line -->
+  <ellipse cx="200" cy="162" rx="100" ry="8" fill="#1a3a8a"/>
+
+  <!-- Top knob / button -->
+  <rect x="191" y="64" width="18" height="12" rx="5" fill="#1d4ed8"/>
+  <rect x="193" y="66" width="14" height="8" rx="3" fill="#2563EB" opacity="0.6"/>
+
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" rx="80" fill="#0F0F0F"/>
+
+  <!-- Clock outer ring -->
+  <circle cx="200" cy="200" r="165" fill="none" stroke="#7BA7FF" stroke-width="10"/>
+  <circle cx="200" cy="200" r="148" fill="none" stroke="#7BA7FF" stroke-width="3" opacity="0.4"/>
+
+  <!-- Tick marks at all 12 positions -->
+  <line x1="200" y1="38" x2="200" y2="62" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="283" y1="59" x2="271" y2="80" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="341" y1="117" x2="320" y2="129" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="362" y1="200" x2="338" y2="200" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="341" y1="283" x2="320" y2="271" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="283" y1="341" x2="271" y2="320" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="200" y1="362" x2="200" y2="338" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="117" y1="341" x2="129" y2="320" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="59" y1="283" x2="80" y2="271" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="38" y1="200" x2="62" y2="200" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="59" y1="117" x2="80" y2="129" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+  <line x1="117" y1="59" x2="129" y2="80" stroke="#7BA7FF" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Banner / ribbon across the middle, slightly tilted -->
+  <g transform="rotate(-8, 200, 200)">
+    <!-- Banner background -->
+    <rect x="44" y="178" width="312" height="52" rx="4" fill="#7BA7FF"/>
+    <!-- Banner fold left -->
+    <polygon points="44,178 30,204 44,230" fill="#4a6fd4"/>
+    <!-- Banner fold right -->
+    <polygon points="356,178 370,204 356,230" fill="#4a6fd4"/>
+    <!-- Banner top/bottom edge lines -->
+    <rect x="44" y="178" width="312" height="4" rx="2" fill="#9bbdff"/>
+    <rect x="44" y="226" width="312" height="4" rx="2" fill="#4a6fd4"/>
+
+    <!-- CLO text left of crack -->
+    <text x="85" y="218" font-family="Arial Black, sans-serif" font-weight="900" font-size="46" fill="#0F0F0F" letter-spacing="2">CLO</text>
+
+    <!-- CKED text right of crack -->
+    <text x="215" y="218" font-family="Arial Black, sans-serif" font-weight="900" font-size="46" fill="#0F0F0F" letter-spacing="2">CKED</text>
+
+    <!-- Lightning bolt crack through center -->
+    <polyline points="202,170 192,192 208,196 196,236" fill="none" stroke="#0F0F0F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="202,170 192,192 208,196 196,236" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  </g>
+
+  <!-- Glow lines radiating from crack center -->
+  <line x1="200" y1="200" x2="200" y2="140" stroke="white" stroke-width="1.5" opacity="0.15"/>
+  <line x1="200" y1="200" x2="240" y2="165" stroke="white" stroke-width="1.5" opacity="0.15"/>
+  <line x1="200" y1="200" x2="160" y2="165" stroke="white" stroke-width="1.5" opacity="0.15"/>
+</svg>

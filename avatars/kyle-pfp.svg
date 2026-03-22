@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <!-- Background circle -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0f3460"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#ff6b6b"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="200" cy="200" r="200" fill="url(#bg)"/>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="200" r="185" fill="none" stroke="#e94560" stroke-width="3" opacity="0.4"/>
+
+  <!-- Inner ring -->
+  <circle cx="200" cy="200" r="160" fill="none" stroke="#e94560" stroke-width="1" opacity="0.2"/>
+
+  <!-- Lightning bolt -->
+  <polygon points="220,60 160,210 195,210 175,340 245,185 210,185 240,60"
+    fill="url(#bolt)" filter="url(#glow)"/>
+
+  <!-- Letter K subtle overlay -->
+  <text x="200" y="370" font-family="Arial Black, sans-serif" font-size="28" font-weight="900"
+    fill="#ffffff" opacity="0.15" text-anchor="middle" letter-spacing="8">KYLE</text>
+</svg>

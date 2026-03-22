@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 180" width="400" height="180">
+  <rect width="400" height="180" fill="#0F0F0F" rx="20"/>
+
+  <!-- Swatch 1 — Roku-style medium purple -->
+  <rect x="20" y="30" width="60" height="60" rx="12" fill="#6B3FA0"/>
+  <text x="50" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#888">#6B3FA0</text>
+
+  <!-- Swatch 2 — Light lavender purple -->
+  <rect x="100" y="30" width="60" height="60" rx="12" fill="#9B6DD1"/>
+  <text x="130" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#888">#9B6DD1</text>
+
+  <!-- Swatch 3 — Soft light purple -->
+  <rect x="180" y="30" width="60" height="60" rx="12" fill="#B48EE0"/>
+  <text x="210" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#888">#B48EE0</text>
+
+  <!-- Swatch 4 — Vibrant electric purple -->
+  <rect x="260" y="30" width="60" height="60" rx="12" fill="#7C3AED"/>
+  <text x="290" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#888">#7C3AED</text>
+
+  <!-- Swatch 5 — Muted mauve purple -->
+  <rect x="320" y="30" width="60" height="60" rx="12" fill="#A855F7"/>
+  <text x="350" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#888">#A855F7</text>
+
+  <!-- Labels -->
+  <text x="50" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#555">Roku-ish</text>
+  <text x="130" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#555">Light</text>
+  <text x="210" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#555">Soft</text>
+  <text x="290" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#555">Electric</text>
+  <text x="350" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#555">Bright</text>
+</svg>
