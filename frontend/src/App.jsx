@@ -141,6 +141,17 @@ function PageHeader({ onOpenDrawer }) {
   return null;
 }
 
+function AppMainWrapper({ children }) {
+  const location = useLocation();
+  const fullWidthRoutes = ['/signup', '/subscription/success', '/subscription/cancel'];
+  const isFullWidth = fullWidthRoutes.includes(location.pathname);
+  return (
+    <div className={`app-main${isFullWidth ? ' full-width' : ''}`}>
+      {children}
+    </div>
+  );
+}
+
 function AppInner() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -163,7 +174,7 @@ function AppInner() {
 
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
         <LeftSidebar collapsed={sidebarCollapsed} />
-        <div className="app-main">
+        <AppMainWrapper>
           {/* Mobile header only */}
           <div className="mobile-only-header">
             <PageHeader onOpenDrawer={() => setDrawerOpen(true)} />
@@ -186,7 +197,7 @@ function AppInner() {
             </Routes>
           </main>
           <BottomNav />
-        </div>
+        </AppMainWrapper>
       </div>
     </BrowserRouter>
   );
