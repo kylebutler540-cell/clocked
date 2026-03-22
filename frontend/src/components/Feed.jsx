@@ -44,7 +44,7 @@ const MOCK_POST_2 = {
   id: 'mock-seed-post-2',
   anonymous_user_id: '00000000-0000-0000-0000-000000000a7c',
   employer_name: 'Amazon Delivery Station DGR6',
-  employer_address: 'Trade Drive, Grand Rapids, MI',
+  employer_address: '3951 Trade Dr, Grand Rapids, MI 49508',
   employer_place_id: 'ChIJkZmEyWCzGYgRaxvWpapOX7I',
   rating_emoji: 'NEUTRAL',
   header: 'Warehouse conditions during peak season',
