@@ -125,17 +125,24 @@ export default function Feed({ filters = {} }) {
   if (loading) {
     return (
       <div className="feed">
-        <PostCard key={MOCK_POST.id} post={MOCK_POST} />
-        <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />
+        {!filters.employer_place_id && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
+        {!filters.employer_place_id && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
         {[1,2,3].map(i => <SkeletonCard key={i} />)}
       </div>
     );
   }
 
+  // Only show mock posts on the main feed, not on company-specific pages
+  const showMockPosts = !filters.employer_place_id;
+
+  // Filter mock posts by rating if a rating filter is active
+  const filteredMock1 = showMockPosts && (!filters.rating || filters.rating === MOCK_POST.rating_emoji) ? MOCK_POST : null;
+  const filteredMock2 = showMockPosts && (!filters.rating || filters.rating === MOCK_POST_2.rating_emoji) ? MOCK_POST_2 : null;
+
   return (
     <div className="feed">
-      <PostCard key={MOCK_POST.id} post={MOCK_POST} />
-      <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />
+      {filteredMock1 && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
+      {filteredMock2 && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
       {posts.map(post => (
         <PostCard key={post.id} post={post} />
       ))}

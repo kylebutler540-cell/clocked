@@ -4,8 +4,8 @@ import api from '../lib/api';
 import Feed from '../components/Feed';
 
 const FILTER_OPTIONS = [
-  { label: '🌍 All', value: null, color: null },
-  { label: '😞 Bad', value: 'BAD', color: '#EF4444' },
+  { label: 'All', value: null, color: null },
+  { label: '😡 Bad', value: 'BAD', color: '#EF4444' },
   { label: '😐 Neutral', value: 'NEUTRAL', color: '#EAB308' },
   { label: '😊 Good', value: 'GOOD', color: '#22C55E' },
 ];
@@ -90,7 +90,7 @@ export default function CompanyProfile() {
               <span className="rating-bar-count">{counts.NEUTRAL}</span>
             </div>
             <div className="rating-bar">
-              <span className="rating-bar-label">😞</span>
+              <span className="rating-bar-label">😡</span>
               <div className="rating-bar-track">
                 <div className="rating-bar-fill fill-bad" style={{ width: barWidth(counts.BAD) }} />
               </div>
