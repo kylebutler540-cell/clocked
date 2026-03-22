@@ -1,19 +1,26 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
-// Company logo using Google's Places photo or Clearbit logo fallback
+// Strip generic suffixes to get the brand name for logo lookup
+function getBrandSlug(name) {
+  if (!name) return '';
+  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
+  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
+  return brand.toLowerCase();
+}
+
+// Company logo using Clearbit
 function CompanyLogo({ name }) {
   const [err, setErr] = useState(false);
-  // Extract domain-like name for Clearbit (e.g. "Walmart" -> walmart.com)
-  const slug = name?.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/\s+/g, '') || '';
+  const slug = getBrandSlug(name);
   const src = `https://logo.clearbit.com/${slug}.com`;
 
-  if (err) {
+  if (err || !slug) {
     return (
       <div style={{
         width: 36, height: 36, borderRadius: 8, background: 'var(--bg-elevated)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 18, flexShrink: 0,
+        fontSize: 18, flexShrink: 0, border: '1px solid var(--border)',
       }}>🏢</div>
     );
   }
@@ -22,7 +29,7 @@ function CompanyLogo({ name }) {
       src={src}
       alt={name}
       onError={() => setErr(true)}
-      style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 2 }}
+      style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 3, border: '1px solid var(--border)' }}
     />
   );
 }
