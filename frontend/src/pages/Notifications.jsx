@@ -30,7 +30,9 @@ export default function Notifications() {
   if (notifications.length === 0) {
     return (
       <div style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: '60px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>🔔</div>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        </div>
         <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8 }}>No notifications yet</h3>
         <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>You'll see activity on your posts here.</p>
       </div>

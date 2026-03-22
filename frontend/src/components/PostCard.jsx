@@ -139,7 +139,7 @@ export default function PostCard({ post: initialPost, onUpdate }) {
               onClick={e => { e.stopPropagation(); setShowFlag(true); }}
               aria-label="Flag post"
             >
-              ⚑
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
             </button>
           </div>
         </div>
@@ -167,7 +167,8 @@ export default function PostCard({ post: initialPost, onUpdate }) {
               className="see-more-btn"
               onClick={e => { e.stopPropagation(); setShowPaywall(true); }}
             >
-              🔓 See Full Review — $2.99/mo
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:6,flexShrink:0}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              See Full Review — $2.99/mo
             </button>
           )}
         </div>

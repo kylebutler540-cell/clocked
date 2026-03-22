@@ -1560,19 +1560,28 @@ textarea.form-input {
   .app-main {
     flex: 1;
     min-width: 0;
-    max-width: 620px;
     background: var(--bg-primary);
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
     min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-content {
+    flex: 1;
   }
 
   .app-header {
     max-width: 100%;
   }
 
+  /* Keep bottom nav on desktop but style it as a bottom bar */
   .bottom-nav {
-    display: none !important;
+    display: flex !important;
+    position: sticky;
+    bottom: 0;
+    border-top: 1px solid var(--border);
   }
 
   .hamburger-btn {

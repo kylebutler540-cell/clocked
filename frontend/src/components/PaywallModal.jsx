@@ -27,7 +27,9 @@ export default function PaywallModal({ onClose }) {
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
 
-        <div style={{ fontSize: 40, marginBottom: 12, textAlign: 'center' }}>🔓</div>
+        <div style={{ marginBottom: 12, textAlign: 'center', display: 'flex', justifyContent: 'center' }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
         <h2 className="modal-title" style={{ textAlign: 'center' }}>Unlock Full Reviews</h2>
         <p className="modal-subtitle" style={{ textAlign: 'center' }}>
           Read uncensored reviews from real workers. No BS, no fluff — just the truth about your employer.
