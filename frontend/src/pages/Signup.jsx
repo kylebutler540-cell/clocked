@@ -76,8 +76,8 @@ export default function Signup() {
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '60px 24px' }}>
-    <div style={{ width: '100%', maxWidth: 400 }}>
+    <div className="auth-page-wrapper">
+    <div className="auth-page-card">
       <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>
         {mode === 'signup' ? 'Create Account' : 'Welcome Back'}
       </h1>
@@ -151,3 +151,4 @@ export default function Signup() {
     </div>
   );
 }
+
