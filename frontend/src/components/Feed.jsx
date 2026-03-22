@@ -22,6 +22,26 @@ const MOCK_POST = {
   disliked: false,
 };
 
+const MOCK_POST_2 = {
+  id: 'mock-seed-post-2',
+  anonymous_user_id: '00000000-0000-0000-0000-000000000a7c',
+  employer_name: 'Amazon',
+  employer_address: '4500 60th St SE, Grand Rapids, MI',
+  employer_place_id: 'mock-amazon-grand-rapids',
+  rating_emoji: 'NEUTRAL',
+  header: 'Warehouse conditions during peak season',
+  body: 'The pace is brutal during Q4. Mandatory overtime every single week, no exceptions. The pay is decent but your body pays for it. Took these photos of our "break room" — make your own judgement.',
+  body_truncated: false,
+  likes: 31,
+  dislikes: 2,
+  comment_count: 8,
+  created_at: new Date(Date.now() - 18000000).toISOString(),
+  media_urls: ['https://images.unsplash.com/photo-1553413077-190dd305871c?w=600&q=80'],
+  saved: false,
+  liked: false,
+  disliked: false,
+};
+
 export default function Feed({ filters = {} }) {
   const [posts, setPosts] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
@@ -95,6 +115,7 @@ export default function Feed({ filters = {} }) {
   return (
     <div className="feed">
       <PostCard key={MOCK_POST.id} post={MOCK_POST} />
+      <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />
       {posts.map(post => (
         <PostCard key={post.id} post={post} />
       ))}

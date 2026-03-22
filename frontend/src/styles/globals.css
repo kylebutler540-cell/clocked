@@ -522,13 +522,16 @@ img, video {
 /* ========== Post Card ========== */
 .post-card {
   background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
+  border-radius: 16px;
   padding: 16px;
-  transition: background var(--transition);
+  margin: 10px 12px;
+  transition: background var(--transition), box-shadow var(--transition);
+  box-shadow: 0 1px 4px var(--shadow);
 }
 
 .post-card:hover {
   background: var(--bg-elevated);
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .post-header {
@@ -651,7 +654,7 @@ img, video {
   width: 100%;
   max-height: 300px;
   object-fit: cover;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
 }
 
 .media-grid {
@@ -719,6 +722,9 @@ img, video {
 .feed {
   display: flex;
   flex-direction: column;
+  background: var(--bg-secondary);
+  min-height: 100%;
+  padding: 4px 0;
 }
 
 .feed-empty {
@@ -1528,7 +1534,7 @@ textarea.form-input {
   }
 }
 
-/* ========== Desktop Layout (Reddit/Instagram style) ========== */
+/* ========== Desktop Layout (Reddit style) ========== */
 @media (min-width: 768px) {
   body {
     background: var(--bg-secondary);
@@ -1537,8 +1543,9 @@ textarea.form-input {
   .app-layout {
     display: flex;
     flex-direction: row;
-    max-width: 1100px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     min-height: 100dvh;
     background: transparent;
     align-items: flex-start;
@@ -1555,33 +1562,67 @@ textarea.form-input {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-primary);
   }
 
   .app-main {
     flex: 1;
     min-width: 0;
-    background: var(--bg-primary);
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
+    background: var(--bg-secondary);
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
   }
 
+  /* Center the content column */
   .page-content {
     flex: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--bg-primary);
+    min-height: 100%;
   }
 
   .app-header {
+    max-width: 680px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--bg-secondary);
+    border-bottom: none;
+    justify-content: center;
+    padding: 12px 16px;
+  }
+
+  /* Center search bar, hide logo from header on desktop */
+  .app-header .app-logo {
+    display: none;
+  }
+
+  .header-right {
+    width: 100%;
+    max-width: 500px;
+    justify-content: center;
+  }
+
+  .header-search-wrapper {
     max-width: 100%;
   }
 
-  /* Keep bottom nav on desktop but style it as a bottom bar */
+  /* Bottom nav — seamless, no border, inside content column */
   .bottom-nav {
     display: flex !important;
-    position: sticky;
-    bottom: 0;
-    border-top: 1px solid var(--border);
+    position: sticky !important;
+    bottom: 0 !important;
+    left: unset !important;
+    transform: none !important;
+    max-width: 680px;
+    margin: 0 auto;
+    width: 100%;
+    border-top: none !important;
+    background: var(--bg-primary) !important;
+    box-shadow: none !important;
   }
 
   .hamburger-btn {
