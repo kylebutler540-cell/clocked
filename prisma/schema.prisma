@@ -12,6 +12,7 @@ model User {
   anonymous_id      String         @unique @default(cuid())
   email             String?        @unique
   password_hash     String?
+  google_id         String?        @unique
   created_at        DateTime       @default(now())
   subscription_status SubscriptionStatus @default(FREE)
 

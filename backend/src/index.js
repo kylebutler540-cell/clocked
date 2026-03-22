@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/auth');
+const googleAuthRoutes = require('./routes/google-auth');
 const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const employerRoutes = require('./routes/employers');
@@ -57,6 +58,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/posts/:postId/comments', commentRoutes);
 app.use('/api/employers', employerRoutes);
