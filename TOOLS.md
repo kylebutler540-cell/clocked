@@ -2,19 +2,14 @@
 
 ## Active Cron Bots
 
-| Name | Schedule | Model | Purpose |
-|------|----------|-------|---------|
-| heartbeat-handler | Every 4hrs, 8AM/12/4PM/8PM | ollama/qwen2.5:0.5b | Lightweight heartbeat checks HEARTBEAT.md |
-| weather-bot | 7 AM daily | google/gemini-flash-2.0 | Alerts only if notable weather (rain/snow/extremes) |
-| morning-briefing | 7 AM daily | google/gemini-2.5-flash-preview | Full morning briefing — weather, trading bot summary, tip |
-| heartbeat-night-off | Midnight | — | Disables heartbeats overnight |
-| heartbeat-morning-on | 8 AM | — | Re-enables morning heartbeat |
-
-## Coding Agent Defaults (Cost Optimization)
-- **Default model for coding tasks:** `google/gemini-2.5-flash-preview` — fast, cheap, solid for 80% of tasks
-- **Use Claude Sonnet only when:** complex multi-file reasoning, subtle bugs, architecture decisions
-- **Rule:** Always state which model you're using when spawning a coding agent
-- **Batching:** Group feature requests into single coding sessions — don't spawn multiple agents for related tasks
+| Name | Schedule | Purpose |
+|------|----------|---------|
+| heartbeat-handler | Every 2hrs, 8AM–10PM | Lightweight heartbeat checks HEARTBEAT.md |
+| weather-bot | 7 AM daily | Alerts only if notable weather (rain/snow/extremes) |
+| daily-digest | 5 PM daily | 3-5 news stories on cars, BMW, business, AI |
+| morning-briefing | 7 AM daily | Full morning briefing — weather, tip, goal, motivation |
+| heartbeat-night-off | Midnight | Disables heartbeats overnight |
+| heartbeat-morning-on | 8 AM | (Redundant — system heartbeat disabled, keep or remove) |
 
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
