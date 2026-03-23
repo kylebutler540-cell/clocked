@@ -1853,6 +1853,7 @@ textarea.form-input {
     top: 0;
     z-index: 100;
     backdrop-filter: blur(12px);
+    margin: 0 auto;
   }
 
   .app-header .app-logo {
@@ -1877,6 +1878,7 @@ textarea.form-input {
     max-width: 740px;
     background: transparent;
     flex: 1;
+    margin: 0 auto;
   }
 
   /* Hide bottom nav on desktop — replaced by left sidebar */

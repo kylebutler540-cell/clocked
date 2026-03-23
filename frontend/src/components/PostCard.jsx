@@ -168,9 +168,9 @@ export default function PostCard({ post: initialPost, onUpdate }) {
                 <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
               </svg>
             </button>
-            <span className="vote-score" style={{ color: score > 0 ? '#22C55E' : score < 0 ? '#EF4444' : 'var(--text-muted)' }}>
-              {score > 0 ? `+${score}` : score}
-            </span>
+            {post.likes > 0 && (
+              <span className="vote-score" style={{ color: '#22C55E' }}>+{post.likes}</span>
+            )}
             <button
               className={`vote-btn${post.disliked ? ' active-down' : ''}`}
               onClick={handleDislike}
@@ -182,7 +182,7 @@ export default function PostCard({ post: initialPost, onUpdate }) {
               </svg>
             </button>
             {post.dislikes > 0 && (
-              <span className="vote-score" style={{ color: '#EF4444', fontSize: 12 }}>{post.dislikes}</span>
+              <span className="vote-score" style={{ color: '#EF4444' }}>-{post.dislikes}</span>
             )}
           </div>
 
