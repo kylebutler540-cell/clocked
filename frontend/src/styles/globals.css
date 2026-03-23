@@ -1818,16 +1818,15 @@ textarea.form-input {
     grid-column: 1;
     grid-row: 1;
     width: 240px;
-    position: sticky;
-    top: 0;
-    height: 100dvh;
-    overflow-y: auto;
+    position: static;
+    height: auto;
+    min-height: 100dvh;
     padding: 20px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
     border-right: 1px solid var(--border);
-    background: var(--bg-primary);
+    background: var(--bg-elevated) !important;
   }
 
   /* Main area — takes remaining space */
