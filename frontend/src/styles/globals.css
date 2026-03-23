@@ -2499,7 +2499,7 @@ textarea.form-input {
   }
 }
 
-/* Desktop back button — top of content area, just right of sidebar */
+/* Desktop back button — top of content area */
 .desktop-back-wrapper {
   display: none;
 }
@@ -2507,19 +2507,20 @@ textarea.form-input {
 @media (min-width: 768px) {
   .desktop-back-wrapper {
     display: flex;
-    padding: 12px 16px 0;
+    padding: 8px 12px 0;
   }
 
   .desktop-back-wrapper .back-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 16px;
     width: auto;
     height: auto;
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
   }
 
   .desktop-back-wrapper .back-btn:hover {
