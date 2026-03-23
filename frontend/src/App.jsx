@@ -112,15 +112,12 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
           </svg>
         </button>
         <div className="desktop-logo" onClick={() => navigate('/')}>clocked</div>
-
+        <LocationPill />
       </div>
 
-      {/* Center: location pill + purple search bar */}
-      <div className="desktop-topbar-search" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <LocationPill />
-        <div style={{ flex: 1 }}>
-          <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
-        </div>
+      {/* Center: search bar */}
+      <div className="desktop-topbar-search">
+        <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
       </div>
       {showGetApp && <GetAppModal onClose={() => setShowGetApp(false)} />}
 
