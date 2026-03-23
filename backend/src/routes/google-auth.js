@@ -59,15 +59,25 @@ router.post('/google', async (req, res) => {
 
     // Merge anonymous user's posts and comments into the Google account
     if (anonUser && anonUser.id !== user.id) {
-      await prisma.post.updateMany({
-        where: { anonymous_user_id: anonUser.id },
-        data: { anonymous_user_id: user.id },
-      });
-      await prisma.comment.updateMany({
-        where: { anonymous_user_id: anonUser.id },
-        data: { anonymous_user_id: user.id },
-      });
-      await prisma.user.delete({ where: { id: anonUser.id } });
+      try {
+        await prisma.$transaction([
+          prisma.post.updateMany({
+            where: { anonymous_user_id: anonUser.id },
+            data: { anonymous_user_id: user.id },
+          }),
+          prisma.comment.updateMany({
+            where: { anonymous_user_id: anonUser.id },
+            data: { anonymous_user_id: user.id },
+          }),
+          prisma.save.deleteMany({ where: { user_id: anonUser.id } }),
+          prisma.postReaction.deleteMany({ where: { user_id: anonUser.id } }),
+          prisma.flag.deleteMany({ where: { user_id: anonUser.id } }),
+          prisma.notification.deleteMany({ where: { user_id: anonUser.id } }),
+          prisma.user.delete({ where: { id: anonUser.id } }),
+        ]);
+      } catch (mergeErr) {
+        console.error('Account merge failed (non-fatal):', mergeErr);
+      }
     }
 
     const token = signToken(user.id);
