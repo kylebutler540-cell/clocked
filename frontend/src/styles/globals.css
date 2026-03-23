@@ -410,6 +410,22 @@ img, video {
     height: auto !important;
     flex: none;
   }
+
+  /* Hide any residual scrollbar on desktop content area */
+  .page-content::-webkit-scrollbar {
+    display: none;
+  }
+  .app-main::-webkit-scrollbar {
+    display: none;
+  }
+  .page-content {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .app-main {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
 }
 
 .page-content > * {
@@ -1846,15 +1862,14 @@ textarea.form-input {
     background: var(--bg-elevated) !important;
   }
 
-  /* Main area — height is auto so body scrolls, scrollbar at viewport edge */
+  /* Main area — align-self: start prevents grid from stretching to 100dvh */
   .app-main {
     grid-column: 2;
     grid-row: 1;
+    align-self: start;
     min-width: 0;
     background: var(--bg-secondary);
     min-height: 100dvh;
-    height: auto;
-    flex: none;
     display: flex;
     flex-direction: column;
     align-items: center;

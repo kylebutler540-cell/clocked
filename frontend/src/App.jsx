@@ -292,7 +292,7 @@ function AppMainWrapper({ children }) {
   const fullWidthRoutes = ['/signup', '/subscription/success', '/subscription/cancel'];
   const isFullWidth = fullWidthRoutes.includes(location.pathname);
   return (
-    <div className={`app-main${isFullWidth ? ' full-width' : ''}`}>
+    <div className={`app-main${isFullWidth ? ' full-width' : ''}`} style={{ height: 'auto', minHeight: 0 }}>
       {children}
     </div>
   );
