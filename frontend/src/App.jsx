@@ -31,7 +31,7 @@ const PAGE_TITLES = {
 function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   function handleSearchSelect(place) {
@@ -59,7 +59,11 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
 
       {/* Right: login + menu */}
       <div className="desktop-topbar-right">
-        {!user && (
+        {user?.email ? (
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user.email}
+          </span>
+        ) : (
           <button className="btn btn-primary" style={{ padding: '7px 16px', fontSize: 13 }} onClick={() => navigate('/signup')}>
             Log In
           </button>
@@ -72,15 +76,31 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
           </button>
           {menuOpen && (
             <div className="topbar-dropdown" onClick={() => setMenuOpen(false)}>
-              <button className="topbar-dropdown-item" onClick={() => navigate('/signup')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Log In / Sign Up
-              </button>
-              <button className="topbar-dropdown-item" onClick={() => navigate('/profile')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-                Go Pro — $2.99/mo
-              </button>
-              <div className="topbar-dropdown-divider" />
+              {user?.email ? (
+                <>
+                  <button className="topbar-dropdown-item" onClick={() => navigate('/profile')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Profile
+                  </button>
+                  <button className="topbar-dropdown-item" onClick={() => navigate('/profile')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                    Go Pro — $2.99/mo
+                  </button>
+                  <div className="topbar-dropdown-divider" />
+                </>
+              ) : (
+                <>
+                  <button className="topbar-dropdown-item" onClick={() => navigate('/signup')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Log In / Sign Up
+                  </button>
+                  <button className="topbar-dropdown-item" onClick={() => navigate('/profile')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                    Go Pro — $2.99/mo
+                  </button>
+                  <div className="topbar-dropdown-divider" />
+                </>
+              )}
               <button className="topbar-dropdown-item" onClick={toggle}>
                 {theme === 'dark' ? (
                   <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Light Mode</>
@@ -88,6 +108,15 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
                   <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>Dark Mode</>
                 )}
               </button>
+              {user?.email && (
+                <>
+                  <div className="topbar-dropdown-divider" />
+                  <button className="topbar-dropdown-item" style={{ color: '#EF4444' }} onClick={() => { logout(); navigate('/'); }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sign Out
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

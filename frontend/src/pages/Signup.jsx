@@ -45,8 +45,7 @@ export default function Signup() {
     try {
       const res = await api.post('/auth/google', { credential: response.credential });
       const { token, user } = res.data;
-      localStorage.setItem('clocked_token', token);
-      localStorage.setItem('clocked_user', JSON.stringify(user));
+      localStorage.setItem('clocked-token', token);
       window.location.href = '/';
     } catch (err) {
       addToast('Google sign-in failed');
