@@ -20,19 +20,15 @@ export default function Home() {
 
   return (
     <>
-      <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)' }}>
+      {/* Mobile only: location pill */}
+      <div className="mobile-location-bar">
         <button
           onClick={() => setShowLocationModal(true)}
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '5px 12px',
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border)',
-            borderRadius: 20,
-            fontSize: 13,
-            fontWeight: 600,
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 12px', background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)', borderRadius: 20,
+            fontSize: 13, fontWeight: 600,
             color: location ? 'var(--text-primary)' : 'var(--text-muted)',
           }}
         >

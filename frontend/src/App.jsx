@@ -79,6 +79,7 @@ function GetAppModal({ onClose }) {
 
 function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggle } = useTheme();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -103,7 +104,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
 
   return (
     <div className="desktop-topbar">
-      {/* Left: collapse button + logo */}
+      {/* Left: collapse button + logo + back button */}
       <div className="desktop-topbar-left">
         <button className="collapse-btn" onClick={onToggleSidebar} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -111,6 +112,13 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
           </svg>
         </button>
         <div className="desktop-logo" onClick={() => navigate('/')}>clocked</div>
+        {location.pathname !== '/' && location.pathname !== '/search' && (
+          <button className="back-btn" onClick={() => navigate(-1)} aria-label="Go back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Center: location pill + purple search bar */}
@@ -267,6 +275,11 @@ function PageHeader({ onOpenDrawer }) {
   );
 }
 
+// Wrapper so DesktopTopBar has access to router hooks
+function DesktopTopBarWrapper(props) {
+  return <DesktopTopBar {...props} />;
+}
+
 function AppMainWrapper({ children }) {
   const location = useLocation();
   const fullWidthRoutes = ['/signup', '/subscription/success', '/subscription/cancel'];
@@ -295,9 +308,7 @@ function AppInner() {
 
   return (
     <BrowserRouter>
-      {/* Desktop top bar */}
-      <DesktopTopBar sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />
-
+      <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
         <LeftSidebar collapsed={sidebarCollapsed} />
         <AppMainWrapper>

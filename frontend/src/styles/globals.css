@@ -2492,3 +2492,10 @@ textarea.form-input {
   background: var(--bg-elevated);
   color: var(--text-primary);
 }
+
+/* Hide mobile location bar on desktop (location pill is in topbar) */
+@media (min-width: 768px) {
+  .mobile-location-bar {
+    display: none;
+  }
+}
