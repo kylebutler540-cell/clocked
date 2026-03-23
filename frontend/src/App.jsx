@@ -104,7 +104,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
 
   return (
     <div className="desktop-topbar">
-      {/* Left: collapse button + logo + back button */}
+      {/* Left: collapse button + logo */}
       <div className="desktop-topbar-left">
         <button className="collapse-btn" onClick={onToggleSidebar} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -112,11 +112,11 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
           </svg>
         </button>
         <div className="desktop-logo" onClick={() => navigate('/')}>clocked</div>
-        <LocationPill />
       </div>
 
-      {/* Center: search bar */}
+      {/* Center: location pill + search bar */}
       <div className="desktop-topbar-search">
+        <LocationPill />
         <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
       </div>
       {showGetApp && <GetAppModal onClose={() => setShowGetApp(false)} />}

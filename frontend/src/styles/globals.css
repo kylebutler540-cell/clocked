@@ -184,8 +184,11 @@ img, video {
 
   .desktop-topbar-search {
     flex: 1;
-    max-width: 480px;
+    max-width: 560px;
     margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   /* Purple outline search bar on desktop */
