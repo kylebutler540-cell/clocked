@@ -112,13 +112,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
           </svg>
         </button>
         <div className="desktop-logo" onClick={() => navigate('/')}>clocked</div>
-        {location.pathname !== '/' && location.pathname !== '/search' && (
-          <button className="back-btn" onClick={() => navigate(-1)} aria-label="Go back">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-        )}
+
       </div>
 
       {/* Center: location pill + purple search bar */}
@@ -275,9 +269,25 @@ function PageHeader({ onOpenDrawer }) {
   );
 }
 
-// Wrapper so DesktopTopBar has access to router hooks
 function DesktopTopBarWrapper(props) {
   return <DesktopTopBar {...props} />;
+}
+
+function DesktopBackButton() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/' || location.pathname === '/search';
+  if (isHome) return null;
+  return (
+    <div className="desktop-back-wrapper">
+      <button className="back-btn" onClick={() => navigate(-1)} aria-label="Go back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>Back</span>
+      </button>
+    </div>
+  );
 }
 
 function AppMainWrapper({ children }) {
@@ -317,6 +327,7 @@ function AppInner() {
             <PageHeader onOpenDrawer={() => setDrawerOpen(true)} />
           </div>
           <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+          <DesktopBackButton />
           <main className="page-content">
             <Routes>
               <Route path="/" element={<Home />} />
