@@ -135,32 +135,70 @@ router.post('/', optionalAuth, async (req, res) => {
   }
 });
 
-// Like a post
+// Like a post (toggle, one per user)
 router.post('/:id/like', optionalAuth, async (req, res) => {
   try {
-    const post = await prisma.post.update({
-      where: { id: req.params.id },
-      data: { likes: { increment: 1 } },
-      select: { likes: true, dislikes: true },
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Login to like posts' });
+
+    const existing = await prisma.postReaction.findUnique({
+      where: { user_id_post_id: { user_id: userId, post_id: req.params.id } },
     });
-    res.json(post);
+
+    if (existing?.type === 'like') {
+      // Unlike
+      await prisma.postReaction.delete({ where: { id: existing.id } });
+      const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
+      return res.json({ ...post, liked: false, disliked: false });
+    }
+
+    if (existing?.type === 'dislike') {
+      // Switch from dislike to like
+      await prisma.postReaction.update({ where: { id: existing.id }, data: { type: 'like' } });
+      const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 }, dislikes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
+      return res.json({ ...post, liked: true, disliked: false });
+    }
+
+    // New like
+    await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'like' } });
+    const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } }, select: { likes: true, dislikes: true } });
+    res.json({ ...post, liked: true, disliked: false });
   } catch (err) {
-    if (err.code === 'P2025') return res.status(404).json({ error: 'Post not found' });
+    console.error(err);
     res.status(500).json({ error: 'Failed to like post' });
   }
 });
 
-// Dislike a post
+// Dislike a post (toggle, one per user)
 router.post('/:id/dislike', optionalAuth, async (req, res) => {
   try {
-    const post = await prisma.post.update({
-      where: { id: req.params.id },
-      data: { dislikes: { increment: 1 } },
-      select: { likes: true, dislikes: true },
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Login to dislike posts' });
+
+    const existing = await prisma.postReaction.findUnique({
+      where: { user_id_post_id: { user_id: userId, post_id: req.params.id } },
     });
-    res.json(post);
+
+    if (existing?.type === 'dislike') {
+      // Un-dislike
+      await prisma.postReaction.delete({ where: { id: existing.id } });
+      const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
+      return res.json({ ...post, liked: false, disliked: false });
+    }
+
+    if (existing?.type === 'like') {
+      // Switch from like to dislike
+      await prisma.postReaction.update({ where: { id: existing.id }, data: { type: 'dislike' } });
+      const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 }, likes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
+      return res.json({ ...post, liked: false, disliked: true });
+    }
+
+    // New dislike
+    await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'dislike' } });
+    const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 } }, select: { likes: true, dislikes: true } });
+    res.json({ ...post, liked: false, disliked: true });
   } catch (err) {
-    if (err.code === 'P2025') return res.status(404).json({ error: 'Post not found' });
+    console.error(err);
     res.status(500).json({ error: 'Failed to dislike post' });
   }
 });

@@ -179,6 +179,9 @@ export default function PostCard({ post: initialPost, onUpdate }) {
                 <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
               </svg>
             </button>
+            {post.dislikes > 0 && (
+              <span className="vote-score" style={{ color: '#EF4444', fontSize: 12 }}>{post.dislikes}</span>
+            )}
           </div>
 
           {/* Comments */}

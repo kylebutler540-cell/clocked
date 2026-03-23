@@ -10,6 +10,7 @@ import BottomNav from './components/BottomNav';
 import SideDrawer from './components/SideDrawer';
 import LeftSidebar from './components/LeftSidebar';
 import EmployerSearch from './components/EmployerSearch';
+import LocationModal from './components/LocationModal';
 
 import Home from './pages/Home';
 import Create from './pages/Create';
@@ -28,11 +29,60 @@ const PAGE_TITLES = {
 };
 
 // Desktop top bar — full width, Reddit-style
+function LocationPill() {
+  const [location, setLocation] = useState(() => localStorage.getItem('userLocation') || '');
+  const [showModal, setShowModal] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setShowModal(true)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '6px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+          color: location ? 'var(--text-primary)' : 'var(--text-muted)',
+          background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+          whiteSpace: 'nowrap', flexShrink: 0, transition: 'border-color 0.15s',
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        {location || 'Set location'}
+      </button>
+      {showModal && <LocationModal onClose={(city) => { if (city) setLocation(city); setShowModal(false); }} />}
+    </>
+  );
+}
+
+function GetAppModal({ onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: 340, textAlign: 'center' }}>
+        <div className="modal-handle" />
+        <h2 className="modal-title">Get the Clocked App</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>Coming soon to iOS and Android</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="btn btn-secondary btn-full" disabled style={{ opacity: 0.5 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:8}}><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Download on App Store
+          </button>
+          <button className="btn btn-secondary btn-full" disabled style={{ opacity: 0.5 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:8}}><path d="M3.18 23.76c.3.17.64.24.99.2l12.6-12.6-3.12-3.12L3.18 23.76zm16.44-10.94L17.34 11.4l1.72-1.72 2.28 1.3c.65.37.65 1.34 0 1.84zM2.94.28c-.06.13-.1.29-.1.47v22.5c0 .18.04.34.1.47l.05.04 12.6-12.6v-.3L2.99.24l-.05.04zM15.99 15.32l-3.12 3.12 1.44 1.44c.65.65 1.7.65 2.35 0L17.97 18c.65-.65.65-1.7 0-2.35l-1.98-1.98z"/></svg>
+            Get it on Google Play
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 16 }}>
+          We're working on it — join the waitlist at theclocked.com
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showGetApp, setShowGetApp] = useState(false);
   const menuRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -63,13 +113,24 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
         <div className="desktop-logo" onClick={() => navigate('/')}>clocked</div>
       </div>
 
-      {/* Center: purple search bar */}
-      <div className="desktop-topbar-search">
-        <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
+      {/* Center: location pill + purple search bar */}
+      <div className="desktop-topbar-search" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <LocationPill />
+        <div style={{ flex: 1 }}>
+          <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
+        </div>
       </div>
+      {showGetApp && <GetAppModal onClose={() => setShowGetApp(false)} />}
 
-      {/* Right: login + menu */}
+      {/* Right: get app + login + menu */}
       <div className="desktop-topbar-right">
+        <button
+          className="btn btn-secondary"
+          style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}
+          onClick={() => setShowGetApp(true)}
+        >
+          Get App
+        </button>
         {user?.email ? (
           <div
             onClick={() => navigate('/profile')}
