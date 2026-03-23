@@ -74,6 +74,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@media (min-width: 768px) {
+  body {
+    overflow-y: auto;
+  }
+}
+
 #root {
   min-height: 100dvh;
   display: flex;
@@ -1875,14 +1881,15 @@ textarea.form-input {
   }
 
   /* Content feed — centered column with white cards */
-  /* overflow-y on .app-main puts the scrollbar at the viewport right edge */
+  /* Scroll happens on body/html so the scrollbar sits at the far viewport edge */
   .page-content {
     width: 100%;
     max-width: 740px;
     background: transparent;
     flex: none;
     height: auto;
-    overflow-y: visible;
+    overflow-y: visible !important;
+    overflow: visible !important;
     padding-bottom: 24px;
     margin: 0 auto;
   }
