@@ -2473,3 +2473,22 @@ textarea.form-input {
     background: var(--bg-elevated) !important;
   }
 }
+
+/* Back button */
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}

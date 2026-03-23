@@ -71,9 +71,20 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
       {/* Right: login + menu */}
       <div className="desktop-topbar-right">
         {user?.email ? (
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.email}
-          </span>
+          <div
+            onClick={() => navigate('/profile')}
+            style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 700, fontSize: 14,
+              cursor: 'pointer', flexShrink: 0,
+              userSelect: 'none',
+            }}
+            title={user.email}
+          >
+            {user.email[0].toUpperCase()}
+          </div>
         ) : (
           <button className="btn btn-primary" style={{ padding: '7px 16px', fontSize: 13 }} onClick={() => navigate('/signup')}>
             Log In
@@ -165,20 +176,34 @@ function MobileHeader({ onOpenDrawer }) {
   );
 }
 
+function BackButton() {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => navigate(-1)}
+      className="back-btn"
+      aria-label="Go back"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+  );
+}
+
 function PageHeader({ onOpenDrawer }) {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/search';
   const title = PAGE_TITLES[location.pathname];
 
   if (isHome) return <MobileHeader onOpenDrawer={onOpenDrawer} />;
-  if (title) {
-    return (
-      <header className="app-header" style={{ justifyContent: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{title}</h2>
-      </header>
-    );
-  }
-  return null;
+
+  return (
+    <header className="app-header" style={{ justifyContent: 'flex-start', gap: 12 }}>
+      <BackButton />
+      {title && <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{title}</h2>}
+    </header>
+  );
 }
 
 function AppMainWrapper({ children }) {
