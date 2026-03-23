@@ -25,7 +25,21 @@ router.post('/google', async (req, res) => {
     const payload = ticket.getPayload();
     const { email, name, picture, sub: googleId } = payload;
 
-    // Find or create user
+    // Detect anonymous session to merge (posted before signing in)
+    let anonUser = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const anonToken = authHeader.slice(7);
+        const anonPayload = jwt.verify(anonToken, process.env.JWT_SECRET);
+        const candidate = await prisma.user.findUnique({ where: { id: anonPayload.userId } });
+        if (candidate && !candidate.email) {
+          anonUser = candidate;
+        }
+      } catch { /* ignore invalid/expired token */ }
+    }
+
+    // Find or create Google user
     let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
@@ -41,6 +55,19 @@ router.post('/google', async (req, res) => {
         where: { id: user.id },
         data: { google_id: googleId },
       });
+    }
+
+    // Merge anonymous user's posts and comments into the Google account
+    if (anonUser && anonUser.id !== user.id) {
+      await prisma.post.updateMany({
+        where: { anonymous_user_id: anonUser.id },
+        data: { anonymous_user_id: user.id },
+      });
+      await prisma.comment.updateMany({
+        where: { anonymous_user_id: anonUser.id },
+        data: { anonymous_user_id: user.id },
+      });
+      await prisma.user.delete({ where: { id: anonUser.id } });
     }
 
     const token = signToken(user.id);

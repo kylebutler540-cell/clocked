@@ -61,6 +61,14 @@ export function AuthProvider({ children }) {
     return res.data;
   }
 
+  async function loginWithGoogle(credential) {
+    // api already sends the current Authorization header, so the backend can
+    // detect and merge any anonymous session before returning the Google JWT.
+    const res = await api.post('/auth/google', { credential });
+    saveSession(res.data.token, res.data.user);
+    return res.data;
+  }
+
   function logout() {
     localStorage.removeItem('clocked-token');
     delete api.defaults.headers.common['Authorization'];
@@ -72,7 +80,7 @@ export function AuthProvider({ children }) {
   const isSubscribed = user && ['ACTIVE', 'TRIALING'].includes(user.subscription_status);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isSubscribed, setUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, loginWithGoogle, logout, isSubscribed, setUser }}>
       {children}
     </AuthContext.Provider>
   );

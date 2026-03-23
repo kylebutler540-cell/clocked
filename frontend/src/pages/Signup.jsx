@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import api from '../lib/api';
 
 const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
 
@@ -11,7 +10,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [mode, setMode] = useState('signup'); // 'signup' or 'login'
-  const { register, login } = useAuth();
+  const { register, login, loginWithGoogle } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -43,10 +42,8 @@ export default function Signup() {
 
   async function handleGoogleCredential(response) {
     try {
-      const res = await api.post('/auth/google', { credential: response.credential });
-      const { token, user } = res.data;
-      localStorage.setItem('clocked-token', token);
-      window.location.href = '/';
+      await loginWithGoogle(response.credential);
+      navigate('/');
     } catch (err) {
       addToast('Google sign-in failed');
     }
