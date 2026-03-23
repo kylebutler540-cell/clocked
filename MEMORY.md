@@ -17,14 +17,41 @@
 
 ## Clocked App
 - Anonymous workplace review app — 50/50 Lukas + buddy
-- MVP built, UI locked in — dark mode, purple theme, emoji ratings, 4-tab nav
-- Logo: white rounded square, purple gradient "clocked" text
-- Domain: theclocked.com (GoDaddy, showing placeholder)
-- App running locally at http://localhost:3000
-- Backend NOT connected yet — all mock data
-- Left off at a great point visually — UI solid, ready for backend
-- Next: Railway account → PostgreSQL → connect backend → deploy → eventually React Native for App Store
-- Google Maps API key: AIzaSyDVTt1iv8oqd9ziIMyqs_jCo6et5iucc2s (still needs Places API enabled + domain restriction)
+- **LIVE at:** https://frontend-production-d4bd.up.railway.app
+- **Backend:** https://backend-production-7798f.up.railway.app (health: /health)
+- **GitHub:** https://github.com/kylebutler540-cell/clocked (user: kylebutler540-cell)
+- Domain: theclocked.com (GoDaddy) — NOT yet pointed to Railway (next step)
+
+### Stack
+- Frontend: React + Vite, deployed on Railway
+- Backend: Node/Express, deployed on Railway
+- Database: PostgreSQL on Railway (migrations done, all tables created)
+- Railway project: vivacious-upliftment (ID: c5ccc547-4fa7-4cc0-8a90-655c09fd9564)
+- Railway plan: Hobby ($5/mo), card ending 5587
+
+### Google Maps
+- API key: AIzaSyDVTt1iv8oqd9ziIMyqs_jCo6et5iucc2s
+- Enabled: Places API, Maps JavaScript API, Geocoding API
+- Project: clocked-490921
+- GOOGLE_MAPS_API_KEY set in Railway backend env vars
+
+### Design — LOCKED IN
+- Purple theme (#A855F7), light mode default + dark toggle
+- Post cards: 16px rounded, bubble/Reddit style
+- Emojis: 😡 bad (red) 😐 neutral (yellow) 😊 good (green) — outline SVGs for all other icons
+- Desktop: fixed top bar, collapsible left sidebar, 740px centered feed, no bottom nav
+- Mobile: 4-tab bottom nav, no zoom on input
+- Employer search: Google Places autocomplete, location-biased, Clearbit logos
+
+### Auth
+- Google Sign-In: client `65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com`
+- Token: `clocked-token` in localStorage
+
+### Next Steps
+1. Point theclocked.com DNS → Railway frontend
+2. Stripe subscription ($2.99/mo paywall)
+3. QR code in Get App modal
+4. React Native → App Store eventually
 
 ## Nightly Routine (every night)
 - At end of day / when Lukas says goodnight: close all apps on the Mac mini EXCEPT Safari (he wants those tabs open for adding credits)

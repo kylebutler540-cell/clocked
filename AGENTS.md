@@ -113,6 +113,14 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 **Don't overdo it:** One reaction per message max. Pick the one that fits best.
 
+## Cost Management
+
+**Default coding agent model:** `google/gemini-2.5-flash-preview` — use this for all standard coding tasks.
+**Use Claude Sonnet for coding only when:** complex multi-file debugging, subtle architecture decisions, or when Gemini explicitly fails.
+**Batch feature requests** into single coding agent sessions — don't spawn multiple agents for related tasks.
+**Screenshots > snapshots** — always prefer screenshots over full DOM snapshots.
+**No unnecessary tool calls** — don't read files you don't need for the current task.
+
 ## Tools
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
