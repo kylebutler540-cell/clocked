@@ -23,7 +23,7 @@ export default function PostDetail() {
   const [editText, setEditText] = useState('');
   const [menuCommentId, setMenuCommentId] = useState(null);
   const longPressTimer = useRef(null);
-  const menuRef = useRef(null);
+  const menuRefs = useRef({});
 
   useEffect(() => {
     Promise.all([
@@ -41,7 +41,7 @@ export default function PostDetail() {
   // Close comment menu on outside click
   useEffect(() => {
     function handleOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (menuRefs.current[menuCommentId] && !menuRefs.current[menuCommentId].contains(e.target)) {
         setMenuCommentId(null);
       }
     }
@@ -146,6 +146,7 @@ export default function PostDetail() {
         ) : (
           comments.map(comment => {
             const isOwner = user?.id && comment.anonymous_user_id === user.id;
+            if (isOwner) console.log('[PostDetail] comment ownership match', { commentAnonId: comment.anonymous_user_id, userId: user.id });
             const isEditing = editingCommentId === comment.id;
             const menuOpen = menuCommentId === comment.id;
 
@@ -166,7 +167,7 @@ export default function PostDetail() {
                       {timeAgo(comment.created_at)}
                     </span>
                     {isOwner && (
-                      <div style={{ position: 'relative' }} ref={menuOpen ? menuRef : null}>
+                      <div style={{ position: 'relative' }} ref={el => { if (el) menuRefs.current[comment.id] = el; }}>
                         <button
                           style={{
                             background: 'none', border: 'none', cursor: 'pointer',
