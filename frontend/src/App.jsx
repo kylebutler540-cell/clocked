@@ -33,6 +33,17 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   const { theme, toggle } = useTheme();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = React.useRef(null);
+
+  React.useEffect(() => {
+    function handleOutsideClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [menuOpen]);
 
   function handleSearchSelect(place) {
     navigate(`/company/${place.place_id}`, {
@@ -68,7 +79,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
             Log In
           </button>
         )}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} ref={menuRef}>
           <button className="topbar-menu-btn" onClick={() => setMenuOpen(v => !v)}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
