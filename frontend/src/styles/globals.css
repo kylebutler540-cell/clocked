@@ -1825,6 +1825,8 @@ textarea.form-input {
     background: var(--bg-secondary);
     align-items: start;
     overflow: visible;
+    /* Prevent grid from stretching rows to full viewport height */
+    grid-auto-rows: auto;
   }
 
   /* Left sidebar — pinned to far left */
@@ -1844,13 +1846,15 @@ textarea.form-input {
     background: var(--bg-elevated) !important;
   }
 
-  /* Main area — takes remaining space, body scrolls so bar is at viewport edge */
+  /* Main area — height is auto so body scrolls, scrollbar at viewport edge */
   .app-main {
     grid-column: 2;
     grid-row: 1;
     min-width: 0;
     background: var(--bg-secondary);
     min-height: 100dvh;
+    height: auto;
+    flex: none;
     display: flex;
     flex-direction: column;
     align-items: center;
