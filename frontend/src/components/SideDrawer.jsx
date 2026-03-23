@@ -116,7 +116,7 @@ export default function SideDrawer({ isOpen, onClose }) {
           <a href="#" className="drawer-about-link" onClick={onClose}>Privacy Policy</a>
           <a href="#" className="drawer-about-link" onClick={onClose}>Community Guidelines</a>
           <a href="#" className="drawer-about-link" onClick={onClose}>Contact Us</a>
-          <div className="drawer-version">Version 1.0.0</div>
+          <div className="drawer-version">Version 1.0.1</div>
         </div>
       </div>
 
