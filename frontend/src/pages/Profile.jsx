@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { generateAnonName } from '../lib/utils';
 import api from '../lib/api';
+
+const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
 
 export default function Profile() {
   const { user, logout, isSubscribed } = useAuth();
@@ -17,6 +19,33 @@ export default function Profile() {
   const [isRegister, setIsRegister] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const { login, register } = useAuth();
+
+  // Mount Google button when login modal opens
+  useEffect(() => {
+    if (!showLogin) return;
+    const init = () => {
+      window.google?.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          try {
+            const res = await api.post('/auth/google', { credential: response.credential });
+            localStorage.setItem('clocked-token', res.data.token);
+            window.location.href = '/';
+          } catch { addToast('Google sign-in failed'); }
+        },
+      });
+      window.google?.accounts.id.renderButton(
+        document.getElementById('profile-google-btn'),
+        { theme: 'outline', size: 'large', width: '100%', text: 'continue_with', shape: 'pill' }
+      );
+    };
+    if (window.google) { init(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = init;
+    document.body.appendChild(script);
+  }, [showLogin]);
 
   async function handleAuth(e) {
     e.preventDefault();
@@ -152,6 +181,14 @@ export default function Profile() {
                 ? 'Save reviews, get notifications, and manage your subscription.'
                 : 'Welcome back.'}
             </p>
+
+            {/* Google Sign-In */}
+            <div id="profile-google-btn" style={{ marginBottom: 16, width: '100%' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>or</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
 
             <form onSubmit={handleAuth}>
               <div className="form-group">
