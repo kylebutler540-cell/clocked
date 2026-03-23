@@ -1,14 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import LocationModal from './LocationModal';
 
 export default function SideDrawer({ isOpen, onClose }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const activeSort = searchParams.get('sort') || 'latest';
+  const [location, setLocation] = useState(() => localStorage.getItem('userLocation') || '');
+  const [showLocation, setShowLocation] = useState(false);
 
   function handleSort(sort) {
     navigate(sort === 'latest' ? '/' : `/?sort=${sort}`);
     onClose();
+  }
+
+  function handleLocationClose(city) {
+    if (city) {
+      setLocation(city);
+      localStorage.setItem('userLocation', city);
+    }
+    setShowLocation(false);
   }
 
   return (
@@ -62,6 +73,27 @@ export default function SideDrawer({ isOpen, onClose }) {
             </svg>
             History
           </button>
+
+          <button
+            className="drawer-nav-item"
+            onClick={() => { navigate('/saved'); onClose(); }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+            </svg>
+            Saved
+          </button>
+
+          <button
+            className="drawer-nav-item"
+            onClick={() => setShowLocation(true)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            {location || 'Set Location'}
+          </button>
         </nav>
 
         <div className="drawer-divider" />
@@ -87,6 +119,8 @@ export default function SideDrawer({ isOpen, onClose }) {
           <div className="drawer-version">Version 1.0.0</div>
         </div>
       </div>
+
+      {showLocation && <LocationModal onClose={handleLocationClose} />}
     </>
   );
 }

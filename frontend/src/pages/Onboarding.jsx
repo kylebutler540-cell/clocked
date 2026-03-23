@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LocationModal from '../components/LocationModal';
 
 const FEATURES = [
   {
@@ -34,12 +35,30 @@ const FEATURES = [
 
 export default function Onboarding({ onDone }) {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0); // 0 = welcome, 1 = features, 2 = offer
+  const [step, setStep] = useState(0); // 0 = welcome, 1 = features, 2 = offer, 3 = location
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [location, setLocation] = useState(() => localStorage.getItem('userLocation') || '');
 
   function finish(path = '/') {
     localStorage.setItem('hasSeenOnboarding', 'true');
     onDone();
     navigate(path);
+  }
+
+  function handleMaybeLater() {
+    if (!localStorage.getItem('userLocation')) {
+      setStep(3);
+    } else {
+      finish('/');
+    }
+  }
+
+  function handleLocationClose(city) {
+    if (city) {
+      setLocation(city);
+      localStorage.setItem('userLocation', city);
+    }
+    setShowLocationModal(false);
   }
 
   if (step === 0) {
@@ -54,7 +73,7 @@ export default function Onboarding({ onDone }) {
           The app built for workers, by workers.
         </p>
         <p className="onboarding-body">
-          Find out what it's <em>really</em> like to work somewhere before you take the job. 
+          Find out what it's <em>really</em> like to work somewhere before you take the job.
           Real reviews from real people — completely anonymous.
         </p>
         <div className="onboarding-actions">
@@ -93,32 +112,69 @@ export default function Onboarding({ onDone }) {
     );
   }
 
-  // Step 2 — early access offer
+  if (step === 2) {
+    return (
+      <div className="onboarding-screen">
+        <div className="onboarding-offer-badge">🎉 Early Access Offer</div>
+        <h2 className="onboarding-offer-title">You're one of the first.</h2>
+        <p className="onboarding-offer-body">
+          Clocked just launched. As one of our first users, you get <strong>50% off Pro forever</strong> — unlimited reviews, no paywall, ever.
+        </p>
+        <div className="onboarding-offer-card">
+          <div className="onboarding-offer-price">
+            <span className="onboarding-price-original">$2.99</span>
+            <span className="onboarding-price-new">$1.49<span>/mo</span></span>
+          </div>
+          <div className="onboarding-offer-detail">Lock in your founder rate today.</div>
+        </div>
+        <div className="onboarding-actions">
+          <button className="btn btn-primary btn-full onboarding-btn" onClick={() => finish('/signup')}>
+            Create Account & Claim Offer
+          </button>
+          <button className="btn btn-ghost btn-full" onClick={handleMaybeLater}>
+            Maybe Later
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
+          No credit card required to browse. Cancel anytime.
+        </p>
+      </div>
+    );
+  }
+
+  // Step 3 — location prompt
   return (
     <div className="onboarding-screen">
-      <div className="onboarding-offer-badge">🎉 Early Access Offer</div>
-      <h2 className="onboarding-offer-title">You're one of the first.</h2>
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <h2 className="onboarding-offer-title">See reviews near you</h2>
       <p className="onboarding-offer-body">
-        Clocked just launched. As one of our first users, you get <strong>50% off Pro forever</strong> — unlimited reviews, no paywall, ever.
+        Set your location to find workplace reviews from your area.
+        {location && <><br /><strong style={{ color: '#A855F7' }}>📍 {location}</strong></>}
       </p>
-      <div className="onboarding-offer-card">
-        <div className="onboarding-offer-price">
-          <span className="onboarding-price-original">$2.99</span>
-          <span className="onboarding-price-new">$1.49<span>/mo</span></span>
-        </div>
-        <div className="onboarding-offer-detail">Lock in your founder rate today.</div>
-      </div>
       <div className="onboarding-actions">
-        <button className="btn btn-primary btn-full onboarding-btn" onClick={() => finish('/signup')}>
-          Create Account & Claim Offer
+        <button
+          className="btn btn-primary btn-full onboarding-btn"
+          onClick={() => setShowLocationModal(true)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          {location ? 'Change Location' : 'Set My Location'}
         </button>
+        {location && (
+          <button className="btn btn-primary btn-full onboarding-btn" onClick={() => finish('/')}>
+            Continue
+          </button>
+        )}
         <button className="btn btn-ghost btn-full" onClick={() => finish('/')}>
-          Maybe Later
+          Skip for Now
         </button>
       </div>
-      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
-        No credit card required to browse. Cancel anytime.
-      </p>
+      {showLocationModal && <LocationModal onClose={handleLocationClose} />}
     </div>
   );
 }

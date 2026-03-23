@@ -248,6 +248,53 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
   }
 });
 
+// Edit post (owner only)
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const { body } = req.body;
+    if (!body || body.trim().length < 10) {
+      return res.status(400).json({ error: 'Review body must be at least 10 characters' });
+    }
+    if (body.length > 5000) {
+      return res.status(400).json({ error: 'Review body too long (max 5000 chars)' });
+    }
+    const post = await prisma.post.findUnique({ where: { id: req.params.id } });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (post.anonymous_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const updated = await prisma.post.update({
+      where: { id: req.params.id },
+      data: { body: body.trim() },
+      include: { _count: { select: { comments: true } } },
+    });
+    res.json(formatPost(updated, new Set(), true));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update post' });
+  }
+});
+
+// Delete post (owner only)
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const post = await prisma.post.findUnique({ where: { id: req.params.id } });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    if (post.anonymous_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    await prisma.comment.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.postReaction.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.save.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.flag.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.post.delete({ where: { id: req.params.id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
 // Get saved posts for current user
 router.get('/user/saved', requireAuth, async (req, res) => {
   try {

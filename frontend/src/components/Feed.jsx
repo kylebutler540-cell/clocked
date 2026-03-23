@@ -144,7 +144,11 @@ export default function Feed({ filters = {} }) {
       {filteredMock1 && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
       {filteredMock2 && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
       {posts.map(post => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          onDelete={() => setPosts(prev => prev.filter(p => p.id !== post.id))}
+        />
       ))}
 
       {/* Infinite scroll sentinel */}

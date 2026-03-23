@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { timeAgo, ratingToEmoji, generateAnonName } from '../lib/utils';
@@ -45,13 +45,30 @@ function RatingBadge({ value }) {
   );
 }
 
-export default function PostCard({ post: initialPost, onUpdate }) {
+export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
   const [post, setPost] = useState(initialPost);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFlag, setShowFlag] = useState(false);
-  const { isSubscribed } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState('');
+  const { user, isSubscribed } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const menuRef = useRef(null);
+
+  const isMock = post.id?.startsWith('mock-');
+  const isOwner = !isMock && user?.id && post.anonymous_user_id === user.id;
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    }
+    if (showMenu) document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showMenu]);
 
   async function handleLike() {
     if (isMock) return;
@@ -84,14 +101,44 @@ export default function PostCard({ post: initialPost, onUpdate }) {
     });
   }
 
+  function startEditing(e) {
+    e.stopPropagation();
+    setShowMenu(false);
+    setEditText(post.body);
+    setEditing(true);
+  }
+
+  async function handleSaveEdit(e) {
+    e.stopPropagation();
+    if (!editText.trim()) return;
+    try {
+      const res = await api.put(`/posts/${post.id}`, { body: editText.trim() });
+      setPost(p => ({ ...p, body: res.data.body, body_truncated: res.data.body_truncated }));
+      setEditing(false);
+    } catch {
+      addToast('Failed to update post');
+    }
+  }
+
+  async function handleDeletePost(e) {
+    e.stopPropagation();
+    setShowMenu(false);
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await api.delete(`/posts/${post.id}`);
+      if (onDelete) onDelete();
+      else navigate('/');
+    } catch {
+      addToast('Failed to delete post');
+    }
+  }
+
   const mediaUrls = post.media_urls || [];
-  const isMock = post.id?.startsWith('mock-');
   const previewText = post.body_truncated ? getPreviewText(post.body) : post.body;
-  const score = (post.likes || 0) - (post.dislikes || 0);
 
   return (
     <>
-      <article className="post-card" onClick={() => { if (!isMock) navigate(`/post/${post.id}`); }}>
+      <article className="post-card" onClick={() => { if (!isMock && !editing) navigate(`/post/${post.id}`); }}>
 
         {/* Employer name — top, like a subreddit */}
         <div className="post-employer-row">
@@ -102,6 +149,42 @@ export default function PostCard({ post: initialPost, onUpdate }) {
           <span className="post-meta-time">{post.employer_address?.split(',').slice(1, 3).join(',').trim()}</span>
           <div style={{ flex: 1 }} />
           <RatingBadge value={post.rating_emoji} />
+          {isOwner && (
+            <div
+              style={{ position: 'relative' }}
+              ref={menuRef}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--text-muted)', padding: '2px 6px',
+                  fontSize: 18, lineHeight: 1, marginLeft: 4,
+                }}
+                onClick={() => setShowMenu(v => !v)}
+                aria-label="Post options"
+              >
+                ⋮
+              </button>
+              {showMenu && (
+                <div style={{
+                  position: 'absolute', right: 0, top: '100%', zIndex: 200,
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '4px 0', minWidth: 160,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                }}>
+                  <button className="topbar-dropdown-item" onClick={startEditing}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit Post
+                  </button>
+                  <button className="topbar-dropdown-item" style={{ color: '#EF4444' }} onClick={handleDeletePost}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    Delete Post
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Posted by + time */}
@@ -114,27 +197,60 @@ export default function PostCard({ post: initialPost, onUpdate }) {
         {/* Title */}
         {post.header && <h3 className="post-title-large">{post.header}</h3>}
 
-        {/* Body */}
-        <div className="post-text">
-          {post.body_truncated ? (
-            <p style={{
-              margin: 0,
-              WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-              maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-            }}>{previewText}</p>
-          ) : (
-            <p>{previewText}</p>
-          )}
-        </div>
+        {/* Body — or inline edit form */}
+        {editing ? (
+          <div onClick={e => e.stopPropagation()} style={{ marginBottom: 8 }}>
+            <textarea
+              className="form-input"
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              rows={5}
+              maxLength={5000}
+              style={{ width: '100%', resize: 'vertical', marginBottom: 8 }}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-primary"
+                style={{ padding: '6px 16px', fontSize: 13 }}
+                onClick={handleSaveEdit}
+                disabled={!editText.trim()}
+              >
+                Save
+              </button>
+              <button
+                className="btn btn-ghost"
+                style={{ padding: '6px 16px', fontSize: 13 }}
+                onClick={e => { e.stopPropagation(); setEditing(false); }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="post-text">
+              {post.body_truncated ? (
+                <p style={{
+                  margin: 0,
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+                  maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+                }}>{previewText}</p>
+              ) : (
+                <p>{previewText}</p>
+              )}
+            </div>
 
-        {post.body_truncated && !isSubscribed && (
-          <button
-            className="see-more-btn"
-            onClick={e => { e.stopPropagation(); setShowPaywall(true); }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:6,flexShrink:0}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            See Full Review — $2.99/mo
-          </button>
+            {post.body_truncated && !isSubscribed && (
+              <button
+                className="see-more-btn"
+                onClick={e => { e.stopPropagation(); setShowPaywall(true); }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:6,flexShrink:0}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                See Full Review — $2.99/mo
+              </button>
+            )}
+          </>
         )}
 
         {/* Media */}

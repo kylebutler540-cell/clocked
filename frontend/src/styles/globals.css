@@ -1879,11 +1879,15 @@ textarea.form-input {
   }
 
   /* Content feed — centered column with white cards */
+  /* overflow-y on .app-main puts the scrollbar at the viewport right edge */
   .page-content {
     width: 100%;
     max-width: 740px;
     background: transparent;
-    flex: 1;
+    flex: none;
+    height: auto;
+    overflow-y: visible;
+    padding-bottom: 24px;
     margin: 0 auto;
   }
 
