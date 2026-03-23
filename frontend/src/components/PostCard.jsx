@@ -54,16 +54,18 @@ export default function PostCard({ post: initialPost, onUpdate }) {
   const navigate = useNavigate();
 
   async function handleLike() {
+    if (isMock) return;
     try {
       const res = await api.post(`/posts/${post.id}/like`);
-      setPost(p => ({ ...p, likes: res.data.likes }));
+      setPost(p => ({ ...p, likes: res.data.likes, dislikes: res.data.dislikes, liked: res.data.liked, disliked: res.data.disliked }));
     } catch { addToast('Failed to like post'); }
   }
 
   async function handleDislike() {
+    if (isMock) return;
     try {
       const res = await api.post(`/posts/${post.id}/dislike`);
-      setPost(p => ({ ...p, dislikes: res.data.dislikes }));
+      setPost(p => ({ ...p, likes: res.data.likes, dislikes: res.data.dislikes, liked: res.data.liked, disliked: res.data.disliked }));
     } catch { addToast('Failed to dislike post'); }
   }
 

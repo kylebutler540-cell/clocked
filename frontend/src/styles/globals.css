@@ -2528,3 +2528,24 @@ textarea.form-input {
     color: var(--text-primary);
   }
 }
+
+/* Back button in topbar */
+.topbar-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.topbar-back-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
