@@ -2,14 +2,24 @@
 
 ## Active Cron Bots
 
-| Name | Schedule | Purpose |
-|------|----------|---------|
-| heartbeat-handler | Every 2hrs, 8AM–10PM | Lightweight heartbeat checks HEARTBEAT.md |
-| weather-bot | 7 AM daily | Alerts only if notable weather (rain/snow/extremes) |
-| daily-digest | 5 PM daily | 3-5 news stories on cars, BMW, business, AI |
-| morning-briefing | 7 AM daily | Full morning briefing — weather, tip, goal, motivation |
-| heartbeat-night-off | Midnight | Disables heartbeats overnight |
-| heartbeat-morning-on | 8 AM | (Redundant — system heartbeat disabled, keep or remove) |
+| Name | Schedule | Model | Purpose |
+|------|----------|-------|---------|
+| heartbeat-handler | Every 4hrs, 8AM/12/4PM/8PM | ollama/qwen2.5:0.5b | Lightweight heartbeat checks HEARTBEAT.md |
+| weather-bot | 7 AM daily | google/gemini-flash-2.0 | Alerts only if notable weather (rain/snow/extremes) |
+| morning-briefing | 7 AM daily | google/gemini-2.5-flash-preview | Full morning briefing — weather, trading bot summary, tip |
+| heartbeat-night-off | Midnight | — | Disables heartbeats overnight |
+| heartbeat-morning-on | 8 AM | — | Re-enables morning heartbeat |
+
+## Coding Agent Defaults
+- **Default model:** `anthropic/claude-sonnet-4-6` — Claude Sonnet for all coding work
+- **Batching:** Group related tasks into one agent session
+- **Always deploy frontend via:** `cd clocked/app/frontend && railway up --service frontend`
+- **Never rely on git push alone for frontend** — Railway frontend is CLI-deployed only
+
+## Clocked App — Deploy Process
+- **Frontend:** `cd /Users/kylebutler/.openclaw/workspace/clocked/app/frontend && railway up --service frontend`
+- **Backend:** git push to main (Railway auto-deploys backend from GitHub)
+- **Verify deploy:** `curl -s https://frontend-production-d4bd.up.railway.app | grep -o 'assets/index-[^"]*js'` — hash should change after deploy
 
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
