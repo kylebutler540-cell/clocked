@@ -11,7 +11,9 @@
 | heartbeat-morning-on | 8 AM | — | Re-enables morning heartbeat |
 
 ## Coding Agent Defaults
-- **Default model:** `anthropic/claude-sonnet-4-6` — Claude Sonnet for all coding work
+- **Default model:** `google/gemini-2.5-flash-preview` — use for most coding tasks
+- **Auto-upgrade to `anthropic/claude-sonnet-4-6`** when: complex multi-file logic, subtle bugs, architecture decisions, or quality is at risk — no need to ask, just do it and say which model was used
+- **Priority order:** App quality first → token savings second
 - **Batching:** Group related tasks into one agent session
 - **Always deploy frontend via:** `cd clocked/app/frontend && railway up --service frontend`
 - **Never rely on git push alone for frontend** — Railway frontend is CLI-deployed only
