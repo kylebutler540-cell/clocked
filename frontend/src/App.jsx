@@ -300,6 +300,16 @@ function AppMainWrapper({ children }) {
 
 function AppInner() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Lock body scroll when sidebar is open
+  React.useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem('hasSeenOnboarding')
