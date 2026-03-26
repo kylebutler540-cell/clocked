@@ -9,11 +9,22 @@
 
 ## Trading Bot (Coinbase)
 - Running on Coinbase, trading BTC-USDC and ETH-USDC
-- RSI-based strategy, min trade $40, RSI-scaled position sizing (80/65/50% based on signal strength)
-- Started with $100.49 USDC
-- As of 2026-03-22: portfolio at ~$104.04 (cash + open position)
+- Started with $100.49 USDC — as of 2026-03-25 down to ~$87-97 range (fees killing small gains)
 - Bot file: `/Users/kylebutler/.openclaw/workspace/trading/bot.py`
 - Log: `/Users/kylebutler/.openclaw/workspace/trading/trade_log.txt`
+- State file: `/Users/kylebutler/.openclaw/workspace/trading/positions.json` (persists across restarts)
+
+### v3 Strategy (current as of 2026-03-25)
+- **1-hour candles** — filters noise, only real trend signals
+- **Buy: RSI < 28** (extreme oversold only, high conviction)
+- **Sell: RSI > 68** OR **+3.5% take-profit** OR **-3% stop-loss**
+- **One trade at a time** — picks best signal, 80% of portfolio
+- **Min $40/trade** to clear Coinbase ~1.2% round-trip fees
+- **State saved to disk** — survives restarts without orphaning positions
+
+### Key lesson learned
+Fee drag was killing the account. Most old trades were +0.2–0.9% gains = net loss after 1.2% fees.
+The only profitable playbook is fewer, bigger swings (+3%+). v3 is built around this.
 
 ## Clocked App
 - Anonymous workplace review app — 50/50 Lukas + buddy
