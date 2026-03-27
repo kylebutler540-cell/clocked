@@ -67,4 +67,25 @@ router.get('/reverse', async (req, res) => {
   }
 });
 
+// Geocode a city name to lat/lng
+router.get('/reverse-city', async (req, res) => {
+  try {
+    const { city } = req.query;
+    if (!city) return res.status(400).json({ error: 'city required' });
+
+    const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+      params: { address: city, key: process.env.GOOGLE_MAPS_API_KEY },
+    });
+
+    const data = response.data;
+    if (!data.results?.length) return res.status(404).json({ error: 'No results' });
+
+    const { lat, lng } = data.results[0].geometry.location;
+    res.json({ lat, lng });
+  } catch (err) {
+    console.error('Reverse city geocode error:', err.message);
+    res.status(500).json({ error: 'Geocode failed' });
+  }
+});
+
 module.exports = router;

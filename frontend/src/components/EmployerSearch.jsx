@@ -50,18 +50,37 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
 
+  // Get or geocode user lat/lng (cached in localStorage)
+  const getUserLatLng = useCallback(async () => {
+    const cached = localStorage.getItem('userLatLng');
+    if (cached) return cached.split(',').map(Number);
+    const userLocation = localStorage.getItem('userLocation');
+    if (!userLocation) return null;
+    try {
+      const res = await api.get('/locations/reverse-city', { params: { city: userLocation } });
+      if (res.data.lat && res.data.lng) {
+        const coords = `${res.data.lat},${res.data.lng}`;
+        localStorage.setItem('userLatLng', coords);
+        return [res.data.lat, res.data.lng];
+      }
+    } catch { /* ignore */ }
+    return null;
+  }, []);
+
   const search = useCallback(async (q) => {
     if (q.length < 2) { setResults([]); return; }
     setLoading(true);
     try {
       const userLocation = localStorage.getItem('userLocation') || 'Grand Rapids, MI';
-      const userLatLng = localStorage.getItem('userLatLng'); // "lat,lng" if GPS used
-      const res = await api.get('/employers/search', { params: { query: q, location: userLocation } });
+      const [res, userCoords] = await Promise.all([
+        api.get('/employers/search', { params: { query: q, location: userLocation } }),
+        getUserLatLng(),
+      ]);
       let predictions = res.data.predictions || [];
 
       // Add distance + sort by closest if we have user coords
-      if (userLatLng) {
-        const [uLat, uLng] = userLatLng.split(',').map(Number);
+      if (userCoords) {
+        const [uLat, uLng] = userCoords;
         predictions = predictions.map(p => {
           if (p.lat && p.lng) {
             const miles = getDistanceMiles(uLat, uLng, p.lat, p.lng);
@@ -78,7 +97,7 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getUserLatLng]);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
