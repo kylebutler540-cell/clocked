@@ -9,6 +9,7 @@ const googleAuthRoutes = require('./routes/google-auth');
 const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const employerRoutes = require('./routes/employers');
+const locationRoutes = require('./routes/locations');
 const subscriptionRoutes = require('./routes/subscriptions');
 const notificationRoutes = require('./routes/notifications');
 
@@ -62,6 +63,7 @@ app.use('/api/auth', googleAuthRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/posts/:postId/comments', commentRoutes);
 app.use('/api/employers', employerRoutes);
+app.use('/api/locations', locationRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/notifications', notificationRoutes);
 

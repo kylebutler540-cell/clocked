@@ -46,7 +46,7 @@ export default function Saved() {
   }
 
   return (
-    <div>
+    <div className="saved-page">
       <div className="section-header">Saved Reviews ({posts.length})</div>
       {posts.map(post => (
         <PostCard key={post.id} post={post} />

@@ -80,9 +80,6 @@ export default function Onboarding({ onDone }) {
           <button className="btn btn-primary btn-full onboarding-btn" onClick={() => setStep(1)}>
             Get Started
           </button>
-          <button className="btn btn-ghost btn-full" onClick={handleMaybeLater}>
-            Browse First
-          </button>
         </div>
       </div>
     );

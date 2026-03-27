@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
-const GOOGLE_API_KEY = 'AIzaSyDVTt1iv8oqd9ziIMyqs_jCo6et5iucc2s';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://backend-production-7798f.up.railway.app';
 
 export default function LocationModal({ onClose }) {
   const [cityInput, setCityInput] = useState('');
@@ -10,64 +10,38 @@ export default function LocationModal({ onClose }) {
   const [error, setError] = useState(null);
   const debounceRef = useRef(null);
 
-  useEffect(() => {
+  function handleInput(e) {
+    const val = e.target.value;
+    setCityInput(val);
     clearTimeout(debounceRef.current);
-    if (cityInput.length < 2) { setSuggestions([]); return; }
-
+    if (val.length < 2) { setSuggestions([]); return; }
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(cityInput)}&types=(cities)&language=en&key=${GOOGLE_API_KEY}`
-        );
+        const res = await fetch(`${API_BASE}/api/locations/search?query=${encodeURIComponent(val)}`);
         const data = await res.json();
-        if (data.status === 'OK') {
-          setSuggestions(data.predictions.map(p => ({
-            description: p.description,
-            place_id: p.place_id,
-          })));
-        } else {
-          setSuggestions([]);
-        }
+        setSuggestions(data.predictions || []);
       } catch {
         setSuggestions([]);
       } finally {
         setLoading(false);
       }
     }, 300);
-
-    return () => clearTimeout(debounceRef.current);
-  }, [cityInput]);
+  }
 
   async function handleUseLocation() {
-    if (!navigator.geolocation) {
-      setError('Geolocation not supported.');
-      return;
-    }
+    if (!navigator.geolocation) { setError('Geolocation not supported.'); return; }
     setGeoLoading(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      async ({ coords: { latitude, longitude } }) => {
         try {
-          const { latitude, longitude } = pos.coords;
-          // Save exact coords for distance calculations
           localStorage.setItem('userLatLng', `${latitude},${longitude}`);
-          const res = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`
-          );
+          const res = await fetch(`${API_BASE}/api/locations/reverse?lat=${latitude}&lng=${longitude}`);
           const data = await res.json();
-          let city = '';
-          if (data.results?.length > 0) {
-            const components = data.results[0].address_components;
-            const locality = components.find(c => c.types.includes('locality'));
-            const state = components.find(c => c.types.includes('administrative_area_level_1'));
-            city = locality && state
-              ? `${locality.long_name}, ${state.short_name}`
-              : data.results[0].formatted_address.split(',').slice(0, 2).join(',').trim();
-          }
-          if (city) {
-            localStorage.setItem('userLocation', city);
-            onClose(city);
+          if (data.city) {
+            localStorage.setItem('userLocation', data.city);
+            onClose(data.city);
           } else {
             setError('Could not detect your city. Please type it manually.');
           }
@@ -76,15 +50,12 @@ export default function LocationModal({ onClose }) {
         }
         setGeoLoading(false);
       },
-      () => {
-        setError('Location access denied. Please type your city.');
-        setGeoLoading(false);
-      }
+      () => { setError('Location access denied. Please type your city.'); setGeoLoading(false); }
     );
   }
 
-  function handleSelect(description) {
-    const city = description.split(',').slice(0, 2).join(',').trim();
+  function handleSelect(prediction) {
+    const city = `${prediction.city}${prediction.region ? ', ' + prediction.region.split(',')[0].trim() : ''}`;
     localStorage.setItem('userLocation', city);
     onClose(city);
   }
@@ -105,36 +76,30 @@ export default function LocationModal({ onClose }) {
           style={{ marginBottom: 12 }}
         >
           {geoLoading ? 'Getting location…' : (
-            <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:6,flexShrink:0}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Use my exact location</>
+            <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>Use my exact location</>
           )}
         </button>
 
-        {error && (
-          <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{error}</p>
-        )}
+        {error && <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
         <div style={{ position: 'relative', marginBottom: 16 }}>
           <input
             className="form-input"
-            placeholder="Search city or zip code…"
+            placeholder="Search city…"
             value={cityInput}
-            onChange={e => { setCityInput(e.target.value); }}
+            onChange={handleInput}
             autoComplete="off"
           />
           {(suggestions.length > 0 || loading) && (
             <div className="search-results" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100 }}>
               {loading && (
-                <div style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: 14 }}>
-                  Searching…
-                </div>
+                <div style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: 14 }}>Searching…</div>
               )}
               {suggestions.map(s => (
-                <div
-                  key={s.place_id}
-                  className="search-result-item"
-                  onMouseDown={() => handleSelect(s.description)}
-                >
-                  <span className="search-result-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                <div key={s.place_id} className="search-result-item" onMouseDown={() => handleSelect(s)}>
+                  <span className="search-result-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                  </span>
                   <div className="search-result-info">
                     <div className="search-result-name">{s.description}</div>
                   </div>

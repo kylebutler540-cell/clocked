@@ -5,22 +5,22 @@
   --purple-light: #C084FC;
   --purple-glow: rgba(168, 85, 247, 0.15);
 
-  /* Dark mode defaults */
-  --bg-primary: #0A0A0A;
-  --bg-secondary: #111111;
-  --bg-card: #1A1A1A;
-  --bg-elevated: #222222;
-  --bg-input: #1E1E1E;
+  /* Light mode defaults (prevents black flash on first load) */
+  --bg-primary: #F8F9FA;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #F0F0F0;
+  --bg-input: #F5F5F5;
 
-  --text-primary: #F5F5F5;
-  --text-secondary: #A0A0A0;
-  --text-muted: #666666;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-muted: #888888;
 
-  --border: #2A2A2A;
-  --border-light: #333333;
+  --border: #E5E5E5;
+  --border-light: #EEEEEE;
 
-  --shadow: rgba(0, 0, 0, 0.5);
-  --shadow-lg: rgba(0, 0, 0, 0.7);
+  --shadow: rgba(0, 0, 0, 0.08);
+  --shadow-lg: rgba(0, 0, 0, 0.15);
 
   --nav-height: 64px;
   --header-height: 56px;
@@ -50,6 +50,24 @@
 
   --shadow: rgba(0, 0, 0, 0.08);
   --shadow-lg: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #111111;
+  --bg-card: #1A1A1A;
+  --bg-elevated: #222222;
+  --bg-input: #1E1E1E;
+
+  --text-primary: #F5F5F5;
+  --text-secondary: #A0A0A0;
+  --text-muted: #666666;
+
+  --border: #2A2A2A;
+  --border-light: #333333;
+
+  --shadow: rgba(0, 0, 0, 0.5);
+  --shadow-lg: rgba(0, 0, 0, 0.7);
 }
 
 /* ========== Reset ========== */
@@ -402,6 +420,8 @@ img, video {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  /* iOS Safari: allow sticky children to work inside scroll container */
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (min-width: 768px) {
@@ -451,6 +471,30 @@ img, video {
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  /* iOS Safari: sticky must be on a direct child of the scroll container */
+  /* We handle this by making mobile-only-header sticky within app-main */
+}
+
+/* iOS fix: fixed header like the bottom nav — guaranteed to stay pinned */
+@media (max-width: 767px) {
+  .mobile-only-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 150;
+    background: var(--bg-primary);
+  }
+
+  .mobile-only-header .app-header {
+    position: relative;
+    top: auto;
+  }
+
+  /* Offset page content so it starts below the fixed header */
+  .page-content {
+    padding-top: var(--header-height);
+  }
 }
 
 .app-logo {
@@ -1777,6 +1821,29 @@ textarea.form-input {
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
   background: var(--bg-primary);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ========== Saved Page ========== */
+.saved-page {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: var(--bg-secondary);
+  min-height: 100%;
+}
+
+@media (min-width: 768px) {
+  .saved-page {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .saved-page .section-header {
+    max-width: 100%;
+  }
 }
 
 .divider {
@@ -1949,11 +2016,12 @@ textarea.form-input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 28px;
-  background: var(--bg-primary);
+  padding: 64px 40px;
+  background: #ffffff;
   text-align: center;
-  max-width: 430px;
+  max-width: 600px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .onboarding-logo-wrap {
@@ -1961,14 +2029,14 @@ textarea.form-input {
 }
 
 .onboarding-logo-icon {
-  width: 76px;
-  height: 76px;
+  width: 96px;
+  height: 96px;
   background: linear-gradient(135deg, #A855F7, #7C3AED);
-  border-radius: 22px;
+  border-radius: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 38px;
+  font-size: 48px;
   font-weight: 900;
   color: white;
   margin: 0 auto;
@@ -1976,46 +2044,46 @@ textarea.form-input {
 }
 
 .onboarding-wordmark {
-  font-size: 34px;
+  font-size: 42px;
   font-weight: 800;
   color: var(--purple);
   letter-spacing: -0.5px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .onboarding-tagline {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
+  color: #111111;
+  margin-bottom: 16px;
 }
 
 .onboarding-body {
-  font-size: 15px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  max-width: 300px;
-  margin-bottom: 40px;
+  font-size: 17px;
+  color: #555555;
+  line-height: 1.7;
+  max-width: 420px;
+  margin-bottom: 48px;
 }
 
 .onboarding-actions {
   width: 100%;
-  max-width: 320px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .onboarding-btn {
-  font-size: 16px;
-  padding: 14px 0 !important;
+  font-size: 17px;
+  padding: 16px 0 !important;
 }
 
 .onboarding-features-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  margin-bottom: 28px;
-  color: var(--text-primary);
+  margin-bottom: 32px;
+  color: #111111;
 }
 
 .onboarding-features {
@@ -2023,17 +2091,19 @@ textarea.form-input {
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  margin-bottom: 36px;
+  max-width: 480px;
+  margin-bottom: 40px;
 }
 
 .onboarding-feature-card {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  background: var(--bg-elevated);
-  border-radius: 14px;
-  padding: 16px;
+  gap: 18px;
+  background: #f8f8f8;
+  border-radius: 16px;
+  padding: 20px;
   text-align: left;
+  border: none;
 }
 
 .onboarding-feature-icon {
@@ -2048,16 +2118,16 @@ textarea.form-input {
 }
 
 .onboarding-feature-name {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 3px;
+  color: #111111;
+  margin-bottom: 4px;
 }
 
 .onboarding-feature-desc {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.4;
+  font-size: 14px;
+  color: #555555;
+  line-height: 1.5;
 }
 
 .onboarding-offer-badge {
@@ -2071,28 +2141,28 @@ textarea.form-input {
 }
 
 .onboarding-offer-title {
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 12px;
+  color: #111111;
+  margin-bottom: 16px;
 }
 
 .onboarding-offer-body {
-  font-size: 15px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  max-width: 300px;
-  margin-bottom: 24px;
+  font-size: 17px;
+  color: #555555;
+  line-height: 1.7;
+  max-width: 420px;
+  margin-bottom: 32px;
 }
 
 .onboarding-offer-card {
-  background: var(--purple-glow);
-  border: 1px solid rgba(168,85,247,0.3);
-  border-radius: 16px;
-  padding: 20px 28px;
-  margin-bottom: 28px;
+  background: rgba(168,85,247,0.07);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 20px;
+  padding: 28px 40px;
+  margin-bottom: 36px;
   width: 100%;
-  max-width: 300px;
+  max-width: 380px;
 }
 
 .onboarding-offer-price {
@@ -2541,7 +2611,7 @@ textarea.form-input {
   }
 }
 
-/* Desktop back button — top of content area */
+/* Desktop back button — positioned at left edge of content, just right of sidebar */
 .desktop-back-wrapper {
   display: none;
 }
@@ -2549,7 +2619,9 @@ textarea.form-input {
 @media (min-width: 768px) {
   .desktop-back-wrapper {
     display: flex;
-    padding: 8px 12px 0;
+    /* Align to the full app-main width, not the centered 740px column */
+    width: 100%;
+    padding: 8px 0 0 12px;
   }
 
   .desktop-back-wrapper .back-btn {

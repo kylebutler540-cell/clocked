@@ -7,6 +7,13 @@
     <meta name="description" content="Clocked — anonymous employer reviews for hourly workers" />
     <meta name="theme-color" content="#A855F7" />
     <title>Clocked</title>
+    <!-- Apply theme before React loads to prevent flash -->
+    <script>
+      (function() {
+        var theme = localStorage.getItem('clocked-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
