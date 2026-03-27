@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://backend-production-7798f.up.railway.app/api/',
   timeout: 15000,
 });
 
@@ -15,3 +15,4 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+// Fri Mar 27 19:40:47 EDT 2026

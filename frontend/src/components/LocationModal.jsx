@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://backend-production-7798f.up.railway.app';
+import api from '../lib/api';
 
 export default function LocationModal({ onClose }) {
   const [cityInput, setCityInput] = useState('');
@@ -18,9 +17,8 @@ export default function LocationModal({ onClose }) {
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/locations/search?query=${encodeURIComponent(val)}`);
-        const data = await res.json();
-        setSuggestions(data.predictions || []);
+        const res = await api.get('/locations/search', { params: { query: val } });
+        setSuggestions(res.data.predictions || []);
       } catch {
         setSuggestions([]);
       } finally {
@@ -37,11 +35,10 @@ export default function LocationModal({ onClose }) {
       async ({ coords: { latitude, longitude } }) => {
         try {
           localStorage.setItem('userLatLng', `${latitude},${longitude}`);
-          const res = await fetch(`${API_BASE}/api/locations/reverse?lat=${latitude}&lng=${longitude}`);
-          const data = await res.json();
-          if (data.city) {
-            localStorage.setItem('userLocation', data.city);
-            onClose(data.city);
+          const res = await api.get('/locations/reverse', { params: { lat: latitude, lng: longitude } });
+          if (res.data.city) {
+            localStorage.setItem('userLocation', res.data.city);
+            onClose(res.data.city);
           } else {
             setError('Could not detect your city. Please type it manually.');
           }
