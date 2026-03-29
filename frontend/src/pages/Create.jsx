@@ -4,6 +4,7 @@ import api from '../lib/api';
 import EmployerSearch from '../components/EmployerSearch';
 import RatingSelector from '../components/RatingSelector';
 import { useToast } from '../context/ToastContext';
+import { clearFeedCache } from '../components/Feed';
 
 export default function Create() {
   const routeLocation = useLocation();
@@ -92,6 +93,7 @@ export default function Create() {
       });
 
       addToast('Review posted!');
+      clearFeedCache();
       navigate('/');
     } catch (err) {
       addToast(err.response?.data?.error || 'Failed to post review');

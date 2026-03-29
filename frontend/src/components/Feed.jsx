@@ -229,3 +229,6 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
     </div>
   );
 }
+
+// Call after a new post is created to force the home feed to refetch on next mount
+export function clearFeedCache() { _feedCache.clear(); }

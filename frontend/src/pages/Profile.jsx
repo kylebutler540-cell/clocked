@@ -30,18 +30,36 @@ function TabSpinner() {
 
 // Post list for posts/videos/photos/liked/disliked tabs
 function UserPostList({ url, emptyState }) {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setAuthError(false);
     api.get(url)
       .then(res => setPosts(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setPosts([]))
+      .catch(err => {
+        if (err.response?.status === 401) setAuthError(true);
+        setPosts([]);
+      })
       .finally(() => setLoading(false));
   }, [url]);
 
   if (loading) return <TabSpinner />;
+  if (authError) return (
+    <div className="profile-empty-state">
+      <p className="profile-empty-text">Sign in to view this content.</p>
+      <button
+        className="btn btn-primary"
+        style={{ marginTop: 16, padding: '9px 24px', fontSize: 14 }}
+        onClick={() => navigate('/profile')}
+      >
+        Sign In
+      </button>
+    </div>
+  );
   if (posts.length === 0) return emptyState || <EmptyState text="Nothing here yet." />;
 
   return (
@@ -230,7 +248,7 @@ export default function Profile() {
             </button>
           </div>
         </div>
-        <UserPostList url={`/posts/user/${viewingUserId}/posts`} />
+        <UserPostList url={`/posts/user/${viewingUserId}/posts`} emptyState={<EmptyState text="This user hasn't posted anything yet." />} />
       </div>
     );
   }

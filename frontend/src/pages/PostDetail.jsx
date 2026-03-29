@@ -197,6 +197,9 @@ export default function PostDetail() {
 
   return (
     <div className="post-detail-page">
+      {/* Reactions (like/dislike/save) in PostCard update the module-level reaction cache.
+          When the user navigates back to the home feed, each PostCard re-reads from that
+          cache on mount — so reaction state stays consistent without touching the feed cache. */}
       <PostCard post={post} onDelete={() => navigate('/')} />
 
       <div className="divider" />

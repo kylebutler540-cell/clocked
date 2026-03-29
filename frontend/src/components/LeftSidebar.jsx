@@ -86,21 +86,6 @@ export default function LeftSidebar({ collapsed = false }) {
         )}
       />
 
-      {/* Sign Out */}
-      {user?.email && (
-        <button
-          className="sidebar-nav-item"
-          onClick={() => { logout(); navigate('/'); }}
-          title={collapsed ? 'Sign Out' : undefined}
-          style={{ color: '#EF4444' }}
-        >
-          <span className="sidebar-nav-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          </span>
-          {!collapsed && <span className="sidebar-nav-label">Sign Out</span>}
-        </button>
-      )}
-
       {/* Premium */}
       {!collapsed && (
         <button className="sidebar-premium-cta" onClick={() => navigate('/profile')}>
