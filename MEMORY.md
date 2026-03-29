@@ -7,6 +7,13 @@
 - Bot file: `/Users/kylebutler/.openclaw/workspace/trading/bot.py`
 - Bot log: `/Users/kylebutler/.openclaw/workspace/trading/trade_log.txt`
 
+## Trading Bot (Coinbase) — Python Path Fix
+- Bot must be launched with `/opt/homebrew/bin/python3.14` — NOT `python3` or `/usr/bin/python3`
+- Shebang in bot.py: `#!/opt/homebrew/bin/python3.14`
+- LaunchAgent: `/Users/kylebutler/Library/LaunchAgents/com.clocked.tradingbot.plist` — auto-restarts on reboot
+- If bot dies, restart with: `cd /Users/kylebutler/.openclaw/workspace/trading && /opt/homebrew/bin/python3.14 bot.py >> trade_log.txt 2>&1 &`
+- Verify running: `pgrep -f "bot.py"`
+
 ## Trading Bot (Coinbase)
 - Running on Coinbase, trading BTC-USDC and ETH-USDC
 - Started with $100.49 USDC — as of 2026-03-25 down to ~$87-97 range (fees killing small gains)

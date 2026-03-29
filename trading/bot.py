@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3.14
 """
 Coinbase Trading Bot for Lukas — v3
 Strategy: High-conviction RSI swings on 1-hour candles
