@@ -124,7 +124,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
       <div className="desktop-topbar-search">
         <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
       </div>
-      {showGetApp && <GetAppModal onClose={() => setShowGetApp(false)} />}
+      {showGetApp && createPortal(<GetAppModal onClose={() => setShowGetApp(false)} />, document.body)}
 
       {/* Right: get app + login + menu */}
       <div className="desktop-topbar-right">
@@ -140,15 +140,18 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
             onClick={() => navigate('/profile')}
             style={{
               width: 34, height: 34, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+              background: user.avatar_url ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'white', fontWeight: 700, fontSize: 14,
-              cursor: 'pointer', flexShrink: 0,
+              cursor: 'pointer', flexShrink: 0, overflow: 'hidden',
               userSelect: 'none',
             }}
             title={user.email}
           >
-            {user.email[0].toUpperCase()}
+            {user.avatar_url
+              ? <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : (user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase())
+            }
           </div>
         ) : (
           <button className="btn btn-primary" style={{ padding: '7px 16px', fontSize: 13 }} onClick={() => navigate('/signup')}>

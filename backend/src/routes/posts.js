@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { generateUniqueAnonNumber } = require('../lib/anonNumber');
+const { notify } = require('../lib/notify');
 
 const router = express.Router();
 
@@ -482,8 +483,12 @@ router.post('/:id/like', optionalAuth, async (req, res) => {
 
     // New like
     await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'like' } });
-    const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } }, select: { likes: true, dislikes: true } });
-    res.json({ ...post, liked: true, disliked: false });
+    const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
+    // Notify post owner (not self)
+    if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
+      await notify({ userId: post.anonymous_user_id, type: 'like', message: 'Someone liked your post.', data: { post_id: req.params.id } });
+    }
+    res.json({ likes: post.likes, dislikes: post.dislikes, liked: true, disliked: false });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to like post' });
@@ -516,8 +521,12 @@ router.post('/:id/dislike', optionalAuth, async (req, res) => {
 
     // New dislike
     await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'dislike' } });
-    const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 } }, select: { likes: true, dislikes: true } });
-    res.json({ ...post, liked: false, disliked: true });
+    const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
+    // Notify post owner (not self)
+    if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
+      await notify({ userId: post.anonymous_user_id, type: 'dislike', message: 'Someone disliked your post.', data: { post_id: req.params.id } });
+    }
+    res.json({ likes: post.likes, dislikes: post.dislikes, liked: false, disliked: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to dislike post' });

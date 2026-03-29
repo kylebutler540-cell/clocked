@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../lib/prisma');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
+const { notify } = require('../lib/notify');
 
 const router = express.Router();
 
@@ -101,6 +102,14 @@ router.post('/:userId', requireAuth, async (req, res) => {
         data: { following_count: { increment: 1 } },
       }),
     ]);
+
+    // Notify the followed user
+    await notify({
+      userId: followingId,
+      type: 'follow',
+      message: 'Someone followed you.',
+      data: { follower_id: req.user.id },
+    });
 
     res.json({ following: true, follower_count: updatedTarget.follower_count });
   } catch (err) {

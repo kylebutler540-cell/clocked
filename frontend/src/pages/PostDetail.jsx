@@ -68,11 +68,9 @@ export default function PostDetail() {
   const [submitting, setSubmitting] = useState(false);
 
   // Rich comment tools state
-  const [commentFormat, setCommentFormat] = useState(null); // null | 'bold' | 'metallic' | 'heading'
-  const [showFormatMenu, setShowFormatMenu] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null); // { file, dataUrl }
+  const [lightboxImage, setLightboxImage] = useState(null);
   const imageInputRef = useRef(null);
-  const formatMenuRef = useRef(null);
 
   // Comment edit/delete state
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -94,17 +92,6 @@ export default function PostDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Close format menu on outside click
-  useEffect(() => {
-    function handleOutside(e) {
-      if (formatMenuRef.current && !formatMenuRef.current.contains(e.target)) {
-        setShowFormatMenu(false);
-      }
-    }
-    if (showFormatMenu) document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [showFormatMenu]);
-
   // Close comment menu on outside click
   useEffect(() => {
     function handleOutside(e) {
@@ -125,22 +112,15 @@ export default function PostDetail() {
     e.target.value = '';
   }
 
-  function selectFormat(fmt) {
-    setCommentFormat(prev => prev === fmt ? null : fmt);
-    setShowFormatMenu(false);
-  }
-
   async function handleComment(e) {
     e.preventDefault();
     if (!commentText.trim()) return;
     setSubmitting(true);
     try {
-      const prefix = commentFormat === 'bold' ? '§b§' : commentFormat === 'metallic' ? '§m§' : commentFormat === 'heading' ? '§h§' : '';
-      const body = prefix + commentText.trim();
+      const body = commentText.trim();
       const res = await api.post(`/posts/${id}/comments`, { body, image_url: selectedImage?.dataUrl || null });
       setComments(prev => [...prev, res.data]);
       setCommentText('');
-      setCommentFormat(null);
       setSelectedImage(null);
     } catch {
       addToast('Failed to post comment');
@@ -193,10 +173,25 @@ export default function PostDetail() {
 
   if (!post) return null;
 
-  const formatLabel = commentFormat === 'bold' ? 'Bold' : commentFormat === 'metallic' ? 'Metallic' : commentFormat === 'heading' ? 'Heading' : null;
-
   return (
     <div className="post-detail-page">
+      {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <button
+            onClick={() => setLightboxImage(null)}
+            style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#fff', fontSize: 28, lineHeight: 1, cursor: 'pointer', padding: '4px 8px' }}
+          >×</button>
+          <img
+            src={lightboxImage}
+            alt="Full size"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8 }}
+          />
+        </div>
+      )}
       {/* Reactions (like/dislike/save) in PostCard update the module-level reaction cache.
           When the user navigates back to the home feed, each PostCard re-reads from that
           cache on mount — so reaction state stays consistent without touching the feed cache. */}
@@ -208,17 +203,20 @@ export default function PostDetail() {
       <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
         <form onSubmit={handleComment}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
+            <textarea
               className="form-input"
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  setCommentText(t => t + '\n');
+                }
+              }}
               placeholder="Add a comment..."
               maxLength={1000}
-              style={{
-                flex: 1,
-                fontWeight: commentFormat === 'bold' || commentFormat === 'heading' ? 700 : undefined,
-                fontSize: commentFormat === 'heading' ? 16 : undefined,
-              }}
+              rows={2}
+              style={{ flex: 1, resize: 'none' }}
             />
             <button
               type="submit"
@@ -259,82 +257,6 @@ export default function PostDetail() {
               </svg>
               {selectedImage ? 'Image ✓' : 'Image'}
             </button>
-
-            {/* Format Aa button */}
-            <div style={{ position: 'relative' }} ref={formatMenuRef}>
-              <button
-                type="button"
-                onClick={() => setShowFormatMenu(v => !v)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 3,
-                  padding: '4px 8px', borderRadius: 6,
-                  fontSize: 12, fontWeight: 600,
-                  color: commentFormat ? 'var(--purple)' : 'var(--text-muted)',
-                  background: commentFormat ? 'var(--purple-glow)' : 'var(--bg-elevated)',
-                  border: `1px solid ${commentFormat ? 'var(--purple)' : 'var(--border)'}`,
-                  transition: 'all 0.15s',
-                }}
-                title="Text formatting"
-              >
-                <span style={{ fontSize: 14, lineHeight: 1 }}>A</span><span style={{ fontSize: 10, lineHeight: 1 }}>a</span>
-                {formatLabel && <span style={{ marginLeft: 2 }}>· {formatLabel}</span>}
-              </button>
-              {showFormatMenu && (
-                <div style={{
-                  position: 'absolute', bottom: 'calc(100% + 6px)', left: 0,
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  borderRadius: 10, padding: '4px 0', minWidth: 148,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 200,
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => selectFormat('bold')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      width: '100%', padding: '9px 14px', fontSize: 14,
-                      fontWeight: 700, textAlign: 'left', background: 'transparent',
-                      color: commentFormat === 'bold' ? 'var(--purple)' : 'var(--text-primary)',
-                    }}
-                  >
-                    <span style={{ fontWeight: 700 }}>B</span> Bold
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectFormat('metallic')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      width: '100%', padding: '9px 14px', fontSize: 14,
-                      textAlign: 'left', background: 'transparent',
-                      background: commentFormat === 'metallic' ? 'var(--purple-glow)' : 'transparent',
-                    }}
-                  >
-                    <span style={{
-                      fontWeight: 600,
-                      background: 'linear-gradient(135deg, #9CA3AF, #D1D5DB, #6B7280)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}>M</span>
-                    <span style={{
-                      background: 'linear-gradient(135deg, #9CA3AF, #D1D5DB, #6B7280)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text', fontWeight: 600,
-                    }}>Metallic</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectFormat('heading')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      width: '100%', padding: '9px 14px', fontSize: 14,
-                      textAlign: 'left', background: 'transparent',
-                      color: commentFormat === 'heading' ? 'var(--purple)' : 'var(--text-primary)',
-                    }}
-                  >
-                    <span style={{ fontSize: 16, fontWeight: 700 }}>H</span> Heading
-                  </button>
-                </div>
-              )}
-            </div>
 
             {selectedImage && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 2 }}>
@@ -461,7 +383,8 @@ export default function PostDetail() {
                       <img
                         src={comment.image_url}
                         alt="Comment attachment"
-                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, marginTop: 8, objectFit: 'contain', display: 'block' }}
+                        onClick={() => setLightboxImage(comment.image_url)}
+                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, marginTop: 8, objectFit: 'contain', display: 'block', cursor: 'zoom-in' }}
                       />
                     )}
                   </>

@@ -187,11 +187,16 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
   }
 
   async function handleSave() {
+    const prevSaved = post.saved;
+    setPost(p => ({ ...p, saved: !p.saved }));
     try {
       const res = await api.post(`/posts/${post.id}/save`);
       setPost(p => ({ ...p, saved: res.data.saved }));
       addToast(res.data.saved ? 'Post saved' : 'Post unsaved');
-    } catch (err) { addToast(err.response?.status === 401 ? 'Sign in to save posts' : 'Failed to save post'); }
+    } catch (err) {
+      setPost(p => ({ ...p, saved: prevSaved }));
+      addToast(err.response?.status === 401 ? 'Sign in to save posts' : 'Failed to save post');
+    }
   }
 
   function handleEmployerClick(e) {
@@ -240,15 +245,43 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
     <>
       <article className="post-card" onClick={() => { if (!isMock && !editing) navigate(`/post/${post.id}`); }}>
 
-        {/* Employer name — top, like a subreddit */}
+        {/* Top row: avatar + display name + time — rating badge — ⋮ */}
         <div className="post-employer-row">
-          <button className="post-employer-name" onClick={handleEmployerClick}>
-            {post.employer_name}
+          {/* Avatar */}
+          <button
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+            onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
+          >
+            <span style={{
+              width: 34, height: 34, borderRadius: '50%', overflow: 'hidden',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+              color: '#fff', fontWeight: 700, fontSize: 13,
+            }}>
+              {post.author_avatar_url
+                ? <img src={post.author_avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (post.author_display_name ? post.author_display_name[0].toUpperCase() : (post.author_anon_number != null ? String(post.author_anon_number)[0] : 'A'))
+              }
+            </span>
           </button>
-          <span className="post-employer-sep">·</span>
-          <span className="post-meta-time">{post.employer_address?.split(',').slice(1, 3).join(',').trim()}</span>
-          <div style={{ flex: 1 }} />
+
+          {/* Display name + time */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0, marginLeft: 8, flex: 1 }}>
+            <button
+              className="post-byline-user"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', fontWeight: 600, fontSize: 14, textAlign: 'left', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
+            >
+              {post.author_display_name
+                ? post.author_display_name
+                : (post.author_anon_number != null ? `Anonymous ${post.author_anon_number}` : generateAnonName(post.anonymous_user_id))
+              }
+            </button>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.2 }}>{timeAgo(post.created_at)}</span>
+          </div>
+
           <RatingBadge value={post.rating_emoji} />
+
           {isOwner && (
             <div
               style={{ position: 'relative' }}
@@ -287,30 +320,17 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
           )}
         </div>
 
-        {/* Posted by + time */}
-        <div className="post-byline">
-          Posted by{' '}
-          <button
-            className="post-byline-user"
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, verticalAlign: 'middle' }}
-            onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
-          >
-            {post.author_avatar_url && (
-              <span style={{
-                width: 20, height: 20, borderRadius: '50%', overflow: 'hidden', display: 'inline-flex',
-                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
-              }}>
-                <img src={post.author_avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </span>
-            )}
-            {post.author_display_name
-              ? <span>{post.author_display_name}{post.author_username && <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 3 }}>@{post.author_username}</span>}</span>
-              : (post.author_anon_number != null ? `Anonymous ${post.author_anon_number}` : generateAnonName(post.anonymous_user_id))
-            }
+        {/* Employer name + location — now below the author row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, marginBottom: 2 }}>
+          <button className="post-employer-name" onClick={handleEmployerClick} style={{ fontSize: 13 }}>
+            {post.employer_name}
           </button>
-          <span className="post-byline-sep">·</span>
-          {timeAgo(post.created_at)}
+          {post.employer_address && (
+            <>
+              <span className="post-employer-sep">·</span>
+              <span className="post-meta-time">{post.employer_address.split(',').slice(1, 3).join(',').trim()}</span>
+            </>
+          )}
         </div>
 
         {/* Title */}

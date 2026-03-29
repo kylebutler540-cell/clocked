@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { optionalAuth, requireAuth } = require('../middleware/auth');
 const { generateUniqueAnonNumber } = require('../lib/anonNumber');
+const { notify } = require('../lib/notify');
 
 const router = express.Router({ mergeParams: true });
 
@@ -61,7 +62,7 @@ router.post('/', optionalAuth, async (req, res) => {
       include: { user: { select: { anon_number: true } } },
     });
 
-    res.status(201).json({
+    const result = {
       id: comment.id,
       post_id: comment.post_id,
       anonymous_user_id: comment.anonymous_user_id,
@@ -69,7 +70,19 @@ router.post('/', optionalAuth, async (req, res) => {
       body: comment.body,
       image_url: comment.image_url ?? null,
       created_at: comment.created_at,
-    });
+    };
+
+    // Notify post owner (not self)
+    if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
+      await notify({
+        userId: post.anonymous_user_id,
+        type: 'comment',
+        message: 'Someone commented on your post.',
+        data: { post_id: post.id, comment_id: comment.id },
+      });
+    }
+
+    res.status(201).json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create comment' });
