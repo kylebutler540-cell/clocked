@@ -1477,9 +1477,12 @@ textarea.form-input {
   background: rgba(0, 0, 0, 0.7);
   z-index: 300;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 24px 16px;
   animation: fadeIn 0.2s ease;
+  overflow: hidden;
+  touch-action: none;
 }
 
 @keyframes fadeIn {
@@ -1489,12 +1492,18 @@ textarea.form-input {
 
 .modal-sheet {
   width: 100%;
-  max-width: var(--max-width);
+  max-width: 480px;
   background: var(--bg-secondary);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-xl);
   padding: 24px 20px;
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
-  animation: slideUp 0.3s ease;
+  animation: scaleIn 0.2s ease;
+  position: relative;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @keyframes slideUp {
@@ -1503,11 +1512,19 @@ textarea.form-input {
 }
 
 .modal-handle {
-  width: 40px;
-  height: 4px;
+  width: 36px;
+  height: 2px;
   background: var(--border);
-  border-radius: 2px;
+  border-radius: 99px;
   margin: 0 auto 20px;
+  opacity: 0.5;
+}
+
+/* Hide handle on desktop — just click outside to close */
+@media (min-width: 768px) {
+  .modal-handle {
+    display: none;
+  }
 }
 
 .modal-title {
@@ -2848,3 +2865,4 @@ textarea.form-input {
   background: var(--bg-elevated);
   color: var(--text-primary);
 }
+/* Sun Mar 29 11:49:36 EDT 2026 */

@@ -42,8 +42,12 @@ export default function Signup() {
 
   async function handleGoogleCredential(response) {
     try {
-      await loginWithGoogle(response.credential);
-      navigate('/');
+      const data = await loginWithGoogle(response.credential);
+      if (!data.user?.username) {
+        navigate('/profile-setup');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       addToast('Google sign-in failed');
     }
@@ -56,14 +60,19 @@ export default function Signup() {
 
     setSubmitting(true);
     try {
+      let data;
       if (mode === 'signup') {
-        await register(email, password);
+        data = await register(email, password);
         addToast('Account created!');
       } else {
-        await login(email, password);
+        data = await login(email, password);
         addToast('Logged in!');
       }
-      navigate('/');
+      if (!data.user?.username) {
+        navigate('/profile-setup');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       addToast(err.response?.data?.error || (mode === 'signup' ? 'Failed to create account' : 'Invalid email or password'));
     } finally {

@@ -292,10 +292,22 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
           Posted by{' '}
           <button
             className="post-byline-user"
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, verticalAlign: 'middle' }}
             onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
           >
-            {post.author_anon_number != null ? `Anonymous ${post.author_anon_number}` : generateAnonName(post.anonymous_user_id)}
+            {post.author_avatar_url && (
+              <span style={{
+                width: 20, height: 20, borderRadius: '50%', overflow: 'hidden', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+              }}>
+                <img src={post.author_avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </span>
+            )}
+            {post.author_display_name
+              ? <span>{post.author_display_name}{post.author_username && <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 3 }}>@{post.author_username}</span>}</span>
+              : (post.author_anon_number != null ? `Anonymous ${post.author_anon_number}` : generateAnonName(post.anonymous_user_id))
+            }
           </button>
           <span className="post-byline-sep">·</span>
           {timeAgo(post.created_at)}

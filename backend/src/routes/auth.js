@@ -8,6 +8,38 @@ const { generateUniqueAnonNumber } = require('../lib/anonNumber');
 
 const router = express.Router();
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_.]{3,20}$/;
+
+const PROFILE_SELECT = {
+  id: true,
+  email: true,
+  anonymous_id: true,
+  subscription_status: true,
+  anon_number: true,
+  created_at: true,
+  display_name: true,
+  username: true,
+  avatar_url: true,
+  follower_count: true,
+  following_count: true,
+};
+
+function formatUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    anonymous_id: user.anonymous_id,
+    subscription_status: user.subscription_status,
+    anon_number: user.anon_number,
+    created_at: user.created_at,
+    display_name: user.display_name,
+    username: user.username,
+    avatar_url: user.avatar_url,
+    follower_count: user.follower_count,
+    following_count: user.following_count,
+  };
+}
+
 function generateAnonymousUsername() {
   const num = Math.floor(Math.random() * 9000) + 1000;
   return `Anonymous${num}`;
@@ -63,10 +95,7 @@ router.post('/register', async (req, res) => {
     });
 
     const token = signToken(user.id);
-    res.status(201).json({
-      token,
-      user: { id: user.id, email: user.email, anonymous_id: user.anonymous_id, subscription_status: user.subscription_status, anon_number: user.anon_number },
-    });
+    res.status(201).json({ token, user: formatUser(user) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Registration failed' });
@@ -92,25 +121,29 @@ router.post('/login', async (req, res) => {
     }
 
     const token = signToken(user.id);
-    res.json({
-      token,
-      user: { id: user.id, email: user.email, anonymous_id: user.anonymous_id, subscription_status: user.subscription_status, anon_number: user.anon_number },
-    });
+    res.json({ token, user: formatUser(user) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// Get public user info by userId (anon number only, no email)
+// Get public user info by userId
 router.get('/user/:userId', async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.userId },
-      select: { anon_number: true },
+      select: {
+        anon_number: true,
+        display_name: true,
+        username: true,
+        avatar_url: true,
+        follower_count: true,
+        following_count: true,
+      },
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ anon_number: user.anon_number });
+    res.json(user);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch user' });
@@ -119,16 +152,51 @@ router.get('/user/:userId', async (req, res) => {
 
 // Get current user
 router.get('/me', requireAuth, async (req, res) => {
-  res.json({
-    user: {
-      id: req.user.id,
-      email: req.user.email,
-      anonymous_id: req.user.anonymous_id,
-      subscription_status: req.user.subscription_status,
-      anon_number: req.user.anon_number,
-      created_at: req.user.created_at,
-    },
-  });
+  res.json({ user: formatUser(req.user) });
+});
+
+// Update profile (display_name, username, avatar_url)
+router.patch('/profile', requireAuth, async (req, res) => {
+  try {
+    const { display_name, username, avatar_url } = req.body;
+    const updateData = {};
+
+    if (display_name !== undefined) {
+      updateData.display_name = display_name ? display_name.trim() : null;
+    }
+
+    if (username !== undefined) {
+      if (username) {
+        if (!USERNAME_REGEX.test(username)) {
+          return res.status(400).json({ error: 'Username must be 3-20 characters: letters, numbers, underscores, or periods only' });
+        }
+        // Check uniqueness (exclude current user)
+        const existing = await prisma.user.findFirst({
+          where: { username, NOT: { id: req.user.id } },
+        });
+        if (existing) {
+          return res.status(409).json({ error: 'Username already taken' });
+        }
+        updateData.username = username;
+      } else {
+        updateData.username = null;
+      }
+    }
+
+    if (avatar_url !== undefined) {
+      updateData.avatar_url = avatar_url || null;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+    });
+
+    res.json({ user: formatUser(updated) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
 });
 
 module.exports = router;

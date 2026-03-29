@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -21,6 +22,7 @@ import CompanyProfile from './pages/CompanyProfile';
 import Saved from './pages/Saved';
 import Onboarding from './pages/Onboarding';
 import Signup from './pages/Signup';
+import ProfileSetup from './pages/ProfileSetup';
 
 const PAGE_TITLES = {
   '/create': 'Create Post',
@@ -47,7 +49,10 @@ function LocationPill() {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         {location || 'Set location'}
       </button>
-      {showModal && <LocationModal onClose={(city) => { if (city) setLocation(city); setShowModal(false); }} />}
+      {showModal && createPortal(
+        <LocationModal onClose={(city) => { if (city) setLocation(city); setShowModal(false); }} />,
+        document.body
+      )}
     </>
   );
 }
@@ -289,7 +294,7 @@ function DesktopBackButton() {
 
 function AppMainWrapper({ children }) {
   const location = useLocation();
-  const fullWidthRoutes = ['/signup', '/subscription/success', '/subscription/cancel'];
+  const fullWidthRoutes = ['/signup', '/profile-setup', '/subscription/success', '/subscription/cancel'];
   const isFullWidth = fullWidthRoutes.includes(location.pathname);
   return (
     <div className={`app-main${isFullWidth ? ' full-width' : ''}`} style={{ height: 'auto', minHeight: 0 }}>
@@ -347,6 +352,7 @@ function AppInner() {
               <Route path="/company/:placeId" element={<CompanyProfile />} />
               <Route path="/saved" element={<Saved />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/profile-setup" element={<ProfileSetup />} />
               <Route path="/subscription/success" element={<SubscriptionSuccess />} />
               <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
               <Route path="*" element={<NotFound />} />

@@ -92,6 +92,11 @@ router.post('/google', async (req, res) => {
         anonymous_id: user.anonymous_id,
         subscription_status: user.subscription_status,
         anon_number: user.anon_number,
+        display_name: user.display_name,
+        username: user.username,
+        avatar_url: user.avatar_url,
+        follower_count: user.follower_count,
+        following_count: user.following_count,
       },
     });
   } catch (err) {

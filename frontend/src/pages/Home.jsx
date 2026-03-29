@@ -94,7 +94,6 @@ export default function Home() {
   }, []);
 
   const filters = sort === 'top' ? { sort: 'top' } : {};
-  if (location) filters.location = location;
 
   return (
     <div className="home-layout">

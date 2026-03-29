@@ -64,7 +64,7 @@ router.get('/', optionalAuth, async (req, res) => {
       take: PAGE_SIZE + 1,
       ...(cursor && !isTopRated ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -123,7 +123,7 @@ router.get('/user/posts', requireAuth, async (req, res) => {
       where: { anonymous_user_id: req.user.id },
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -158,7 +158,7 @@ router.get('/user/:userId/posts', async (req, res) => {
       where: { anonymous_user_id: req.params.userId },
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -177,7 +177,7 @@ router.get('/user/comments', requireAuth, async (req, res) => {
       where: { anonymous_user_id: req.user.id },
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         post: { select: { id: true, employer_name: true, header: true } },
       },
     });
@@ -205,7 +205,7 @@ router.get('/user/liked', requireAuth, async (req, res) => {
       include: {
         post: {
           include: {
-            user: { select: { anon_number: true } },
+            user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
             _count: { select: { comments: true } },
           },
         },
@@ -237,7 +237,7 @@ router.get('/user/disliked', requireAuth, async (req, res) => {
       include: {
         post: {
           include: {
-            user: { select: { anon_number: true } },
+            user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
             _count: { select: { comments: true } },
           },
         },
@@ -269,7 +269,7 @@ router.get('/user/saved', requireAuth, async (req, res) => {
       include: {
         post: {
           include: {
-            user: { select: { anon_number: true } },
+            user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
             _count: { select: { comments: true } },
           },
         },
@@ -300,7 +300,7 @@ router.get('/user/videos', requireAuth, async (req, res) => {
       where: { anonymous_user_id: req.user.id },
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -337,7 +337,7 @@ router.get('/user/photos', requireAuth, async (req, res) => {
       where: { anonymous_user_id: req.user.id },
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -373,7 +373,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -444,7 +444,7 @@ router.post('/', optionalAuth, async (req, res) => {
         media_urls: Array.isArray(media_urls) ? media_urls.slice(0, 10) : [],
       },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -589,7 +589,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       where: { id: req.params.id },
       data: { body: body.trim() },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
       },
     });
@@ -641,6 +641,9 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     id: post.id,
     anonymous_user_id: post.anonymous_user_id,
     author_anon_number: post.user?.anon_number ?? null,
+    author_display_name: post.user?.display_name ?? null,
+    author_username: post.user?.username ?? null,
+    author_avatar_url: post.user?.avatar_url ?? null,
     employer_place_id: post.employer_place_id,
     employer_name: post.employer_name,
     employer_address: post.employer_address,
