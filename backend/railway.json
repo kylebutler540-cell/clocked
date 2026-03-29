@@ -5,7 +5,7 @@
     "buildCommand": "npm install && npx prisma generate"
   },
   "deploy": {
-    "startCommand": "node src/migrate.js && npx prisma generate && npm start",
+    "startCommand": "node src/migrate.js && npx prisma generate --schema=./prisma/schema.prisma && npm start",
     "numReplicas": 1,
     "sleepApplication": false,
     "restartPolicyType": "ON_FAILURE",
