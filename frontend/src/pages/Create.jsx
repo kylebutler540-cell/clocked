@@ -1,41 +1,72 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import EmployerSearch from '../components/EmployerSearch';
 import RatingSelector from '../components/RatingSelector';
 import { useToast } from '../context/ToastContext';
 
 export default function Create() {
-  const [employer, setEmployer] = useState(null);
+  const routeLocation = useLocation();
+  const [employer, setEmployer] = useState(routeLocation.state?.employer || null);
   const [rating, setRating] = useState('');
   const [header, setHeader] = useState('');
   const [body, setBody] = useState('');
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
   const { addToast } = useToast();
   const navigate = useNavigate();
 
   function handleMediaChange(e) {
-    const files = Array.from(e.target.files);
-    const remaining = 10 - mediaFiles.length;
-    const toAdd = files.slice(0, remaining);
-
-    toAdd.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        setMediaPreviews(prev => [...prev, ev.target.result]);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    setMediaFiles(prev => [...prev, ...toAdd]);
+    addFiles(Array.from(e.target.files));
   }
 
   function removeMedia(index) {
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
     setMediaPreviews(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function addFiles(files) {
+    const valid = files.filter(f => f.type.startsWith('image/') || f.type === 'video/mp4');
+    const remaining = 10 - mediaFiles.length;
+    const toAdd = valid.slice(0, remaining);
+    toAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => setMediaPreviews(prev => [...prev, ev.target.result]);
+      reader.readAsDataURL(file);
+    });
+    setMediaFiles(prev => [...prev, ...toAdd]);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }
+
+  function handleDragEnter(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragOver(false);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      addFiles(files);
+    }
   }
 
   async function handleSubmit(e) {
@@ -61,7 +92,7 @@ export default function Create() {
       });
 
       addToast('Review posted!');
-      navigate(`/post/${res.data.id}`);
+      navigate('/');
     } catch (err) {
       addToast(err.response?.data?.error || 'Failed to post review');
     } finally {
@@ -158,12 +189,22 @@ export default function Create() {
           {mediaFiles.length < 10 && (
             <div
               className="media-upload-area"
-              style={{ marginTop: mediaPreviews.length > 0 ? 10 : 0 }}
+              style={{
+                marginTop: mediaPreviews.length > 0 ? 10 : 0,
+                borderColor: isDragOver ? 'var(--purple)' : undefined,
+                background: isDragOver ? 'rgba(168,85,247,0.08)' : undefined,
+                transform: isDragOver ? 'scale(1.01)' : undefined,
+                transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
+              }}
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             >
-              <div className="media-upload-icon">📷</div>
+              <div className="media-upload-icon">{isDragOver ? '⬇️' : '📷'}</div>
               <div className="media-upload-text">
-                Tap to add photos/videos ({10 - mediaFiles.length} remaining)
+                {isDragOver ? 'Drop to upload' : `Tap or drag to add photos/videos (${10 - mediaFiles.length} remaining)`}
               </div>
             </div>
           )}

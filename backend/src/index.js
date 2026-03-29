@@ -12,6 +12,7 @@ const employerRoutes = require('./routes/employers');
 const locationRoutes = require('./routes/locations');
 const subscriptionRoutes = require('./routes/subscriptions');
 const notificationRoutes = require('./routes/notifications');
+const ratingRoutes = require('./routes/ratings');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -66,6 +67,15 @@ app.use('/api/employers', employerRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ratings', ratingRoutes);
+
+// Follow stub — persists to DB once follow feature is built
+app.post('/api/follow', (req, res) => {
+  const { targetUserId } = req.body;
+  if (!targetUserId) return res.status(400).json({ error: 'targetUserId required' });
+  // TODO: implement follow relationship in DB
+  res.json({ following: true, message: 'Follow feature coming soon' });
+});
 
 // 404 handler
 app.use((req, res) => {

@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { optionalAuth, requireAuth } = require('../middleware/auth');
+const { generateUniqueAnonNumber } = require('../lib/anonNumber');
 
 const router = express.Router({ mergeParams: true });
 
@@ -11,8 +12,17 @@ router.get('/', async (req, res) => {
     const comments = await prisma.comment.findMany({
       where: { post_id: req.params.postId },
       orderBy: { created_at: 'asc' },
+      include: { user: { select: { anon_number: true } } },
     });
-    res.json(comments);
+    res.json(comments.map(c => ({
+      id: c.id,
+      post_id: c.post_id,
+      anonymous_user_id: c.anonymous_user_id,
+      author_anon_number: c.user?.anon_number ?? null,
+      body: c.body,
+      image_url: c.image_url ?? null,
+      created_at: c.created_at,
+    })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch comments' });
@@ -22,7 +32,7 @@ router.get('/', async (req, res) => {
 // Add comment (anonymous or authenticated)
 router.post('/', optionalAuth, async (req, res) => {
   try {
-    const { body } = req.body;
+    const { body, image_url } = req.body;
     if (!body || body.trim().length < 1) {
       return res.status(400).json({ error: 'Comment body required' });
     }
@@ -36,7 +46,8 @@ router.post('/', optionalAuth, async (req, res) => {
 
     let userId = req.user?.id;
     if (!userId) {
-      const anonUser = await prisma.user.create({ data: { anonymous_id: uuidv4() } });
+      const anonNum = await generateUniqueAnonNumber();
+      const anonUser = await prisma.user.create({ data: { anonymous_id: uuidv4(), anon_number: anonNum } });
       userId = anonUser.id;
     }
 
@@ -45,10 +56,20 @@ router.post('/', optionalAuth, async (req, res) => {
         post_id: req.params.postId,
         anonymous_user_id: userId,
         body: body.trim(),
+        image_url: image_url || null,
       },
+      include: { user: { select: { anon_number: true } } },
     });
 
-    res.status(201).json(comment);
+    res.status(201).json({
+      id: comment.id,
+      post_id: comment.post_id,
+      anonymous_user_id: comment.anonymous_user_id,
+      author_anon_number: comment.user?.anon_number ?? null,
+      body: comment.body,
+      image_url: comment.image_url ?? null,
+      created_at: comment.created_at,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create comment' });

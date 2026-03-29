@@ -15,6 +15,7 @@ model User {
   google_id         String?        @unique
   created_at        DateTime       @default(now())
   subscription_status SubscriptionStatus @default(FREE)
+  anon_number     Int?           @unique
 
   posts         Post[]
   comments      Comment[]
@@ -22,7 +23,8 @@ model User {
   flags         Flag[]
   reactions     PostReaction[]
   subscription  Subscription?
-  notifications Notification[]
+  notifications   Notification[]
+  companyRatings  CompanyRating[]
 
   @@map("users")
 }
@@ -58,6 +60,7 @@ model Comment {
   post_id          String
   anonymous_user_id String
   body             String
+  image_url        String?
   created_at       DateTime @default(now())
 
   post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
@@ -121,6 +124,21 @@ model Subscription {
   user User @relation(fields: [user_id], references: [id])
 
   @@map("subscriptions")
+}
+
+model CompanyRating {
+  id         String   @id @default(cuid())
+  user_id    String
+  place_id   String
+  rating     Int      // 1-5
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, place_id])
+  @@index([place_id])
+  @@map("company_ratings")
 }
 
 model Notification {

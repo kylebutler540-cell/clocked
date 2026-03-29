@@ -6,6 +6,55 @@ import { timeAgo, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
+// Parse format prefix from comment body
+function parseCommentFormat(body) {
+  if (body.startsWith('§b§')) return { format: 'bold', text: body.slice(3) };
+  if (body.startsWith('§m§')) return { format: 'metallic', text: body.slice(3) };
+  if (body.startsWith('§h§')) return { format: 'heading', text: body.slice(3) };
+  return { format: null, text: body };
+}
+
+function CommentText({ body }) {
+  const { format, text } = parseCommentFormat(body);
+  if (format === 'bold') {
+    return <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0, fontWeight: 700 }}>{text}</p>;
+  }
+  if (format === 'metallic') {
+    return (
+      <p style={{
+        fontSize: 14, lineHeight: 1.5, margin: 0, fontWeight: 600,
+        background: 'linear-gradient(135deg, #9CA3AF, #D1D5DB, #6B7280, #E5E7EB)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>{text}</p>
+    );
+  }
+  if (format === 'heading') {
+    return <p style={{ fontSize: 17, color: 'var(--text-primary)', lineHeight: 1.35, margin: 0, fontWeight: 700 }}>{text}</p>;
+  }
+  return <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>{text}</p>;
+}
+
+function CommentAvatar() {
+  return (
+    <div style={{
+      width: 26,
+      height: 26,
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
+        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+      </svg>
+    </div>
+  );
+}
+
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -17,6 +66,13 @@ export default function PostDetail() {
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Rich comment tools state
+  const [commentFormat, setCommentFormat] = useState(null); // null | 'bold' | 'metallic' | 'heading'
+  const [showFormatMenu, setShowFormatMenu] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null); // { file, dataUrl }
+  const imageInputRef = useRef(null);
+  const formatMenuRef = useRef(null);
 
   // Comment edit/delete state
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -38,6 +94,17 @@ export default function PostDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Close format menu on outside click
+  useEffect(() => {
+    function handleOutside(e) {
+      if (formatMenuRef.current && !formatMenuRef.current.contains(e.target)) {
+        setShowFormatMenu(false);
+      }
+    }
+    if (showFormatMenu) document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showFormatMenu]);
+
   // Close comment menu on outside click
   useEffect(() => {
     function handleOutside(e) {
@@ -49,14 +116,32 @@ export default function PostDetail() {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [menuCommentId]);
 
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setSelectedImage({ file, dataUrl: ev.target.result });
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  function selectFormat(fmt) {
+    setCommentFormat(prev => prev === fmt ? null : fmt);
+    setShowFormatMenu(false);
+  }
+
   async function handleComment(e) {
     e.preventDefault();
     if (!commentText.trim()) return;
     setSubmitting(true);
     try {
-      const res = await api.post(`/posts/${id}/comments`, { body: commentText.trim() });
+      const prefix = commentFormat === 'bold' ? '§b§' : commentFormat === 'metallic' ? '§m§' : commentFormat === 'heading' ? '§h§' : '';
+      const body = prefix + commentText.trim();
+      const res = await api.post(`/posts/${id}/comments`, { body, image_url: selectedImage?.dataUrl || null });
       setComments(prev => [...prev, res.data]);
       setCommentText('');
+      setCommentFormat(null);
+      setSelectedImage(null);
     } catch {
       addToast('Failed to post comment');
     } finally {
@@ -108,32 +193,157 @@ export default function PostDetail() {
 
   if (!post) return null;
 
+  const formatLabel = commentFormat === 'bold' ? 'Bold' : commentFormat === 'metallic' ? 'Metallic' : commentFormat === 'heading' ? 'Heading' : null;
+
   return (
-    <div>
+    <div className="post-detail-page">
       <PostCard post={post} onDelete={() => navigate('/')} />
 
       <div className="divider" />
 
       {/* Comment input */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-        <form onSubmit={handleComment} style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-          <textarea
-            className="form-input"
-            value={commentText}
-            onChange={e => setCommentText(e.target.value)}
-            placeholder="Add a comment..."
-            rows={2}
-            maxLength={1000}
-            style={{ flex: 1, resize: 'none' }}
-          />
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ padding: '10px 14px', alignSelf: 'flex-end' }}
-            disabled={submitting || !commentText.trim()}
-          >
-            {submitting ? '...' : '↑'}
-          </button>
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
+        <form onSubmit={handleComment}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <input
+              className="form-input"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              placeholder="Add a comment..."
+              maxLength={1000}
+              style={{
+                flex: 1,
+                fontWeight: commentFormat === 'bold' || commentFormat === 'heading' ? 700 : undefined,
+                fontSize: commentFormat === 'heading' ? 16 : undefined,
+              }}
+            />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ padding: '8px 14px', flexShrink: 0 }}
+              disabled={submitting || !commentText.trim()}
+            >
+              {submitting ? '...' : '↑'}
+            </button>
+          </div>
+
+          {/* Toolbar */}
+          <div style={{ display: 'flex', gap: 6, marginTop: 7, alignItems: 'center' }}>
+            {/* Image upload */}
+            <input
+              type="file"
+              accept="image/*"
+              ref={imageInputRef}
+              onChange={handleImageSelect}
+              style={{ display: 'none' }}
+            />
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '4px 8px', borderRadius: 6,
+                fontSize: 12, color: selectedImage ? 'var(--purple)' : 'var(--text-muted)',
+                background: selectedImage ? 'var(--purple-glow)' : 'var(--bg-elevated)',
+                border: `1px solid ${selectedImage ? 'var(--purple)' : 'var(--border)'}`,
+                transition: 'all 0.15s',
+              }}
+              title="Attach image"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              {selectedImage ? 'Image ✓' : 'Image'}
+            </button>
+
+            {/* Format Aa button */}
+            <div style={{ position: 'relative' }} ref={formatMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowFormatMenu(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 3,
+                  padding: '4px 8px', borderRadius: 6,
+                  fontSize: 12, fontWeight: 600,
+                  color: commentFormat ? 'var(--purple)' : 'var(--text-muted)',
+                  background: commentFormat ? 'var(--purple-glow)' : 'var(--bg-elevated)',
+                  border: `1px solid ${commentFormat ? 'var(--purple)' : 'var(--border)'}`,
+                  transition: 'all 0.15s',
+                }}
+                title="Text formatting"
+              >
+                <span style={{ fontSize: 14, lineHeight: 1 }}>A</span><span style={{ fontSize: 10, lineHeight: 1 }}>a</span>
+                {formatLabel && <span style={{ marginLeft: 2 }}>· {formatLabel}</span>}
+              </button>
+              {showFormatMenu && (
+                <div style={{
+                  position: 'absolute', bottom: 'calc(100% + 6px)', left: 0,
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  borderRadius: 10, padding: '4px 0', minWidth: 148,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 200,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => selectFormat('bold')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '9px 14px', fontSize: 14,
+                      fontWeight: 700, textAlign: 'left', background: 'transparent',
+                      color: commentFormat === 'bold' ? 'var(--purple)' : 'var(--text-primary)',
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>B</span> Bold
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectFormat('metallic')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '9px 14px', fontSize: 14,
+                      textAlign: 'left', background: 'transparent',
+                      background: commentFormat === 'metallic' ? 'var(--purple-glow)' : 'transparent',
+                    }}
+                  >
+                    <span style={{
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, #9CA3AF, #D1D5DB, #6B7280)',
+                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}>M</span>
+                    <span style={{
+                      background: 'linear-gradient(135deg, #9CA3AF, #D1D5DB, #6B7280)',
+                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text', fontWeight: 600,
+                    }}>Metallic</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectFormat('heading')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '9px 14px', fontSize: 14,
+                      textAlign: 'left', background: 'transparent',
+                      color: commentFormat === 'heading' ? 'var(--purple)' : 'var(--text-primary)',
+                    }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 700 }}>H</span> Heading
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {selectedImage && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 2 }}>
+                <img src={selectedImage.dataUrl} alt="Preview" style={{ width: 28, height: 28, borderRadius: 4, objectFit: 'cover' }} />
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  style={{ color: 'var(--text-muted)', fontSize: 16, lineHeight: 1, padding: '0 2px' }}
+                >×</button>
+              </div>
+            )}
+          </div>
         </form>
       </div>
 
@@ -146,22 +356,27 @@ export default function PostDetail() {
         ) : (
           comments.map(comment => {
             const isOwner = user?.id && comment.anonymous_user_id === user.id;
-            if (isOwner) console.log('[PostDetail] comment ownership match', { commentAnonId: comment.anonymous_user_id, userId: user.id });
             const isEditing = editingCommentId === comment.id;
             const menuOpen = menuCommentId === comment.id;
 
             return (
               <div
                 key={comment.id}
-                style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}
+                style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}
                 onTouchStart={isOwner ? () => handleTouchStart(comment.id) : undefined}
                 onTouchEnd={isOwner ? handleTouchEnd : undefined}
                 onTouchMove={isOwner ? handleTouchEnd : undefined}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {generateAnonName(comment.anonymous_user_id)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <CommentAvatar />
+                    <button
+                      style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit' }}
+                      onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}
+                    >
+                      {comment.author_anon_number != null ? `Anonymous ${comment.author_anon_number}` : generateAnonName(comment.anonymous_user_id)}
+                    </button>
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {timeAgo(comment.created_at)}
@@ -237,9 +452,16 @@ export default function PostDetail() {
                     </div>
                   </div>
                 ) : (
-                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                    {comment.body}
-                  </p>
+                  <>
+                    <CommentText body={comment.body} />
+                    {comment.image_url && (
+                      <img
+                        src={comment.image_url}
+                        alt="Comment attachment"
+                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, marginTop: 8, objectFit: 'contain', display: 'block' }}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             );

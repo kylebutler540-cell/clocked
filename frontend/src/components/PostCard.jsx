@@ -7,6 +7,32 @@ import { useToast } from '../context/ToastContext';
 import PaywallModal from './PaywallModal';
 import FlagModal from './FlagModal';
 
+// Module-level reaction cache: survives navigation within the same browser session
+// Falls back to localStorage for cross-session persistence
+const _reactionCache = new Map(); // postId -> 'like' | 'dislike' | null
+
+function getCachedReaction(postId) {
+  if (_reactionCache.has(postId)) return _reactionCache.get(postId);
+  try {
+    const v = localStorage.getItem(`clocked-reaction-${postId}`);
+    if (v) { _reactionCache.set(postId, v); return v; }
+  } catch {}
+  return null;
+}
+
+function setCachedReaction(postId, value) {
+  _reactionCache.set(postId, value);
+  try {
+    if (value) localStorage.setItem(`clocked-reaction-${postId}`, value);
+    else localStorage.removeItem(`clocked-reaction-${postId}`);
+  } catch {}
+}
+
+function clearCachedReaction(postId) {
+  _reactionCache.delete(postId);
+  try { localStorage.removeItem(`clocked-reaction-${postId}`); } catch {}
+}
+
 const RATING_EMOJIS = [
   { value: 'BAD', emoji: '😡', color: '#EF4444' },
   { value: 'NEUTRAL', emoji: '😐', color: '#EAB308' },
@@ -36,17 +62,29 @@ function RatingBadge({ value }) {
       background: `${r.color}22`,
       color: r.color,
       border: `1px solid ${r.color}44`,
-      filter: r.greenFilter ? 'hue-rotate(85deg) saturate(1.4) brightness(1.1)' : 'none',
       flexShrink: 0,
     }}>
-      <span style={{ fontSize: 15 }}>{r.emoji}</span>
+      <span style={{ fontSize: 15, filter: r.greenFilter ? 'hue-rotate(85deg) saturate(1.4) brightness(1.1)' : 'none' }}>{r.emoji}</span>
       {value === 'BAD' ? 'Bad' : value === 'NEUTRAL' ? 'Neutral' : 'Good'}
     </span>
   );
 }
 
 export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
-  const [post, setPost] = useState(initialPost);
+  // Apply cached reaction as fallback if server didn't return user context
+  const getInitialPost = () => {
+    if (initialPost.liked || initialPost.disliked) {
+      // Server knows — sync cache to match
+      setCachedReaction(initialPost.id, initialPost.liked ? 'like' : 'dislike');
+      return initialPost;
+    }
+    const cached = getCachedReaction(initialPost.id);
+    if (cached === 'like') return { ...initialPost, liked: true, disliked: false };
+    if (cached === 'dislike') return { ...initialPost, liked: false, disliked: true };
+    return initialPost;
+  };
+
+  const [post, setPost] = useState(getInitialPost);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -60,6 +98,22 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
   const isMock = post.id?.startsWith('mock-');
   const isOwner = !isMock && user?.id && post.anonymous_user_id === user.id;
 
+  // When the parent re-fetches and passes a fresh initialPost, re-apply cache if server has no reaction
+  useEffect(() => {
+    if (!initialPost.liked && !initialPost.disliked) {
+      const cached = getCachedReaction(initialPost.id);
+      if (cached === 'like') {
+        setPost(p => ({ ...p, liked: true, disliked: false }));
+      } else if (cached === 'dislike') {
+        setPost(p => ({ ...p, liked: false, disliked: true }));
+      }
+    } else {
+      // Server returned a real reaction — trust it and sync cache
+      setCachedReaction(initialPost.id, initialPost.liked ? 'like' : 'dislike');
+      setPost(p => ({ ...p, liked: initialPost.liked, disliked: initialPost.disliked }));
+    }
+  }, [initialPost.id, initialPost.liked, initialPost.disliked]);
+
   useEffect(() => {
     function handleOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -72,18 +126,64 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
 
   async function handleLike() {
     if (isMock) return;
+    const prev = { liked: post.liked, disliked: post.disliked, likes: post.likes, dislikes: post.dislikes };
+    const prevCached = getCachedReaction(post.id);
+
+    // Optimistic update
+    if (post.liked) {
+      setPost(p => ({ ...p, liked: false, likes: p.likes - 1 }));
+      clearCachedReaction(post.id);
+    } else if (post.disliked) {
+      setPost(p => ({ ...p, liked: true, disliked: false, likes: p.likes + 1, dislikes: p.dislikes - 1 }));
+      setCachedReaction(post.id, 'like');
+    } else {
+      setPost(p => ({ ...p, liked: true, likes: p.likes + 1 }));
+      setCachedReaction(post.id, 'like');
+    }
+
     try {
       const res = await api.post(`/posts/${post.id}/like`);
       setPost(p => ({ ...p, likes: res.data.likes, dislikes: res.data.dislikes, liked: res.data.liked, disliked: res.data.disliked }));
-    } catch { addToast('Failed to like post'); }
+      if (res.data.liked) setCachedReaction(post.id, 'like');
+      else if (res.data.disliked) setCachedReaction(post.id, 'dislike');
+      else clearCachedReaction(post.id);
+    } catch (err) {
+      setPost(p => ({ ...p, ...prev }));
+      if (prevCached) setCachedReaction(post.id, prevCached);
+      else clearCachedReaction(post.id);
+      addToast(err.response?.status === 401 ? 'Sign in to like posts' : 'Failed to like post');
+    }
   }
 
   async function handleDislike() {
     if (isMock) return;
+    const prev = { liked: post.liked, disliked: post.disliked, likes: post.likes, dislikes: post.dislikes };
+    const prevCached = getCachedReaction(post.id);
+
+    // Optimistic update
+    if (post.disliked) {
+      setPost(p => ({ ...p, disliked: false, dislikes: p.dislikes - 1 }));
+      clearCachedReaction(post.id);
+    } else if (post.liked) {
+      setPost(p => ({ ...p, disliked: true, liked: false, dislikes: p.dislikes + 1, likes: p.likes - 1 }));
+      setCachedReaction(post.id, 'dislike');
+    } else {
+      setPost(p => ({ ...p, disliked: true, dislikes: p.dislikes + 1 }));
+      setCachedReaction(post.id, 'dislike');
+    }
+
     try {
       const res = await api.post(`/posts/${post.id}/dislike`);
       setPost(p => ({ ...p, likes: res.data.likes, dislikes: res.data.dislikes, liked: res.data.liked, disliked: res.data.disliked }));
-    } catch { addToast('Failed to dislike post'); }
+      if (res.data.disliked) setCachedReaction(post.id, 'dislike');
+      else if (res.data.liked) setCachedReaction(post.id, 'like');
+      else clearCachedReaction(post.id);
+    } catch (err) {
+      setPost(p => ({ ...p, ...prev }));
+      if (prevCached) setCachedReaction(post.id, prevCached);
+      else clearCachedReaction(post.id);
+      addToast(err.response?.status === 401 ? 'Sign in to dislike posts' : 'Failed to dislike post');
+    }
   }
 
   async function handleSave() {
@@ -91,7 +191,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
       const res = await api.post(`/posts/${post.id}/save`);
       setPost(p => ({ ...p, saved: res.data.saved }));
       addToast(res.data.saved ? 'Post saved' : 'Post unsaved');
-    } catch { addToast('Failed to save post'); }
+    } catch (err) { addToast(err.response?.status === 401 ? 'Sign in to save posts' : 'Failed to save post'); }
   }
 
   function handleEmployerClick(e) {
@@ -189,7 +289,14 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
 
         {/* Posted by + time */}
         <div className="post-byline">
-          Posted by <span className="post-byline-user">{generateAnonName(post.anonymous_user_id)}</span>
+          Posted by{' '}
+          <button
+            className="post-byline-user"
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }}
+            onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
+          >
+            {post.author_anon_number != null ? `Anonymous ${post.author_anon_number}` : generateAnonName(post.anonymous_user_id)}
+          </button>
           <span className="post-byline-sep">·</span>
           {timeAgo(post.created_at)}
         </div>
@@ -279,27 +386,24 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
               onClick={handleLike}
               aria-label="Like"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={post.liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
                 <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
               </svg>
             </button>
-            {post.likes > 0 && (
-              <span className="vote-score" style={{ color: '#22C55E' }}>+{post.likes}</span>
-            )}
+            <span className="vote-score" style={{ color: post.liked ? '#22C55E' : 'var(--text-muted)' }}>{post.likes}</span>
+            <div className="vote-divider" />
             <button
               className={`vote-btn${post.disliked ? ' active-down' : ''}`}
               onClick={handleDislike}
               aria-label="Dislike"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={post.disliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
                 <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
               </svg>
             </button>
-            {post.dislikes > 0 && (
-              <span className="vote-score" style={{ color: '#EF4444' }}>-{post.dislikes}</span>
-            )}
+            <span className="vote-score" style={{ color: post.disliked ? '#EF4444' : 'var(--text-muted)' }}>{post.dislikes}</span>
           </div>
 
           {/* Comments */}

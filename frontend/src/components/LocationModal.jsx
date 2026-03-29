@@ -38,6 +38,7 @@ export default function LocationModal({ onClose }) {
           const res = await api.get('/locations/reverse', { params: { lat: latitude, lng: longitude } });
           if (res.data.city) {
             localStorage.setItem('userLocation', res.data.city);
+            dispatchLocationChange(res.data.city);
             onClose(res.data.city);
           } else {
             setError('Could not detect your city. Please type it manually.');
@@ -51,9 +52,14 @@ export default function LocationModal({ onClose }) {
     );
   }
 
+  function dispatchLocationChange(city) {
+    window.dispatchEvent(new CustomEvent('locationchange', { detail: { city } }));
+  }
+
   function handleSelect(prediction) {
     const city = `${prediction.city}${prediction.region ? ', ' + prediction.region.split(',')[0].trim() : ''}`;
     localStorage.setItem('userLocation', city);
+    dispatchLocationChange(city);
     onClose(city);
   }
 

@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import PostCard from './PostCard';
+
+// Module-level cache: survives navigation within the same session
+// key = JSON.stringify(filters) → { posts, nextCursor, ts }
+const _feedCache = new Map();
 
 function SkeletonCard() {
   return (
@@ -60,10 +65,19 @@ const MOCK_POST_2 = {
   disliked: false,
 };
 
-export default function Feed({ filters = {} }) {
-  const [posts, setPosts] = useState([]);
-  const [nextCursor, setNextCursor] = useState(null);
-  const [loading, setLoading] = useState(true);
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes — background refresh after this
+
+export default function Feed({ filters = {}, employerInfo = null, emptyState = null }) {
+  const navigate = useNavigate();
+  const isCompanyFeed = !!filters.employer_place_id;
+  const isTopRated = filters.sort === 'top';
+  const cacheKey = JSON.stringify(filters);
+
+  const cached = _feedCache.get(cacheKey);
+  const [posts, setPosts] = useState(cached?.posts || []);
+  const [nextCursor, setNextCursor] = useState(cached?.nextCursor || null);
+  // If we have cached data, skip the loading skeleton entirely
+  const [loading, setLoading] = useState(!cached);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const observerRef = useRef(null);
@@ -79,14 +93,40 @@ export default function Feed({ filters = {} }) {
     } catch (err) {
       throw err;
     }
-  }, [JSON.stringify(filters)]);
+  }, [cacheKey]);
 
   useEffect(() => {
+    const cached = _feedCache.get(cacheKey);
+    const isStale = !cached || (Date.now() - cached.ts > CACHE_TTL);
+
+    if (cached && !isStale) {
+      // Fresh cache — show immediately, no fetch needed
+      setPosts(cached.posts);
+      setNextCursor(cached.nextCursor);
+      setLoading(false);
+      return;
+    }
+
+    if (cached && isStale) {
+      // Stale cache — show cached data instantly, then silently refresh
+      setPosts(cached.posts);
+      setNextCursor(cached.nextCursor);
+      setLoading(false);
+      fetchPosts().then(({ posts, nextCursor }) => {
+        _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
+        setPosts(posts);
+        setNextCursor(nextCursor);
+      }).catch(() => {});
+      return;
+    }
+
+    // No cache — show skeleton and fetch
     setLoading(true);
     setPosts([]);
     setNextCursor(null);
     fetchPosts()
       .then(({ posts, nextCursor }) => {
+        _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
         setPosts(posts);
         setNextCursor(nextCursor);
       })
@@ -113,7 +153,11 @@ export default function Feed({ filters = {} }) {
     setLoadingMore(true);
     try {
       const { posts: newPosts, nextCursor: newCursor } = await fetchPosts(nextCursor);
-      setPosts(prev => [...prev, ...newPosts]);
+      setPosts(prev => {
+        const merged = [...prev, ...newPosts];
+        _feedCache.set(cacheKey, { posts: merged, nextCursor: newCursor, ts: Date.now() });
+        return merged;
+      });
       setNextCursor(newCursor);
     } catch {
       // silently fail
@@ -125,29 +169,27 @@ export default function Feed({ filters = {} }) {
   if (loading) {
     return (
       <div className="feed">
-        {!filters.employer_place_id && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
-        {!filters.employer_place_id && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
+        {!filters.employer_place_id && !isTopRated && !filters.userId && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
+        {!filters.employer_place_id && !isTopRated && !filters.userId && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
         {[1,2,3].map(i => <SkeletonCard key={i} />)}
       </div>
     );
   }
 
-  // Only show mock posts on the main feed, not on company-specific pages
-  const showMockPosts = !filters.employer_place_id;
-
-  // Filter mock posts by rating if a rating filter is active
-  const filteredMock1 = showMockPosts && (!filters.rating || filters.rating === MOCK_POST.rating_emoji) ? MOCK_POST : null;
-  const filteredMock2 = showMockPosts && (!filters.rating || filters.rating === MOCK_POST_2.rating_emoji) ? MOCK_POST_2 : null;
-
   return (
     <div className="feed">
-      {filteredMock1 && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
-      {filteredMock2 && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
       {posts.map(post => (
         <PostCard
           key={post.id}
           post={post}
-          onDelete={() => setPosts(prev => prev.filter(p => p.id !== post.id))}
+          onDelete={() => {
+            setPosts(prev => {
+              const updated = prev.filter(p => p.id !== post.id);
+              const existing = _feedCache.get(cacheKey);
+              if (existing) _feedCache.set(cacheKey, { ...existing, posts: updated });
+              return updated;
+            });
+          }}
         />
       ))}
 
@@ -161,16 +203,22 @@ export default function Feed({ filters = {} }) {
       )}
 
       {!nextCursor && posts.length === 0 && (
-        <div className="feed-first-cta">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-          </svg>
-          <h3>Be the first to review a workplace near you</h3>
-          <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
-          <a href="/create" className="btn btn-primary" style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}>
-            Write a Review
-          </a>
-        </div>
+        emptyState ? emptyState : (
+          <div className="feed-first-cta">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            <h3>{isCompanyFeed ? 'Be the first to review this workplace' : 'Be the first to review a workplace near you'}</h3>
+            <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}
+              onClick={() => navigate('/create', employerInfo ? { state: { employer: employerInfo } } : {})}
+            >
+              Write a Review
+            </button>
+          </div>
+        )
       )}
 
       {!nextCursor && posts.length > 0 && (

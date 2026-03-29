@@ -10,5 +10,11 @@
     "db:migrate": "cd backend && npx prisma migrate dev --schema=../prisma/schema.prisma",
     "db:seed": "node prisma/seed.js",
     "build:frontend": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }

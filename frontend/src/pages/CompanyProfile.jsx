@@ -1,30 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import Feed from '../components/Feed';
+import StarRating from '../components/StarRating';
+
+const GREEN_EMOJI_FILTER = 'hue-rotate(85deg) saturate(1.4) brightness(1.1)';
 
 const FILTER_OPTIONS = [
   { label: 'All', value: null, color: null },
-  { label: '😡 Bad', value: 'BAD', color: '#EF4444' },
-  { label: '😐 Neutral', value: 'NEUTRAL', color: '#EAB308' },
-  { label: '😊 Good', value: 'GOOD', color: '#22C55E' },
+  { label: 'Bad', emoji: '😡', value: 'BAD', color: '#EF4444' },
+  { label: 'Neutral', emoji: '😐', value: 'NEUTRAL', color: '#EAB308' },
+  { label: 'Good', emoji: '😊', value: 'GOOD', color: '#22C55E', greenEmoji: true },
 ];
 
 export default function CompanyProfile() {
   const { placeId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const stateInfo = location.state || {};
 
   const [profile, setProfile] = useState(null);
   const [ratingFilter, setRatingFilter] = useState(null);
-  const [keyword, setKeyword] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const inputRef = useRef(null);
 
   useEffect(() => {
     api.get(`/employers/profile/${placeId}`)
       .then(res => setProfile(res.data))
       .catch(() => {});
   }, [placeId]);
+
+  // Debounce keyword for live search
+  useEffect(() => {
+    const t = setTimeout(() => setKeyword(keywordInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [keywordInput]);
 
   const total = profile?.total_reviews || 0;
   const counts = profile?.rating_counts || { GOOD: 0, NEUTRAL: 0, BAD: 0 };
@@ -34,10 +45,20 @@ export default function CompanyProfile() {
     return `${Math.round((count / total) * 100)}%`;
   }
 
-  function handleKeywordSearch(e) {
-    e.preventDefault();
-    setKeyword(keywordInput.trim());
+  function handleFilterClick(value) {
+    setRatingFilter(value);
+    if (value === null) {
+      setKeywordInput('');
+      setKeyword('');
+      inputRef.current?.blur();
+    }
   }
+
+  const employerInfo = {
+    place_id: placeId,
+    name: profile?.employer_name || stateInfo.name,
+    address: profile?.employer_address || stateInfo.address,
+  };
 
   const feedFilters = {
     employer_place_id: placeId,
@@ -46,7 +67,7 @@ export default function CompanyProfile() {
   };
 
   return (
-    <div>
+    <div className="company-page">
       {/* Company header */}
       <div className="company-header">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
@@ -59,16 +80,28 @@ export default function CompanyProfile() {
           }}>
             🏢
           </div>
-          <div>
-            <h1 className="company-name">
-              {profile?.employer_name || stateInfo.name || 'Company'}
-            </h1>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h1 className="company-name" style={{ margin: 0 }}>
+                {profile?.employer_name || stateInfo.name || 'Company'}
+              </h1>
+              <StarRating placeId={placeId} />
+            </div>
             <p className="company-address">
               {profile?.employer_address || stateInfo.address || ''}
             </p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-              {total} {total === 1 ? 'review' : 'reviews'}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                {total} {total === 1 ? 'review' : 'reviews'}
+              </p>
+              <button
+                className="btn btn-primary"
+                style={{ padding: '6px 14px', fontSize: 13 }}
+                onClick={() => navigate('/create', { state: { employer: employerInfo } })}
+              >
+                Write a Review
+              </button>
+            </div>
           </div>
         </div>
 
@@ -76,7 +109,7 @@ export default function CompanyProfile() {
         {total > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div className="rating-bar">
-              <span className="rating-bar-label">😊</span>
+              <span className="rating-bar-label" style={{ filter: GREEN_EMOJI_FILTER }}>😊</span>
               <div className="rating-bar-track">
                 <div className="rating-bar-fill fill-good" style={{ width: barWidth(counts.GOOD) }} />
               </div>
@@ -100,23 +133,44 @@ export default function CompanyProfile() {
         )}
       </div>
 
-      {/* Keyword search */}
+      {/* Live keyword search */}
       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-        <form onSubmit={handleKeywordSearch} style={{ display: 'flex', gap: 8 }}>
-          <div className="search-input-wrapper" style={{ flex: 1 }}>
-            <span className="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-            <input
-              className="form-input"
-              type="text"
-              value={keywordInput}
-              onChange={e => setKeywordInput(e.target.value)}
-              placeholder="Search reviews (pay, management...)"
-            />
-          </div>
-          <button type="submit" className="btn btn-secondary" style={{ padding: '10px 14px' }}>
-            Go
-          </button>
-        </form>
+        <div className="search-input-wrapper" style={{ display: 'block' }}>
+          <span className="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input
+            ref={inputRef}
+            className="form-input"
+            type="text"
+            value={keywordInput}
+            onChange={e => setKeywordInput(e.target.value)}
+            placeholder="Search reviews (pay, management...)"
+            style={{ paddingRight: keywordInput.length > 0 ? 36 : undefined }}
+          />
+          {keywordInput.length > 0 && (
+            <button
+              type="button"
+              onClick={() => { setKeywordInput(''); setKeyword(''); inputRef.current?.blur(); }}
+              style={{
+                position: 'absolute',
+                right: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 6px',
+                color: 'var(--text-muted)',
+                fontSize: 18,
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Rating filter tabs */}
@@ -128,7 +182,7 @@ export default function CompanyProfile() {
             <button
               key={opt.label}
               className="filter-tab"
-              onClick={() => setRatingFilter(opt.value)}
+              onClick={() => handleFilterClick(opt.value)}
               style={color ? {
                 background: isActive ? color : `${color}22`,
                 borderColor: color,
@@ -141,13 +195,16 @@ export default function CompanyProfile() {
                 boxShadow: isActive ? '0 2px 8px rgba(168,85,247,0.3)' : 'none',
               }}
             >
+              {opt.emoji && (
+                <span style={opt.greenEmoji ? { filter: GREEN_EMOJI_FILTER } : {}}>{opt.emoji} </span>
+              )}
               {opt.label}
             </button>
           );
         })}
       </div>
 
-      <Feed filters={feedFilters} />
+      <Feed filters={feedFilters} employerInfo={employerInfo} />
     </div>
   );
 }

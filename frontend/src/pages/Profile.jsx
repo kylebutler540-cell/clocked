@@ -1,24 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
-import { generateAnonName } from '../lib/utils';
 import api from '../lib/api';
+import Feed from '../components/Feed';
+import PostCard from '../components/PostCard';
 
 const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
 
-export default function Profile() {
-  const { user, logout, isSubscribed } = useAuth();
-  const { theme, toggle } = useTheme();
-  const { addToast } = useToast();
+function EmptyState({ text }) {
+  return (
+    <div className="profile-empty-state">
+      <svg width="48" height="48" viewBox="0 0 100 100" style={{ marginBottom: 16 }}>
+        <rect width="100" height="100" rx="20" fill="var(--purple-glow)" />
+        <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="var(--purple)" textAnchor="middle">c</text>
+      </svg>
+      <p className="profile-empty-text">{text}</p>
+    </div>
+  );
+}
+
+function TabSpinner() {
+  return (
+    <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div className="spinner" style={{ margin: '0 auto' }} />
+    </div>
+  );
+}
+
+// Post list for posts/videos/photos/liked/disliked tabs
+function UserPostList({ url, emptyState }) {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api.get(url)
+      .then(res => setPosts(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false));
+  }, [url]);
+
+  if (loading) return <TabSpinner />;
+  if (posts.length === 0) return emptyState || <EmptyState text="Nothing here yet." />;
+
+  return (
+    <div className="feed">
+      {posts.map(post => (
+        <PostCard
+          key={post.id}
+          post={post}
+          onDelete={() => setPosts(prev => prev.filter(p => p.id !== post.id))}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Comment history tab
+function UserCommentList() {
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setLoading(true);
+    api.get('/posts/user/comments')
+      .then(res => setComments(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setComments([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <TabSpinner />;
+  if (comments.length === 0) return <EmptyState text="You haven't commented on any posts yet." />;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      {comments.map(comment => (
+        <div
+          key={comment.id}
+          style={{
+            background: 'var(--bg-card)',
+            borderBottom: '1px solid var(--border)',
+            padding: '16px 20px',
+            cursor: 'pointer',
+          }}
+          onClick={() => navigate(`/post/${comment.post_id}`)}
+        >
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>
+              on <strong style={{ color: 'var(--text-primary)' }}>{comment.post_employer_name || 'a post'}</strong>
+              {comment.post_header && (
+                <span style={{ color: 'var(--text-muted)' }}> — {comment.post_header}</span>
+              )}
+            </span>
+          </div>
+          <p style={{ fontSize: 15, color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>{comment.body}</p>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+            {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function Profile() {
+  const navigate = useNavigate();
+  const { userId: viewingUserId } = useParams();
+  const { user, isSubscribed, login, register } = useAuth();
+  const { addToast } = useToast();
+  const [activeTab, setActiveTab] = useState('posts');
   const [showLogin, setShowLogin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
-  const { login, register } = useAuth();
+  const [publicUser, setPublicUser] = useState(null);
+
+  const isOwnProfile = !viewingUserId || viewingUserId === user?.id;
+
+  // For public profile (/profile/:userId)
+  useEffect(() => {
+    if (viewingUserId && !isOwnProfile) {
+      api.get(`/auth/user/${viewingUserId}`)
+        .then(res => setPublicUser(res.data))
+        .catch(() => {});
+    }
+  }, [viewingUserId, isOwnProfile]);
 
   // Mount Google button when login modal opens
   useEffect(() => {
@@ -66,109 +178,140 @@ export default function Profile() {
     }
   }
 
-  async function handleSubscribe() {
-    try {
-      const res = await api.post('/subscriptions/checkout');
-      if (res.data.url) window.location.href = res.data.url;
-      else addToast('Payments not configured yet');
-    } catch {
-      addToast('Failed to start checkout');
-    }
+  const avatarLetter = user?.email ? user.email[0].toUpperCase() : 'A';
+  const displayName = user?.email ? user.email.split('@')[0] : 'Anonymous';
+
+  const postsEmptyState = (
+    <div className="profile-empty-state">
+      <svg width="56" height="56" viewBox="0 0 100 100" style={{ marginBottom: 16 }}>
+        <rect width="100" height="100" rx="20" fill="var(--purple-glow)" />
+        <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="var(--purple)" textAnchor="middle">c</text>
+      </svg>
+      <p className="profile-empty-title">You haven't made any posts yet.</p>
+      <p className="profile-empty-text">Create your first post and share your experience anonymously.</p>
+      <button
+        className="btn btn-primary"
+        style={{ marginTop: 20, padding: '11px 24px', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+        onClick={() => navigate('/create')}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Create Post
+      </button>
+    </div>
+  );
+
+  const tabs = [
+    { id: 'posts', label: 'Posts' },
+    { id: 'comments', label: 'Comments' },
+    { id: 'videos', label: 'Videos' },
+    { id: 'photos', label: 'Photos' },
+    { id: 'liked', label: 'Liked' },
+    { id: 'disliked', label: 'Disliked' },
+  ];
+
+  // Public profile view (viewing another user's profile)
+  if (!isOwnProfile) {
+    const displayName = publicUser?.anon_number ? `Anonymous ${publicUser.anon_number}` : 'Anonymous User';
+    const avatarChar = publicUser?.anon_number ? String(publicUser.anon_number)[0] : 'A';
+    return (
+      <div className="profile-page">
+        <div className="profile-hero">
+          <div className="profile-avatar-large">{avatarChar}</div>
+          <div className="profile-hero-info">
+            <div className="profile-username-large">{displayName}</div>
+            <button
+              className="btn btn-secondary"
+              style={{ marginTop: 10, padding: '7px 20px', fontSize: 13, fontWeight: 600 }}
+              onClick={() => addToast('Follow feature coming soon')}
+            >
+              Follow
+            </button>
+          </div>
+        </div>
+        <UserPostList url={`/posts/user/${viewingUserId}/posts`} />
+      </div>
+    );
   }
 
-  const username = user ? generateAnonName(user.id) : 'Anonymous';
-
   return (
-    <div className="profile-page" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
-      <div className="profile-avatar">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </div>
-      <div className="profile-username">{user?.email || username}</div>
-      <div className="profile-subtitle">
-        {isSubscribed ? (
-          <span className="sub-badge">✦ Pro Member</span>
-        ) : (
-          'Anonymous member'
-        )}
+    <div className="profile-page">
+
+      {/* Hero: avatar + info */}
+      <div className="profile-hero">
+        <div className="profile-avatar-large">{avatarLetter}</div>
+        <div className="profile-hero-info">
+          <div className="profile-username-large">{displayName}</div>
+          {user?.email && (
+            <div className="profile-hero-email">{user.email}</div>
+          )}
+          {user?.anon_number && (
+            <div className="profile-hero-anon">Anonymous {user.anon_number}</div>
+          )}
+          {isSubscribed && <span className="sub-badge" style={{ marginTop: 8 }}>✦ Pro Member</span>}
+          {!user?.email && user && (
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: 12, padding: '8px 20px', fontSize: 13 }}
+              onClick={() => setShowLogin(true)}
+            >
+              Sign In
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Subscription */}
-      {!isSubscribed && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.1))',
-          border: '1px solid rgba(168,85,247,0.3)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '16px',
-          marginBottom: 24,
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
-            🔓 Unlock Full Reviews
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            $2.99/month — 7-day free trial
-          </div>
-          <button className="btn btn-primary" onClick={handleSubscribe} style={{ padding: '10px 18px' }}>
-            Start Free Trial
+      {!user && (
+        <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 16 }}>Sign in to view your profile</p>
+          <button className="btn btn-primary" style={{ padding: '9px 24px', fontSize: 14 }} onClick={() => setShowLogin(true)}>
+            Sign In
           </button>
         </div>
       )}
 
-      {/* Account section */}
-      <div className="profile-section">
-        <div className="profile-section-title">Account</div>
-
-        {user?.email ? (
-          <>
-            <div className="profile-menu-item" onClick={() => navigate('/saved')}>
-              <div className="profile-menu-left">
-                <span className="profile-menu-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                </span>
-                Saved Reviews
-              </div>
-              <span className="profile-menu-arrow">›</span>
-            </div>
-            <div className="profile-menu-item" onClick={logout}>
-              <div className="profile-menu-left">
-                <span className="profile-menu-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                </span>
-                Sign Out
-              </div>
-              <span className="profile-menu-arrow">›</span>
-            </div>
-          </>
-        ) : (
-          <div className="profile-menu-item" onClick={() => setShowLogin(true)}>
-            <div className="profile-menu-left">
-              <span className="profile-menu-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              </span>
-              Create Account / Sign In
-            </div>
-            <span className="profile-menu-arrow">›</span>
+      {user && (
+        <>
+          {/* Tab bar */}
+          <div className="profile-tabs">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                className={`profile-tab${activeTab === tab.id ? ' active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
 
-      {/* Settings */}
-      <div className="profile-section">
-        <div className="profile-section-title">Settings</div>
+          {/* Content */}
+          {activeTab === 'posts' && (
+            <UserPostList url="/posts/user/posts" emptyState={postsEmptyState} />
+          )}
 
-        <div className="profile-menu-item" onClick={toggle}>
-          <div className="profile-menu-left">
-            <span className="profile-menu-icon">
-              {theme === 'dark' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-              )}
-            </span>
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </div>
-          <span className="profile-menu-arrow">›</span>
-        </div>
-      </div>
+          {activeTab === 'comments' && (
+            <UserCommentList />
+          )}
+
+          {activeTab === 'videos' && (
+            <UserPostList url="/posts/user/videos" user={user} />
+          )}
+
+          {activeTab === 'photos' && (
+            <UserPostList url="/posts/user/photos" user={user} />
+          )}
+
+          {activeTab === 'liked' && (
+            <UserPostList url="/posts/user/liked" user={user} />
+          )}
+
+          {activeTab === 'disliked' && (
+            <UserPostList url="/posts/user/disliked" user={user} />
+          )}
+        </>
+      )}
 
       {/* Auth modal */}
       {showLogin && (
@@ -182,7 +325,6 @@ export default function Profile() {
                 : 'Welcome back.'}
             </p>
 
-            {/* Google Sign-In */}
             <div id="profile-google-btn" style={{ marginBottom: 16, width: '100%' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

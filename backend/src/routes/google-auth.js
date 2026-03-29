@@ -3,6 +3,7 @@ const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
+const { generateUniqueAnonNumber } = require('../lib/anonNumber');
 
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -43,11 +44,13 @@ router.post('/google', async (req, res) => {
     let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
+      const anonNum = await generateUniqueAnonNumber();
       user = await prisma.user.create({
         data: {
           email,
           anonymous_id: uuidv4(),
           google_id: googleId,
+          anon_number: anonNum,
         },
       });
     } else if (!user.google_id) {
@@ -88,6 +91,7 @@ router.post('/google', async (req, res) => {
         email: user.email,
         anonymous_id: user.anonymous_id,
         subscription_status: user.subscription_status,
+        anon_number: user.anon_number,
       },
     });
   } catch (err) {

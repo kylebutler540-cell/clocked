@@ -342,6 +342,7 @@ function AppInner() {
               <Route path="/create" element={<Create />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/company/:placeId" element={<CompanyProfile />} />
               <Route path="/saved" element={<Saved />} />
