@@ -86,7 +86,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showGetApp, setShowGetApp] = useState(false);
   const menuRef = React.useRef(null);
@@ -135,7 +135,9 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
         >
           Get App
         </button>
-        {user?.email ? (
+        {authLoading ? (
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--border)' }} />
+        ) : user?.email ? (
           <div
             onClick={() => navigate('/profile')}
             style={{

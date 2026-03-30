@@ -337,7 +337,7 @@ export default function Profile() {
     }
   }
 
-  const ownDisplayName = user?.display_name || (user?.email ? user.email.split('@')[0] : 'Anonymous');
+  const ownDisplayName = user?.display_name || user?.username || 'Anonymous';
   const ownAvatarLetter = ownDisplayName[0]?.toUpperCase() || 'A';
 
   const postsEmptyState = (
