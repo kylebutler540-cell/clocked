@@ -416,10 +416,13 @@ router.post('/', optionalAuth, async (req, res) => {
     if (!rating_emoji || !['BAD', 'NEUTRAL', 'GOOD'].includes(rating_emoji)) {
       return res.status(400).json({ error: 'Valid rating required (BAD, NEUTRAL, GOOD)' });
     }
-    if (!body || body.trim().length < 10) {
+    if (!header || !header.trim()) {
+      return res.status(400).json({ error: 'Headline is required' });
+    }
+    if (body && body.trim().length > 0 && body.trim().length < 10) {
       return res.status(400).json({ error: 'Review body must be at least 10 characters' });
     }
-    if (body.length > 5000) {
+    if (body && body.length > 5000) {
       return res.status(400).json({ error: 'Review body too long (max 5000 chars)' });
     }
 
@@ -441,7 +444,7 @@ router.post('/', optionalAuth, async (req, res) => {
         employer_address,
         rating_emoji,
         header: header?.trim() || null,
-        body: body.trim(),
+        body: body?.trim() || '',
         media_urls: Array.isArray(media_urls) ? media_urls.slice(0, 10) : [],
       },
       include: {

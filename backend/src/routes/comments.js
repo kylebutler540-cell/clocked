@@ -34,10 +34,10 @@ router.get('/', async (req, res) => {
 router.post('/', optionalAuth, async (req, res) => {
   try {
     const { body, image_url } = req.body;
-    if (!body || body.trim().length < 1) {
-      return res.status(400).json({ error: 'Comment body required' });
+    if ((!body || body.trim().length < 1) && !image_url) {
+      return res.status(400).json({ error: 'Comment must have text or an image' });
     }
-    if (body.length > 1000) {
+    if (body && body.length > 1000) {
       return res.status(400).json({ error: 'Comment too long (max 1000 chars)' });
     }
 
@@ -56,7 +56,7 @@ router.post('/', optionalAuth, async (req, res) => {
       data: {
         post_id: req.params.postId,
         anonymous_user_id: userId,
-        body: body.trim(),
+        body: body?.trim() || '',
         image_url: image_url || null,
       },
       include: { user: { select: { anon_number: true } } },
