@@ -114,11 +114,11 @@ export default function PostDetail() {
 
   async function handleComment(e) {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!commentText.trim() && !selectedImage) return;
     setSubmitting(true);
     try {
       const body = commentText.trim();
-      const res = await api.post(`/posts/${id}/comments`, { body, image_url: selectedImage?.dataUrl || null });
+      const res = await api.post(`/posts/${id}/comments`, { body: body || '', image_url: selectedImage?.dataUrl || null });
       setComments(prev => [...prev, res.data]);
       setCommentText('');
       setSelectedImage(null);
@@ -222,7 +222,7 @@ export default function PostDetail() {
               type="submit"
               className="btn btn-primary"
               style={{ padding: '8px 14px', flexShrink: 0 }}
-              disabled={submitting || !commentText.trim()}
+              disabled={submitting || (!commentText.trim() && !selectedImage)}
             >
               {submitting ? '...' : '↑'}
             </button>

@@ -74,8 +74,8 @@ export default function Create() {
     e.preventDefault();
     if (!employer) return addToast('Please select an employer');
     if (!rating) return addToast('Please choose a rating');
+    if (!header.trim()) return addToast('Please add a headline');
     if (body.trim().length > 0 && body.trim().length < 10) return addToast('Review must be at least 10 characters');
-    if (body.trim().length === 0 && mediaFiles.length === 0) return addToast('Add a photo or write something');
 
     setSubmitting(true);
     try {
@@ -88,7 +88,7 @@ export default function Create() {
         employer_name: employer.name,
         employer_address: employer.address || employer.description || '',
         rating_emoji: rating,
-        header: header.trim() || undefined,
+        header: header.trim(),
         body: body.trim(),
         media_urls,
       });
@@ -141,7 +141,7 @@ export default function Create() {
 
         {/* Header */}
         <div className="form-group">
-          <label className="form-label">Headline (optional)</label>
+          <label className="form-label">Headline *</label>
           <input
             className="form-input"
             type="text"
@@ -154,7 +154,7 @@ export default function Create() {
 
         {/* Body */}
         <div className="form-group">
-          <label className="form-label">Review *</label>
+          <label className="form-label">Review <span style={{color:'var(--text-muted)',fontWeight:400,fontSize:12}}>(optional)</span></label>
           <textarea
             className="form-input"
             value={body}
@@ -241,7 +241,7 @@ export default function Create() {
         <button
           type="submit"
           className="btn btn-primary btn-full"
-          disabled={submitting || !employer || !rating || (body.trim().length > 0 && body.trim().length < 10) || (body.trim().length === 0 && mediaFiles.length === 0)}
+          disabled={submitting || !employer || !rating || !header.trim() || (body.trim().length > 0 && body.trim().length < 10)}
         >
           {submitting ? 'Posting...' : 'Post Anonymously'}
         </button>
