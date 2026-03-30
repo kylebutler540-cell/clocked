@@ -5,70 +5,68 @@ const prisma = require('../lib/prisma');
 const router = express.Router();
 
 const GOOGLE_PLACES_BASE = 'https://maps.googleapis.com/maps/api/place';
+const GOOGLE_PLACES_V1 = 'https://places.googleapis.com/v1/places';
 
-// Search employers via Google Places autocomplete
+// Search employers via Google Places API v1 (new, fresher data)
 router.get('/search', async (req, res) => {
   try {
-    const { query, location } = req.query;
+    const { query, lat, lng, location } = req.query;
     if (!query) return res.status(400).json({ error: 'Query required' });
 
-    // Default bias to Grand Rapids, MI
-    const locationBias = location || 'Grand Rapids, MI';
+    // Use provided lat/lng or geocode location string, fallback to Grand Rapids
+    let latitude = parseFloat(lat) || null;
+    let longitude = parseFloat(lng) || null;
 
-    // Geocode the location string to lat/lng for Places API biasing
-    let latLng = '42.9634,-85.6681'; // Grand Rapids default
-    try {
-      const geoRes = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
-        params: { address: locationBias, key: process.env.GOOGLE_MAPS_API_KEY },
-      });
-      if (geoRes.data.status === 'OK' && geoRes.data.results[0]) {
-        const loc = geoRes.data.results[0].geometry.location;
-        latLng = `${loc.lat},${loc.lng}`;
-      }
-    } catch { /* use default */ }
-
-    const params = {
-      input: query,
-      key: process.env.GOOGLE_MAPS_API_KEY,
-      types: 'establishment',
-      language: 'en',
-      location: latLng,
-      radius: 50000, // 50km radius bias
-    };
-
-    const response = await axios.get(`${GOOGLE_PLACES_BASE}/autocomplete/json`, { params });
-    const data = response.data;
-
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Places API error:', data.status, data.error_message);
-      return res.status(502).json({ error: 'Places API error', details: data.status });
+    if (!latitude || !longitude) {
+      const locationBias = location || 'Grand Rapids, MI';
+      try {
+        const geoRes = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+          params: { address: locationBias, key: process.env.GOOGLE_MAPS_API_KEY },
+        });
+        if (geoRes.data.status === 'OK' && geoRes.data.results[0]) {
+          const loc = geoRes.data.results[0].geometry.location;
+          latitude = loc.lat;
+          longitude = loc.lng;
+        }
+      } catch { /* use default */ }
+      latitude = latitude || 42.9634;
+      longitude = longitude || -85.6681;
     }
 
-    // Fetch lat/lng for each prediction so frontend can show distance
-    const predictions = await Promise.all((data.predictions || []).slice(0, 5).map(async p => {
-      let lat = null, lng = null;
-      try {
-        const details = await axios.get(`${GOOGLE_PLACES_BASE}/details/json`, {
-          params: { place_id: p.place_id, fields: 'geometry', key: process.env.GOOGLE_MAPS_API_KEY },
-        });
-        if (details.data.status === 'OK') {
-          lat = details.data.result.geometry.location.lat;
-          lng = details.data.result.geometry.location.lng;
-        }
-      } catch { /* skip */ }
+    // Use new Places API v1 autocomplete
+    const response = await axios.post(`${GOOGLE_PLACES_V1}:autocomplete`, {
+      input: query,
+      includedPrimaryTypes: ['establishment'],
+      locationBias: {
+        circle: {
+          center: { latitude, longitude },
+          radius: 50000,
+        },
+      },
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+      },
+    });
+
+    const suggestions = response.data.suggestions || [];
+
+    const predictions = suggestions.slice(0, 5).map(s => {
+      const p = s.placePrediction;
       return {
-        place_id: p.place_id,
-        name: p.structured_formatting?.main_text || p.description,
-        address: p.structured_formatting?.secondary_text || '',
-        description: p.description,
-        lat,
-        lng,
+        place_id: p.placeId,
+        name: p.structuredFormat?.mainText?.text || p.text?.text || '',
+        address: p.structuredFormat?.secondaryText?.text || '',
+        description: p.text?.text || '',
+        lat: null,
+        lng: null,
       };
-    }));
+    });
 
     res.json({ predictions });
   } catch (err) {
-    console.error(err);
+    console.error('Employer search error:', err.response?.data || err.message);
     res.status(500).json({ error: 'Employer search failed' });
   }
 });
