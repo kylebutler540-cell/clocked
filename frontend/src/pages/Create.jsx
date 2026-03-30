@@ -74,7 +74,8 @@ export default function Create() {
     e.preventDefault();
     if (!employer) return addToast('Please select an employer');
     if (!rating) return addToast('Please choose a rating');
-    if (body.trim().length < 10) return addToast('Review must be at least 10 characters');
+    if (body.trim().length > 0 && body.trim().length < 10) return addToast('Review must be at least 10 characters');
+    if (body.trim().length === 0 && mediaFiles.length === 0) return addToast('Add a photo or write something');
 
     setSubmitting(true);
     try {
@@ -240,7 +241,7 @@ export default function Create() {
         <button
           type="submit"
           className="btn btn-primary btn-full"
-          disabled={submitting || !employer || !rating || body.trim().length < 10}
+          disabled={submitting || !employer || !rating || (body.trim().length > 0 && body.trim().length < 10) || (body.trim().length === 0 && mediaFiles.length === 0)}
         >
           {submitting ? 'Posting...' : 'Post Anonymously'}
         </button>

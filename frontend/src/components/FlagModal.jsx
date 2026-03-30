@@ -12,14 +12,18 @@ const REASONS = [
 
 export default function FlagModal({ postId, onClose }) {
   const [reason, setReason] = useState('');
+  const [otherText, setOtherText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { addToast } = useToast();
 
   async function handleSubmit() {
     if (!reason) return;
+    const finalReason = reason === 'Other' && otherText.trim()
+      ? `Other: ${otherText.trim()}`
+      : reason;
     setSubmitting(true);
     try {
-      await api.post(`/posts/${postId}/flag`, { reason });
+      await api.post(`/posts/${postId}/flag`, { reason: finalReason });
       addToast('Post reported. Thank you.');
       onClose();
     } catch {
@@ -28,6 +32,8 @@ export default function FlagModal({ postId, onClose }) {
       setSubmitting(false);
     }
   }
+
+  const canSubmit = reason && (reason !== 'Other' || otherText.trim().length > 0);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -38,29 +44,51 @@ export default function FlagModal({ postId, onClose }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
           {REASONS.map(r => (
-            <button
-              key={r}
-              style={{
-                padding: '12px 14px',
-                background: reason === r ? 'var(--purple-glow)' : 'var(--bg-input)',
-                border: `1px solid ${reason === r ? 'var(--purple)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius-md)',
-                textAlign: 'left',
-                fontSize: 15,
-                color: 'var(--text-primary)',
-                transition: 'all var(--transition)',
-              }}
-              onClick={() => setReason(r)}
-            >
-              {r}
-            </button>
+            <React.Fragment key={r}>
+              <button
+                style={{
+                  padding: '12px 14px',
+                  background: reason === r ? 'var(--purple-glow)' : 'var(--bg-input)',
+                  border: `1px solid ${reason === r ? 'var(--purple)' : 'var(--border)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  textAlign: 'left',
+                  fontSize: 15,
+                  color: 'var(--text-primary)',
+                  transition: 'all var(--transition)',
+                }}
+                onClick={() => setReason(r)}
+              >
+                {r}
+              </button>
+              {r === 'Other' && reason === 'Other' && (
+                <textarea
+                  autoFocus
+                  placeholder="Describe the reason..."
+                  value={otherText}
+                  onChange={e => setOtherText(e.target.value)}
+                  style={{
+                    width: '100%',
+                    minHeight: 80,
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--purple)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    resize: 'vertical',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              )}
+            </React.Fragment>
           ))}
         </div>
 
         <button
           className="btn btn-primary btn-full"
           onClick={handleSubmit}
-          disabled={!reason || submitting}
+          disabled={!canSubmit || submitting}
         >
           {submitting ? 'Submitting...' : 'Submit Report'}
         </button>
