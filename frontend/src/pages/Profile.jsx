@@ -241,7 +241,7 @@ function UserCommentList() {
 export default function Profile() {
   const navigate = useNavigate();
   const { userId: viewingUserId } = useParams();
-  const { user, isSubscribed, login, register, setUser } = useAuth();
+  const { user, loading: authInitializing, isSubscribed, login, register, setUser } = useAuth();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('posts');
   const [showLogin, setShowLogin] = useState(false);
@@ -368,6 +368,15 @@ export default function Profile() {
     { id: 'disliked', label: 'Disliked' },
   ];
 
+  // While auth is initializing, show a neutral loading state to prevent signed-out flash
+  if (authInitializing) {
+    return (
+      <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+        <div className="spinner" style={{ margin: '0 auto' }} />
+      </div>
+    );
+  }
+
   // Public profile view (viewing another user's profile)
   if (!isOwnProfile) {
     const pubName = publicUser?.display_name || (publicUser?.anon_number ? `Anonymous ${publicUser.anon_number}` : 'Anonymous User');
@@ -428,9 +437,6 @@ export default function Profile() {
           <div className="profile-username-large">{ownDisplayName}</div>
           {user?.username && (
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
-          )}
-          {user?.email && (
-            <div className="profile-hero-email">{user.email}</div>
           )}
           {user?.anon_number && (
             <div className="profile-hero-anon">Anonymous {user.anon_number}</div>
