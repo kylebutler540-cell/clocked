@@ -11,10 +11,18 @@
 | heartbeat-morning-on | 8 AM | — | Re-enables morning heartbeat |
 
 ## Coding Agent Defaults
-- **Default model:** `google/gemini-2.5-flash-preview` — use for most coding tasks
-- **Auto-upgrade to `anthropic/claude-sonnet-4-6`** when: complex multi-file logic, subtle bugs, architecture decisions, or quality is at risk — no need to ask, just do it and say which model was used
-- **Priority order:** App quality first → token savings second
-- **Batching:** Group related tasks into one agent session
+
+### ⚠️ Token Cost Priority: Minimize spend. $100 burned in 2 days — never again.
+
+| Task | Model Flag | When |
+|------|-----------|------|
+| Small UI fixes, single-file, simple logic | `--model claude-haiku-3-5` | Default for most Clocked UI tweaks |
+| Multi-file, moderate complexity | `google/gemini-2.5-flash-preview` (via main session agent) | Medium tasks |
+| Complex architecture, subtle bugs, risky refactors | `--model claude-sonnet-4-6` | Only when quality truly requires it |
+
+- **Always specify `--model claude-haiku-3-5`** in `claude` CLI calls unless the task is clearly complex
+- **Tight prompts** — only include what the agent needs, no extra context or file reads
+- **Batch related changes** into one agent session — never spawn multiple agents for related work
 - **Always deploy frontend via:** `cd clocked/app/frontend && railway up --service frontend`
 - **Never rely on git push alone for frontend** — Railway frontend is CLI-deployed only
 
