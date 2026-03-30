@@ -20,16 +20,30 @@ export default function StarRating({ placeId }) {
 
   async function handleRate(star) {
     if (saving) return;
+    // Optimistic update — show instantly
+    const prevRating = rating;
+    const prevAverage = average;
+    const prevTotal = totalRatings;
     setRating(star);
+    // Optimistically recalculate average
+    const newTotal = prevRating === 0 ? prevTotal + 1 : prevTotal;
+    const newAverage = prevRating === 0
+      ? (prevAverage * prevTotal + star) / newTotal
+      : (prevAverage * prevTotal - prevRating + star) / newTotal;
+    setAverage(newAverage);
+    setTotalRatings(newTotal);
     setSaving(true);
     try {
       await api.post('/ratings', { placeId, rating: star });
-      // Refresh average after upsert
+      // Confirm with server response
       const res = await api.get(`/ratings/${placeId}`);
       setAverage(res.data.averageRating || 0);
       setTotalRatings(res.data.totalRatings || 0);
     } catch {
-      // silently fail
+      // Revert on failure
+      setRating(prevRating);
+      setAverage(prevAverage);
+      setTotalRatings(prevTotal);
     } finally {
       setSaving(false);
     }
@@ -50,7 +64,7 @@ export default function StarRating({ placeId }) {
               cursor: 'pointer',
               fontSize: 22,
               color: filled ? '#A855F7' : 'var(--border)',
-              transition: 'color 0.1s',
+              transition: 'none',
               lineHeight: 1,
             }}
             onMouseEnter={() => setHovered(star)}

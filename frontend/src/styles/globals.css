@@ -31,7 +31,7 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
 
-  --transition: 0.15s ease;
+  --transition: 0.08s ease;
 
   /* Aliases for backward compat */
   --text: var(--text-primary);
@@ -1423,7 +1423,7 @@ textarea.form-input {
 .rating-bar-fill {
   height: 100%;
   border-radius: 4px;
-  transition: width 0.6s ease;
+  transition: width 0.2s ease;
 }
 
 .fill-good { background: linear-gradient(90deg, #22C55E, #16A34A); }
