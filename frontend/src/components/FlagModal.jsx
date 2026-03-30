@@ -16,6 +16,7 @@ export default function FlagModal({ postId, onClose }) {
   const [reason, setReason] = useState('');
   const [otherText, setOtherText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const { addToast } = useToast();
 
   async function handleSubmit() {
@@ -26,8 +27,7 @@ export default function FlagModal({ postId, onClose }) {
     setSubmitting(true);
     try {
       await api.post(`/posts/${postId}/flag`, { reason: finalReason });
-      addToast('Post reported. Thank you.');
-      onClose();
+      setSubmitted(true);
     } catch {
       addToast('Failed to report post');
     } finally {
@@ -36,6 +36,63 @@ export default function FlagModal({ postId, onClose }) {
   }
 
   const canSubmit = reason && (reason !== 'Other' || otherText.trim().length > 0);
+
+  if (submitted) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div
+          className="modal-sheet"
+          onClick={e => e.stopPropagation()}
+          style={{ textAlign: 'center', padding: '32px 24px 28px' }}
+        >
+          {/* Close X top right */}
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              fontSize: 18,
+              lineHeight: 1,
+              padding: 4,
+            }}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+
+          {/* Animated green checkmark */}
+          <div style={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            animation: 'scaleIn 0.2s ease',
+            boxShadow: '0 4px 20px rgba(34,197,94,0.35)',
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10 }}>
+            Report Submitted
+          </h2>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+            Your report has been submitted successfully, and our team is working to resolve the issue.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
