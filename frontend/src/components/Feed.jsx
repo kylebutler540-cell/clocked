@@ -120,10 +120,8 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
       return;
     }
 
-    // No cache — show skeleton and fetch
+    // No cache — show skeleton but don't clear existing posts until new ones arrive
     setLoading(true);
-    setPosts([]);
-    setNextCursor(null);
     fetchPosts()
       .then(({ posts, nextCursor }) => {
         _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });

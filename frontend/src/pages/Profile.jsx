@@ -140,18 +140,27 @@ function TabSpinner() {
   );
 }
 
+// Module-level cache for profile tab data — instant switching after first load
+const _profileTabCache = new Map();
+
 // Post list for posts/videos/photos/liked/disliked tabs
 function UserPostList({ url, emptyState }) {
   const navigate = useNavigate();
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = _profileTabCache.get(url);
+  const [posts, setPosts] = useState(cached || []);
+  const [loading, setLoading] = useState(!cached);
   const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
+    if (cached) return; // already have data, skip fetch
     setLoading(true);
     setAuthError(false);
     api.get(url)
-      .then(res => setPosts(Array.isArray(res.data) ? res.data : []))
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        _profileTabCache.set(url, data);
+        setPosts(data);
+      })
       .catch(err => {
         if (err.response?.status === 401) setAuthError(true);
         setPosts([]);
@@ -189,14 +198,20 @@ function UserPostList({ url, emptyState }) {
 
 // Comment history tab
 function UserCommentList() {
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedComments = _profileTabCache.get('comments');
+  const [comments, setComments] = useState(cachedComments || []);
+  const [loading, setLoading] = useState(!cachedComments);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (cachedComments) return;
     setLoading(true);
     api.get('/posts/user/comments')
-      .then(res => setComments(Array.isArray(res.data) ? res.data : []))
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        _profileTabCache.set('comments', data);
+        setComments(data);
+      })
       .catch(() => setComments([]))
       .finally(() => setLoading(false));
   }, []);
