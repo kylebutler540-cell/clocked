@@ -74,7 +74,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
           {isOwner && (
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', fontSize: 16, lineHeight: 1 }}
               onClick={() => onActionModal(comment)}>
-              <span style={{ fontWeight: 900, fontSize: 15, letterSpacing: 1, lineHeight: 1 }}>•••</span>
+              <span style={{ fontWeight: 900, fontSize: 13, letterSpacing: 0, lineHeight: 1 }}>•••</span>
             </button>
           )}
         </div>
@@ -370,18 +370,19 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Full PostCard — pinned at top, never pushed by comments */}
+          {/* Full PostCard — pinned at top, full width */}
           {post && (
-            <div style={{ position: 'relative', paddingRight: 36 }}>
+            <div>
+              {/* X button in its own row above the post */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '2px 10px 2px' }}>
+                <button onClick={onClose} style={{
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  borderRadius: '50%', width: 26, height: 26, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--text-secondary)', fontSize: 15, lineHeight: 1, fontWeight: 600,
+                }}>×</button>
+              </div>
               <PostCard post={post} />
-              {/* Close button — top right, clear of emoji */}
-              <button onClick={onClose} style={{
-                position: 'absolute', top: 10, right: 10, zIndex: 10,
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                borderRadius: '50%', width: 26, height: 26, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-secondary)', fontSize: 15, lineHeight: 1, fontWeight: 600,
-              }}>×</button>
             </div>
           )}
 
