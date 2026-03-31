@@ -117,6 +117,85 @@ router.get('/', optionalAuth, async (req, res) => {
 
 // IMPORTANT: All /user/* routes must come before /:id to avoid the param catching them
 
+// Get top-rated employers leaderboard (location-filtered)
+router.get('/top-employers', optionalAuth, async (req, res) => {
+  try {
+    const { location } = req.query;
+
+    // Fetch all posts with employer details
+    const posts = await prisma.post.findMany({
+      select: {
+        employer_place_id: true,
+        employer_name: true,
+        employer_address: true,
+        rating_emoji: true,
+      },
+    });
+
+    // Filter by location if provided (case-insensitive contains match)
+    let filtered = posts;
+    if (location) {
+      filtered = posts.filter(p =>
+        p.employer_address.toLowerCase().includes(location.toLowerCase())
+      );
+    }
+
+    // Group by employer_place_id and aggregate stats
+    const employerMap = new Map();
+    filtered.forEach(post => {
+      if (!employerMap.has(post.employer_place_id)) {
+        employerMap.set(post.employer_place_id, {
+          employer_place_id: post.employer_place_id,
+          employer_name: post.employer_name,
+          employer_address: post.employer_address,
+          reviews: [],
+        });
+      }
+      employerMap.get(post.employer_place_id).reviews.push(post.rating_emoji);
+    });
+
+    // Convert ratings to numeric values and calculate aggregates
+    // BAD=1, NEUTRAL=3, GOOD=5
+    const ratingMap = { BAD: 1, NEUTRAL: 3, GOOD: 5 };
+
+    const employers = Array.from(employerMap.values())
+      .map(emp => {
+        const reviews = emp.reviews;
+        const good_count = reviews.filter(r => r === 'GOOD').length;
+        const neutral_count = reviews.filter(r => r === 'NEUTRAL').length;
+        const bad_count = reviews.filter(r => r === 'BAD').length;
+        const avg_rating = reviews.length > 0
+          ? reviews.reduce((sum, rating) => sum + ratingMap[rating], 0) / reviews.length
+          : 0;
+
+        return {
+          employer_place_id: emp.employer_place_id,
+          employer_name: emp.employer_name,
+          employer_address: emp.employer_address,
+          avg_rating: Math.round(avg_rating * 10) / 10, // Round to 1 decimal place
+          review_count: reviews.length,
+          good_count,
+          neutral_count,
+          bad_count,
+        };
+      })
+      .filter(emp => emp.review_count >= 2) // Only include employers with >= 2 reviews
+      .sort((a, b) => {
+        // Sort by avg_rating DESC, then by review_count DESC
+        if (b.avg_rating !== a.avg_rating) {
+          return b.avg_rating - a.avg_rating;
+        }
+        return b.review_count - a.review_count;
+      })
+      .slice(0, 50); // Limit to top 50
+
+    res.json(employers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch top employers' });
+  }
+});
+
 // Get posts by current user (own profile)
 router.get('/user/posts', requireAuth, async (req, res) => {
   try {

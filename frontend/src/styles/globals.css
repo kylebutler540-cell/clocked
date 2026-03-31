@@ -2895,3 +2895,88 @@ body[data-comments-open] .mobile-only-header {
   outline: none;
   box-shadow: none;
 }
+
+/* ========== Employer Leaderboard ========== */
+.employer-leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.employer-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.employer-card:hover {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.employer-rank {
+  font-size: 18px;
+  font-weight: 800;
+  color: #A855F7;
+  min-width: 50px;
+  text-align: center;
+  line-height: 1;
+}
+
+.employer-card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.employer-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.employer-city {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.employer-emoji-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.employer-emoji-row span {
+  white-space: nowrap;
+}
+
+.employer-skeleton {
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

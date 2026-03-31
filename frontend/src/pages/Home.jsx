@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Feed from '../components/Feed';
+import EmployerLeaderboard from '../components/EmployerLeaderboard';
 
 function RightSidebar() {
   const navigate = useNavigate();
@@ -98,7 +99,11 @@ export default function Home() {
   return (
     <div className="home-layout">
       <div className="home-feed-column">
-        <Feed filters={filters} />
+        {sort === 'top' ? (
+          <EmployerLeaderboard location={location} />
+        ) : (
+          <Feed filters={filters} />
+        )}
       </div>
       <div className="home-right-sidebar">
         <RightSidebar />
