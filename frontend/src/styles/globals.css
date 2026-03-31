@@ -2878,3 +2878,10 @@ body[data-comments-open] .bottom-nav,
 body[data-comments-open] .mobile-only-header {
   display: none !important;
 }
+
+/* Hide drag handle bar on desktop */
+@media (min-width: 768px) {
+  .comment-sheet-handle {
+    display: none !important;
+  }
+}

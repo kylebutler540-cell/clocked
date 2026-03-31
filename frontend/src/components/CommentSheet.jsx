@@ -218,7 +218,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       setCommentText('');
       setSelectedImage(null);
       setReplyingTo(null);
-      setTimeout(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }), 100);
+      setTimeout(() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 100);
     } catch (err) {
       addToast(err.response?.status === 401 ? 'Sign in to comment' : 'Failed to post comment');
     } finally {
@@ -315,7 +315,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           borderRadius: '16px 16px 0 0',
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '92vh',
+          maxHeight: 'min(92dvh, 92vh)',
           width: '100%',
           maxWidth: '740px', // matches feed width on desktop
           boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
@@ -324,11 +324,12 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       >
         {/* Drag handle + pinned post header — never scrolls */}
         <div style={{ flexShrink: 0 }}>
-          {/* Drag handle */}
+          {/* Drag handle — mobile only */}
           <div
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
+            className="comment-sheet-handle"
             style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', cursor: 'grab' }}
           >
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
