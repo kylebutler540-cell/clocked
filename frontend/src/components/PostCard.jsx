@@ -269,11 +269,11 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             </span>
           </button>
 
-          {/* Display name + time */}
+          {/* Display name + time — flex:1 spacer, only name/avatar are tappable */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0, marginLeft: 8, flex: 1 }}>
             <button
               className="post-byline-user"
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', fontWeight: 600, fontSize: 14, textAlign: 'left', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', fontWeight: 600, fontSize: 14, textAlign: 'left', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline', width: 'fit-content', maxWidth: '100%' }}
               onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
             >
               {post.author_display_name

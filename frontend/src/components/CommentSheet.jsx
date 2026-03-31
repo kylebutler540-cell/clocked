@@ -137,13 +137,14 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !postId) return;
+    if (!postId) return;
+    // Start fetching immediately when postId is known, not waiting for open animation
     setLoading(true);
     api.get(`/posts/${postId}/comments`)
       .then(res => setComments(res.data))
-      .catch(() => addToast('Failed to load comments'))
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isOpen, postId]);
+  }, [postId]);
 
   // Lock body scroll + hide sidebars/topbar/bottom nav when open
   useEffect(() => {
@@ -350,7 +351,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           borderRadius: '16px 16px 0 0',
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: 'min(92dvh, 92vh)',
+          height: 'min(92dvh, 92vh)',
           width: '100%',
           maxWidth: '740px', // matches feed width on desktop
           boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
