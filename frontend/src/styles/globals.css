@@ -1071,6 +1071,8 @@ img, video {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .action-btn {
