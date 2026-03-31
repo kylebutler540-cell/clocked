@@ -149,14 +149,26 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
       } catch { global._geocodeCache.set(address, null); return null; }
     }
 
-    // Fetch all posts — every posted review counts as one rating vote
-    const posts = await prisma.post.findMany({
-      select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true, likes: true },
+    // Fetch posts (for emoji tallies) + explicit star ratings (for avg + count)
+    const [posts, starRatings] = await Promise.all([
+      prisma.post.findMany({
+        select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true, likes: true },
+      }),
+      prisma.companyRating.findMany({
+        select: { place_id: true, rating: true },
+      }),
+    ]);
+
+    // Build star rating map: place_id → { sum, count }
+    const starMap = new Map();
+    starRatings.forEach(r => {
+      if (!starMap.has(r.place_id)) starMap.set(r.place_id, { sum: 0, count: 0 });
+      const s = starMap.get(r.place_id);
+      s.sum += r.rating;
+      s.count += 1;
     });
 
-    const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
-
-    // Group posts by employer — each post = one vote
+    // Group posts by employer (for emoji tallies only)
     const employerMap = new Map();
     posts.forEach(post => {
       if (!employerMap.has(post.employer_place_id)) {
@@ -180,17 +192,20 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         const neutral_count = reviews.filter(r => r === "NEUTRAL").length;
         const bad_count = reviews.filter(r => r === "BAD").length;
 
-        // Avg star = emoji votes only — matches what's visible as reviews on the page
-        const starSum = reviews.reduce((s, r) => s + (emojiToStar[r] || 3), 0);
-        const avg_rating = Math.round((starSum / reviews.length) * 10) / 10;
+        // Star rating: only from explicit star taps (company_ratings table)
+        const stars = starMap.get(emp.employer_place_id);
+        const star_rating_count = stars?.count || 0;
+        const avg_rating = stars && stars.count > 0
+          ? Math.round((stars.sum / stars.count) * 10) / 10
+          : null;
 
         return {
           employer_place_id: emp.employer_place_id,
           employer_name: emp.employer_name,
           employer_address: emp.employer_address,
           avg_rating,
-          star_rating_count: reviews.length,
-          review_count: reviews.length,
+          star_rating_count, // only explicit star taps
+          review_count: reviews.length, // total posts (for emoji tally)
           good_count,
           neutral_count,
           bad_count,

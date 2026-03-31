@@ -170,9 +170,11 @@ export default function EmployerLeaderboard({ location }) {
             <div className="employer-rating-col">
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <StarDisplay rating={employer.avg_rating} />
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  ({employer.review_count})
-                </span>
+                {employer.star_rating_count > 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    ({employer.star_rating_count})
+                  </span>
+                )}
               </div>
               <div className="employer-emoji-row">
                 {employer.good_count > 0 && <span><span className="emoji">😊</span><span className="count">{employer.good_count}</span></span>}
