@@ -599,6 +599,17 @@ router.post('/', optionalAuth, async (req, res) => {
       },
     });
 
+    // Auto-create/update star rating from emoji: GOOD=5, NEUTRAL=3, BAD=1
+    const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
+    const starValue = emojiToStar[rating_emoji];
+    if (starValue) {
+      await prisma.companyRating.upsert({
+        where: { user_id_place_id: { user_id: userId, place_id: employer_place_id } },
+        update: { rating: starValue },
+        create: { user_id: userId, place_id: employer_place_id, rating: starValue },
+      });
+    }
+
     res.status(201).json(formatPost(post, new Set(), true));
   } catch (err) {
     console.error(err);
