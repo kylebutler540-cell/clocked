@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import PaywallModal from './PaywallModal';
 import FlagModal from './FlagModal';
+import CommentSheet from './CommentSheet';
 
 // Module-level reaction cache: survives navigation within the same browser session
 // Falls back to localStorage for cross-session persistence
@@ -88,6 +89,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const { user, isSubscribed } = useAuth();
@@ -439,7 +441,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
           </div>
 
           {/* Comments */}
-          <button className="action-btn" onClick={() => !isMock && navigate(`/post/${post.id}`)} aria-label="Comments">
+          <button className="action-btn" onClick={e => { e.stopPropagation(); if (!isMock) setShowComments(true); }} aria-label="Comments">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
@@ -470,6 +472,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
 
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       {showFlag && <FlagModal postId={post.id} onClose={() => setShowFlag(false)} />}
+      <CommentSheet postId={post.id} post={post} isOpen={showComments} onClose={() => setShowComments(false)} />
     </>
   );
 }

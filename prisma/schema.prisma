@@ -32,6 +32,7 @@ model User {
   companyRatings  CompanyRating[]
   followers         Follow[] @relation("following")
   following         Follow[] @relation("follower")
+  commentLikes      CommentLike[]
 
   @@map("users")
 }
@@ -81,13 +82,31 @@ model Comment {
   anonymous_user_id String
   body             String
   image_url        String?
+  parent_id        String?
+  likes            Int      @default(0)
   created_at       DateTime @default(now())
 
-  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user User @relation(fields: [anonymous_user_id], references: [id])
+  post     Post          @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [anonymous_user_id], references: [id])
+  parent   Comment?      @relation("replies", fields: [parent_id], references: [id])
+  replies  Comment[]     @relation("replies")
+  likes_rel CommentLike[]
 
   @@index([post_id])
   @@map("comments")
+}
+
+model CommentLike {
+  id         String   @id @default(cuid())
+  user_id    String
+  comment_id String
+  created_at DateTime @default(now())
+
+  user    User    @relation(fields: [user_id], references: [id])
+  comment Comment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, comment_id])
+  @@map("comment_likes")
 }
 
 model Save {
