@@ -122,6 +122,12 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   const listRef = useRef(null);
   const sheetRef = useRef(null);
 
+  // Animate out smoothly then fire onClose
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 320);
+  }
+
   // Drag-to-close state
   const dragStartY = useRef(null);
   const dragCurrentY = useRef(0);
@@ -132,6 +138,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       // Small delay so CSS transition fires
       requestAnimationFrame(() => setVisible(true));
     } else {
+      // Animate out first, then let parent know we're closed
       setVisible(false);
     }
   }, [isOpen]);
@@ -190,7 +197,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   function onTouchEnd() {
     if (sheetRef.current) sheetRef.current.style.transition = 'transform 300ms ease';
     if (dragCurrentY.current > 100) {
-      onClose();
+      handleClose();
     } else {
       if (sheetRef.current) sheetRef.current.style.transform = 'translateX(-50%) translateY(0)';
     }
@@ -339,7 +346,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   return (
     <>
       {/* Overlay — blocks all background interaction */}
-      <div onClick={onClose} onTouchMove={e => e.preventDefault()} style={{
+      <div onClick={handleClose} onTouchMove={e => e.preventDefault()} style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
         zIndex: 1000, opacity: visible ? 1 : 0, transition: 'opacity 300ms ease',
         touchAction: 'none',
@@ -402,7 +409,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
               onTouchEnd={onTouchEnd}
             >
               <PostCard post={post} closeButton={
-                <button onClick={onClose} style={{
+                <button onClick={handleClose} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   color: 'var(--text-muted)', fontSize: 20, lineHeight: 1,
                   padding: '0 4px', display: 'flex', alignItems: 'center', flexShrink: 0,

@@ -179,7 +179,7 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         const avg_rating = reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + ratingMap[r], 0) / reviews.length * 10) / 10 : 0;
         return { employer_place_id: emp.employer_place_id, employer_name: emp.employer_name, employer_address: emp.employer_address, avg_rating, review_count: reviews.length, good_count, neutral_count, bad_count };
       })
-      .filter(emp => emp.review_count >= 2);
+      .filter(emp => emp.review_count >= 1);
 
     if (location) {
       const centerCoords = await geocode(location);
