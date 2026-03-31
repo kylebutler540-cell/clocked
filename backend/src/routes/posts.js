@@ -149,14 +149,26 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
       } catch { global._geocodeCache.set(address, null); return null; }
     }
 
-    // Fetch all posts — every post counts as one vote
-    const posts = await prisma.post.findMany({
-      select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true, likes: true },
-    });
+    // Fetch all posts + manual star ratings — both count
+    const [posts, starRatings] = await Promise.all([
+      prisma.post.findMany({
+        select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true, likes: true },
+      }),
+      prisma.companyRating.findMany({
+        select: { place_id: true, rating: true },
+      }),
+    ]);
 
     const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
 
-    // Group posts by employer — each post = one rating vote
+    // Build manual star map: place_id → [ratings]
+    const manualStarMap = new Map();
+    starRatings.forEach(r => {
+      if (!manualStarMap.has(r.place_id)) manualStarMap.set(r.place_id, []);
+      manualStarMap.get(r.place_id).push(r.rating);
+    });
+
+    // Group posts by employer
     const employerMap = new Map();
     posts.forEach(post => {
       if (!employerMap.has(post.employer_place_id)) {
@@ -180,16 +192,18 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         const neutral_count = reviews.filter(r => r === "NEUTRAL").length;
         const bad_count = reviews.filter(r => r === "BAD").length;
 
-        // Every post is a vote: avg of emoji→star across all reviews
-        const starSum = reviews.reduce((s, r) => s + (emojiToStar[r] || 3), 0);
-        const avg_rating = Math.round((starSum / reviews.length) * 10) / 10;
+        // Combine: post emojis converted to stars + manual star ratings
+        const postStars = reviews.map(r => emojiToStar[r] || 3);
+        const manualStars = manualStarMap.get(emp.employer_place_id) || [];
+        const allStars = [...postStars, ...manualStars];
+        const avg_rating = Math.round((allStars.reduce((s, r) => s + r, 0) / allStars.length) * 10) / 10;
 
         return {
           employer_place_id: emp.employer_place_id,
           employer_name: emp.employer_name,
           employer_address: emp.employer_address,
           avg_rating,
-          star_rating_count: reviews.length, // every review = one rating
+          star_rating_count: allStars.length,
           review_count: reviews.length,
           good_count,
           neutral_count,
