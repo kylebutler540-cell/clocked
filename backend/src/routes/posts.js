@@ -149,26 +149,14 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
       } catch { global._geocodeCache.set(address, null); return null; }
     }
 
-    // Fetch all posts (for location, emoji counts, upvotes)
+    // Fetch all posts — every post counts as one vote
     const posts = await prisma.post.findMany({
       select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true, likes: true },
     });
 
-    // Fetch all real star ratings from company_ratings table
-    const starRatings = await prisma.companyRating.findMany({
-      select: { place_id: true, rating: true },
-    });
+    const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
 
-    // Build star rating map: place_id → { sum, count }
-    const starMap = new Map();
-    starRatings.forEach(r => {
-      if (!starMap.has(r.place_id)) starMap.set(r.place_id, { sum: 0, count: 0 });
-      const s = starMap.get(r.place_id);
-      s.sum += r.rating;
-      s.count += 1;
-    });
-
-    // Group posts by employer
+    // Group posts by employer — each post = one rating vote
     const employerMap = new Map();
     posts.forEach(post => {
       if (!employerMap.has(post.employer_place_id)) {
@@ -192,18 +180,16 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         const neutral_count = reviews.filter(r => r === "NEUTRAL").length;
         const bad_count = reviews.filter(r => r === "BAD").length;
 
-        // Primary: real star rating avg (1-5). Fallback: emoji-based if no star ratings yet
-        const stars = starMap.get(emp.employer_place_id);
-        const avg_rating = stars && stars.count > 0
-          ? Math.round((stars.sum / stars.count) * 10) / 10
-          : null; // null = no star ratings yet, sort to bottom
+        // Every post is a vote: avg of emoji→star across all reviews
+        const starSum = reviews.reduce((s, r) => s + (emojiToStar[r] || 3), 0);
+        const avg_rating = Math.round((starSum / reviews.length) * 10) / 10;
 
         return {
           employer_place_id: emp.employer_place_id,
           employer_name: emp.employer_name,
           employer_address: emp.employer_address,
           avg_rating,
-          star_rating_count: stars?.count || 0,
+          star_rating_count: reviews.length, // every review = one rating
           review_count: reviews.length,
           good_count,
           neutral_count,
