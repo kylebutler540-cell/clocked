@@ -146,19 +146,27 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       .finally(() => setLoading(false));
   }, [postId]);
 
-  // Lock body scroll + hide sidebars/topbar/bottom nav when open
+  // Lock body scroll completely — works on iOS Safari too
   useEffect(() => {
     if (isOpen) {
+      const scrollY = window.scrollY;
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.setAttribute('data-comments-open', 'true');
-    } else {
-      document.body.style.overflow = '';
-      document.body.removeAttribute('data-comments-open');
+      const bottomNav = document.querySelector('.bottom-nav');
+      if (bottomNav) bottomNav.style.display = 'none';
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.removeAttribute('data-comments-open');
+        window.scrollTo(0, scrollY);
+        if (bottomNav) bottomNav.style.display = '';
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-      document.body.removeAttribute('data-comments-open');
-    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -373,7 +381,26 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
 
           {/* Full PostCard — pinned at top, full width */}
           {post && (
-            <div className="comment-sheet-post" style={{ WebkitTapHighlightColor: 'transparent' }}>
+            <div
+              className="comment-sheet-post"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+              onTouchStart={e => {
+                if (listRef.current && listRef.current.scrollTop === 0) {
+                  dragStartY.current = e.touches[0].clientY;
+                  dragCurrentY.current = 0;
+                  if (sheetRef.current) sheetRef.current.style.transition = 'none';
+                }
+              }}
+              onTouchMove={e => {
+                if (dragStartY.current === null) return;
+                const dy = e.touches[0].clientY - dragStartY.current;
+                if (dy <= 0) return;
+                e.stopPropagation();
+                dragCurrentY.current = dy;
+                if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
+              }}
+              onTouchEnd={onTouchEnd}
+            >
               <PostCard post={post} closeButton={
                 <button onClick={onClose} style={{
                   background: 'none', border: 'none', cursor: 'pointer',

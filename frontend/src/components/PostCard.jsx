@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { timeAgo, ratingToEmoji, generateAnonName } from '../lib/utils';
@@ -458,7 +459,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
       </article>
 
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
-      {showFlag && <FlagModal postId={post.id} onClose={() => setShowFlag(false)} />}
+      {showFlag && createPortal(<FlagModal postId={post.id} onClose={() => setShowFlag(false)} />, document.body)}
       <CommentSheet postId={post.id} post={post} isOpen={showComments} onClose={() => setShowComments(false)} />
 
       {showPostActionModal && (
