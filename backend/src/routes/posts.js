@@ -118,7 +118,7 @@ router.get('/', optionalAuth, async (req, res) => {
 // IMPORTANT: All /user/* routes must come before /:id to avoid the param catching them
 
 // Get top-rated employers leaderboard (location-filtered)
-router.get('/top-employers', optionalAuth, async (req, res) => {
+router.get('/employer-leaderboard', optionalAuth, async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
     const { location } = req.query;

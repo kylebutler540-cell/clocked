@@ -30,7 +30,7 @@ export default function EmployerLeaderboard({ location }) {
         if (location) {
           params.location = location;
         }
-        const res = await api.get('/posts/top-employers', { params });
+        const res = await api.get('/posts/employer-leaderboard', { params });
         setEmployers(res.data);
       } catch (err) {
         console.error('Failed to fetch top employers:', err);
