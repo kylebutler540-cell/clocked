@@ -4,6 +4,7 @@ import api from '../lib/api';
 import { timeAgo, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { cacheGet, cacheSet } from '../lib/cache';
 import PostCard from './PostCard';
 
 
@@ -145,12 +146,25 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
 
   useEffect(() => {
     if (!postId) return;
-    // Start fetching immediately when postId is known, not waiting for open animation
-    setLoading(true);
+
+    const cacheKey = 'comments/' + postId;
+
+    // Load from cache first — show immediately, skip loading spinner
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      setComments(cached);
+      setLoading(false);
+    }
+
+    // Always revalidate silently
     api.get(`/posts/${postId}/comments`)
-      .then(res => setComments(res.data))
+      .then(res => {
+        const changed = JSON.stringify(res.data) !== JSON.stringify(cached);
+        cacheSet(cacheKey, res.data);
+        if (changed) setComments(res.data);
+      })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cached) setLoading(false); });
   }, [postId]);
 
   // Lock body scroll completely — works on iOS Safari too
@@ -265,7 +279,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
         if (c.replies) return { ...c, replies: replaceOptimistic(c.replies) };
         return c;
       });
-      setComments(prev => replaceOptimistic(prev));
+      setComments(prev => {
+        const updated = replaceOptimistic(prev);
+        cacheSet('comments/' + postId, updated);
+        return updated;
+      });
     } catch (err) {
       // Remove optimistic on failure
       const remove = list => list.filter(c => c.id !== optimisticComment.id)
@@ -286,7 +304,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       if (c.replies) return { ...c, replies: update(c.replies) };
       return c;
     });
-    setComments(prev => update(prev));
+    setComments(prev => {
+      const updated = update(prev);
+      cacheSet('comments/' + postId, updated);
+      return updated;
+    });
     try {
       const res = await api.post(`/posts/${postId}/comments/${comment.id}/like`);
       const sync = list => list.map(c => {
@@ -294,14 +316,22 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
         if (c.replies) return { ...c, replies: sync(c.replies) };
         return c;
       });
-      setComments(prev => sync(prev));
+      setComments(prev => {
+        const updated = sync(prev);
+        cacheSet('comments/' + postId, updated);
+        return updated;
+      });
     } catch {
       const revert = list => list.map(c => {
         if (c.id === comment.id) return { ...c, liked: comment.liked, likes: comment.likes };
         if (c.replies) return { ...c, replies: revert(c.replies) };
         return c;
       });
-      setComments(prev => revert(prev));
+      setComments(prev => {
+        const updated = revert(prev);
+        cacheSet('comments/' + postId, updated);
+        return updated;
+      });
       addToast('Failed to like comment');
     }
   }
@@ -311,7 +341,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
     try {
       await api.delete(`/posts/${postId}/comments/${commentId}`);
       const remove = list => list.filter(c => c.id !== commentId).map(c => c.replies ? { ...c, replies: remove(c.replies) } : c);
-      setComments(prev => remove(prev));
+      setComments(prev => {
+        const updated = remove(prev);
+        cacheSet('comments/' + postId, updated);
+        return updated;
+      });
     } catch {
       addToast('Failed to delete comment');
     }
@@ -332,7 +366,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
         if (c.replies) return { ...c, replies: update(c.replies) };
         return c;
       });
-      setComments(prev => update(prev));
+      setComments(prev => {
+        const updated = update(prev);
+        cacheSet('comments/' + postId, updated);
+        return updated;
+      });
       setEditingCommentId(null);
     } catch {
       addToast('Failed to update comment');

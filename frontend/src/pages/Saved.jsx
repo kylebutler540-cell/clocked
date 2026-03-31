@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import PostCard from '../components/PostCard';
 import { useAuth } from '../context/AuthContext';
+import { cacheGet, cacheSet } from '../lib/cache';
 
 export default function Saved() {
   const [posts, setPosts] = useState([]);
@@ -12,10 +13,25 @@ export default function Saved() {
 
   useEffect(() => {
     if (!user?.email) { setLoading(false); return; }
+
+    // Load from cache first
+    const cached = cacheGet('saved-posts');
+    if (cached) {
+      setPosts(cached);
+      setLoading(false);
+    }
+
+    // Always revalidate in background
     api.get('/posts/user/saved')
-      .then(res => setPosts(res.data))
+      .then(res => {
+        const changed = JSON.stringify(res.data) !== JSON.stringify(cached);
+        cacheSet('saved-posts', res.data);
+        if (changed) {
+          setPosts(res.data);
+        }
+      })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cached) setLoading(false); });
   }, [user]);
 
   if (loading) {

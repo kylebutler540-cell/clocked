@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { timeAgo } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
+import { cacheGet, cacheSet } from '../lib/cache';
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -10,9 +11,22 @@ export default function Notifications() {
 
   useEffect(() => {
     if (!user?.email) { setLoading(false); return; }
+
+    // Load from cache first
+    const cached = cacheGet('notifications');
+    if (cached) {
+      setNotifications(cached);
+      setLoading(false);
+    }
+
+    // Always revalidate in background
     api.get('/notifications')
       .then(res => {
-        setNotifications(res.data);
+        const changed = JSON.stringify(res.data) !== JSON.stringify(cached);
+        cacheSet('notifications', res.data);
+        if (changed) {
+          setNotifications(res.data);
+        }
         // Mark all as read
         const unreadIds = res.data.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) {
@@ -20,7 +34,7 @@ export default function Notifications() {
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cached) setLoading(false); });
   }, [user]);
 
   if (loading) {

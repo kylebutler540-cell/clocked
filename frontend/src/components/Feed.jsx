@@ -114,8 +114,12 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
       setLoading(false);
       fetchPosts().then(({ posts, nextCursor }) => {
         _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
-        setPosts(posts);
-        setNextCursor(nextCursor);
+        // Only update if data actually changed
+        const changed = JSON.stringify(posts) !== JSON.stringify(cached.posts);
+        if (changed) {
+          setPosts(posts);
+          setNextCursor(nextCursor);
+        }
       }).catch(() => {});
       return;
     }

@@ -152,18 +152,24 @@ function UserPostList({ url, emptyState }) {
   const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
-    if (cached) return; // already have data, skip fetch
-    setLoading(true);
+    if (cached) {
+      setPosts(cached);
+      setLoading(false);
+    }
+
     setAuthError(false);
     api.get(url)
       .then(res => {
         const data = Array.isArray(res.data) ? res.data : [];
+        const changed = JSON.stringify(data) !== JSON.stringify(_profileTabCache.get(url));
         _profileTabCache.set(url, data);
-        setPosts(data);
+        if (changed) setPosts(data);
       })
       .catch(err => {
-        if (err.response?.status === 401) setAuthError(true);
-        setPosts([]);
+        if (!cached) {
+          if (err.response?.status === 401) setAuthError(true);
+          setPosts([]);
+        }
       })
       .finally(() => setLoading(false));
   }, [url]);
@@ -204,15 +210,19 @@ function UserCommentList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (cachedComments) return;
-    setLoading(true);
+    if (cachedComments) {
+      setComments(cachedComments);
+      setLoading(false);
+    }
+
     api.get('/posts/user/comments')
       .then(res => {
         const data = Array.isArray(res.data) ? res.data : [];
+        const changed = JSON.stringify(data) !== JSON.stringify(_profileTabCache.get('comments'));
         _profileTabCache.set('comments', data);
-        setComments(data);
+        if (changed) setComments(data);
       })
-      .catch(() => setComments([]))
+      .catch(() => { if (!cachedComments) setComments([]); })
       .finally(() => setLoading(false));
   }, []);
 

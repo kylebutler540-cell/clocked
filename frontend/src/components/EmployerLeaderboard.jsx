@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { cacheGet, cacheSet } from '../lib/cache';
 
 function SkeletonCard() {
   return (
@@ -22,21 +23,37 @@ export default function EmployerLeaderboard({ location }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const cacheKey = 'employer-leaderboard/' + (location || '');
+
+    // Load from cache first
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      setEmployers(cached);
+      setLoading(false);
+      setError(null);
+    }
+
+    // Always revalidate in background
     const fetchEmployers = async () => {
       try {
-        setLoading(true);
         setError(null);
         const params = {};
         if (location) {
           params.location = location;
         }
         const res = await api.get('/posts/employer-leaderboard', { params });
-        setEmployers(res.data);
+        const changed = JSON.stringify(res.data) !== JSON.stringify(cached);
+        cacheSet(cacheKey, res.data);
+        if (changed) {
+          setEmployers(res.data);
+        }
       } catch (err) {
         console.error('Failed to fetch top employers:', err);
-        setError('Failed to load employers');
+        if (!cached) {
+          setError('Failed to load employers');
+        }
       } finally {
-        setLoading(false);
+        if (!cached) setLoading(false);
       }
     };
 
