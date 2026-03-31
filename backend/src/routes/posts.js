@@ -228,12 +228,13 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         employers = withCoords
           .filter(e => e && e._dist <= 30)
           .sort((a, b) => {
-            // Closest first, then by star rating desc (nulls last), then upvotes
-            if (a._dist !== b._dist) return a._dist - b._dist;
+            // Star rating primary (nulls last), then upvotes, then distance
             if (b.avg_rating === null && a.avg_rating === null) return b.total_likes - a.total_likes;
             if (b.avg_rating === null) return -1;
             if (a.avg_rating === null) return 1;
-            return b.avg_rating !== a.avg_rating ? b.avg_rating - a.avg_rating : b.total_likes - a.total_likes;
+            if (b.avg_rating !== a.avg_rating) return b.avg_rating - a.avg_rating;
+            if (b.total_likes !== a.total_likes) return b.total_likes - a.total_likes;
+            return a._dist - b._dist;
           })
           .map(({ _dist, ...rest }) => rest);
       } else {
