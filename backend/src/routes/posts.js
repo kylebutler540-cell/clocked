@@ -118,32 +118,45 @@ router.get('/', optionalAuth, async (req, res) => {
 // IMPORTANT: All /user/* routes must come before /:id to avoid the param catching them
 
 // Get top-rated employers leaderboard (location-filtered)
-router.get('/employer-leaderboard', optionalAuth, async (req, res) => {
-  res.set('Cache-Control', 'no-store');
+router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
+  res.set("Cache-Control", "no-store");
   try {
     const { location } = req.query;
 
-    // Fetch all posts with employer details
-    const posts = await prisma.post.findMany({
-      select: {
-        employer_place_id: true,
-        employer_name: true,
-        employer_address: true,
-        rating_emoji: true,
-      },
-    });
-
-    // Filter by location if provided (case-insensitive contains match)
-    let filtered = posts;
-    if (location) {
-      filtered = posts.filter(p =>
-        p.employer_address.toLowerCase().includes(location.toLowerCase())
-      );
+    // Haversine distance in miles
+    function haversineMiles(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+      return R * 2 * Math.asin(Math.sqrt(a));
     }
 
-    // Group by employer_place_id and aggregate stats
+    // In-memory geocode cache keyed by string
+    if (!global._geocodeCache) global._geocodeCache = new Map();
+
+    async function geocode(address) {
+      if (global._geocodeCache.has(address)) return global._geocodeCache.get(address);
+      try {
+        const axios = require("axios");
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+        const r = await axios.get(url, { timeout: 4000 });
+        const result = r.data?.results?.[0]?.geometry?.location;
+        if (!result) { global._geocodeCache.set(address, null); return null; }
+        const coords = { lat: result.lat, lng: result.lng };
+        global._geocodeCache.set(address, coords);
+        return coords;
+      } catch { global._geocodeCache.set(address, null); return null; }
+    }
+
+    // Fetch all posts
+    const posts = await prisma.post.findMany({
+      select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true },
+    });
+
+    // Group by employer
     const employerMap = new Map();
-    filtered.forEach(post => {
+    posts.forEach(post => {
       if (!employerMap.has(post.employer_place_id)) {
         employerMap.set(post.employer_place_id, {
           employer_place_id: post.employer_place_id,
@@ -155,45 +168,49 @@ router.get('/employer-leaderboard', optionalAuth, async (req, res) => {
       employerMap.get(post.employer_place_id).reviews.push(post.rating_emoji);
     });
 
-    // Convert ratings to numeric values and calculate aggregates
-    // BAD=1, NEUTRAL=3, GOOD=5
     const ratingMap = { BAD: 1, NEUTRAL: 3, GOOD: 5 };
 
-    const employers = Array.from(employerMap.values())
+    let employers = Array.from(employerMap.values())
       .map(emp => {
         const reviews = emp.reviews;
-        const good_count = reviews.filter(r => r === 'GOOD').length;
-        const neutral_count = reviews.filter(r => r === 'NEUTRAL').length;
-        const bad_count = reviews.filter(r => r === 'BAD').length;
-        const avg_rating = reviews.length > 0
-          ? reviews.reduce((sum, rating) => sum + ratingMap[rating], 0) / reviews.length
-          : 0;
-
-        return {
-          employer_place_id: emp.employer_place_id,
-          employer_name: emp.employer_name,
-          employer_address: emp.employer_address,
-          avg_rating: Math.round(avg_rating * 10) / 10, // Round to 1 decimal place
-          review_count: reviews.length,
-          good_count,
-          neutral_count,
-          bad_count,
-        };
+        const good_count = reviews.filter(r => r === "GOOD").length;
+        const neutral_count = reviews.filter(r => r === "NEUTRAL").length;
+        const bad_count = reviews.filter(r => r === "BAD").length;
+        const avg_rating = reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + ratingMap[r], 0) / reviews.length * 10) / 10 : 0;
+        return { employer_place_id: emp.employer_place_id, employer_name: emp.employer_name, employer_address: emp.employer_address, avg_rating, review_count: reviews.length, good_count, neutral_count, bad_count };
       })
-      .filter(emp => emp.review_count >= 2) // Only include employers with >= 2 reviews
-      .sort((a, b) => {
-        // Sort by avg_rating DESC, then by review_count DESC
-        if (b.avg_rating !== a.avg_rating) {
-          return b.avg_rating - a.avg_rating;
-        }
-        return b.review_count - a.review_count;
-      })
-      .slice(0, 50); // Limit to top 50
+      .filter(emp => emp.review_count >= 2);
 
-    res.json(employers);
+    if (location) {
+      const centerCoords = await geocode(location);
+      if (centerCoords) {
+        // Geocode each employer (parallel, capped at 10 simultaneous)
+        const withCoords = await Promise.all(
+          employers.map(async emp => {
+            const coords = await geocode(emp.employer_address);
+            if (!coords) return null;
+            const dist = haversineMiles(centerCoords.lat, centerCoords.lng, coords.lat, coords.lng);
+            return { ...emp, distance_miles: Math.round(dist * 10) / 10, _dist: dist };
+          })
+        );
+        employers = withCoords
+          .filter(e => e && e._dist <= 30)
+          .sort((a, b) => a._dist - b._dist || b.avg_rating - a.avg_rating)
+          .map(({ _dist, ...rest }) => rest);
+      } else {
+        // Fallback: city string filter
+        employers = employers
+          .filter(e => e.employer_address.toLowerCase().includes(location.toLowerCase()))
+          .sort((a, b) => b.avg_rating - a.avg_rating || b.review_count - a.review_count);
+      }
+    } else {
+      employers = employers.sort((a, b) => b.avg_rating - a.avg_rating || b.review_count - a.review_count);
+    }
+
+    res.json(employers.slice(0, 50));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch top employers' });
+    res.status(500).json({ error: "Failed to fetch top employers" });
   }
 });
 

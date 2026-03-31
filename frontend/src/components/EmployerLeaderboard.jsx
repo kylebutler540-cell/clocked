@@ -102,7 +102,7 @@ export default function EmployerLeaderboard({ location }) {
   return (
     <div className="employer-leaderboard">
       {employers.map((employer, index) => {
-        const cityPart = employer.employer_address.split(',')[0];
+        const cityPart = employer.employer_address.split(",").slice(0, 2).join(",").trim();
         return (
           <div
             key={employer.employer_place_id}
@@ -110,29 +110,33 @@ export default function EmployerLeaderboard({ location }) {
             onClick={() => navigate(`/company/${employer.employer_place_id}`)}
           >
             <div className="employer-rank">#{index + 1}</div>
-            <div className="employer-card-body">
-              <div style={{ flex: 1 }}>
-                <div className="employer-name">{employer.employer_name}</div>
-                <div className="employer-city">{cityPart}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-                    <span>⭐</span>
-                    <span style={{ fontWeight: 600 }}>{employer.avg_rating}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    {employer.review_count} {employer.review_count === 1 ? 'review' : 'reviews'}
-                  </div>
-                </div>
-                <div className="employer-emoji-row">
-                  {employer.good_count > 0 && <span>😊 {employer.good_count}</span>}
-                  {employer.neutral_count > 0 && <span>😐 {employer.neutral_count}</span>}
-                  {employer.bad_count > 0 && <span>😡 {employer.bad_count}</span>}
-                </div>
-              </div>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+
+            <div className="employer-info-col">
+              <div className="employer-name">{employer.employer_name}</div>
+              <div className="employer-city">{cityPart}</div>
+              {employer.distance_miles != null && (
+                <div className="employer-distance">{employer.distance_miles} mi away</div>
+              )}
             </div>
+
+            <div className="employer-rating-col">
+              <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 3 }}>
+                <span>⭐</span>
+                <span>{employer.avg_rating}</span>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                {employer.review_count} {employer.review_count === 1 ? "review" : "reviews"}
+              </div>
+              <div className="employer-emoji-row">
+                {employer.good_count > 0 && <span><span className="emoji">😊</span><span className="count">{employer.good_count}</span></span>}
+                {employer.neutral_count > 0 && <span><span className="emoji">😐</span><span className="count">{employer.neutral_count}</span></span>}
+                {employer.bad_count > 0 && <span><span className="emoji">😡</span><span className="count">{employer.bad_count}</span></span>}
+              </div>
+            </div>
+
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         );
       })}

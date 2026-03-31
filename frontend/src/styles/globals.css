@@ -2898,8 +2898,8 @@ body[data-comments-open] .mobile-only-header {
 
 .employer-card {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
   padding: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -2945,17 +2945,41 @@ body[data-comments-open] .mobile-only-header {
   margin-bottom: 4px;
 }
 
-.employer-emoji-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 6px;
+.employer-info-col {
+  flex: 1;
+  min-width: 0;
 }
 
-.employer-emoji-row span {
-  white-space: nowrap;
+.employer-rating-col {
+  flex-shrink: 0;
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.employer-distance {
+  font-size: 11px;
+  color: #A855F7;
+  margin-top: 2px;
+}
+
+.employer-emoji-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.employer-emoji-row .emoji {
+  font-size: 16px;
+}
+
+.employer-emoji-row .count {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .employer-skeleton {
