@@ -149,12 +149,26 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
       } catch { global._geocodeCache.set(address, null); return null; }
     }
 
-    // Fetch all posts
+    // Fetch all posts (for location, emoji counts, upvotes)
     const posts = await prisma.post.findMany({
-      select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true },
+      select: { employer_place_id: true, employer_name: true, employer_address: true, rating_emoji: true, likes: true },
     });
 
-    // Group by employer
+    // Fetch all real star ratings from company_ratings table
+    const starRatings = await prisma.companyRating.findMany({
+      select: { place_id: true, rating: true },
+    });
+
+    // Build star rating map: place_id → { sum, count }
+    const starMap = new Map();
+    starRatings.forEach(r => {
+      if (!starMap.has(r.place_id)) starMap.set(r.place_id, { sum: 0, count: 0 });
+      const s = starMap.get(r.place_id);
+      s.sum += r.rating;
+      s.count += 1;
+    });
+
+    // Group posts by employer
     const employerMap = new Map();
     posts.forEach(post => {
       if (!employerMap.has(post.employer_place_id)) {
@@ -163,12 +177,13 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
           employer_name: post.employer_name,
           employer_address: post.employer_address,
           reviews: [],
+          total_likes: 0,
         });
       }
-      employerMap.get(post.employer_place_id).reviews.push(post.rating_emoji);
+      const emp = employerMap.get(post.employer_place_id);
+      emp.reviews.push(post.rating_emoji);
+      emp.total_likes += (post.likes || 0);
     });
-
-    const ratingMap = { BAD: 1, NEUTRAL: 3, GOOD: 5 };
 
     let employers = Array.from(employerMap.values())
       .map(emp => {
@@ -176,8 +191,25 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         const good_count = reviews.filter(r => r === "GOOD").length;
         const neutral_count = reviews.filter(r => r === "NEUTRAL").length;
         const bad_count = reviews.filter(r => r === "BAD").length;
-        const avg_rating = reviews.length > 0 ? Math.round(reviews.reduce((s, r) => s + ratingMap[r], 0) / reviews.length * 10) / 10 : 0;
-        return { employer_place_id: emp.employer_place_id, employer_name: emp.employer_name, employer_address: emp.employer_address, avg_rating, review_count: reviews.length, good_count, neutral_count, bad_count };
+
+        // Primary: real star rating avg (1-5). Fallback: emoji-based if no star ratings yet
+        const stars = starMap.get(emp.employer_place_id);
+        const avg_rating = stars && stars.count > 0
+          ? Math.round((stars.sum / stars.count) * 10) / 10
+          : null; // null = no star ratings yet, sort to bottom
+
+        return {
+          employer_place_id: emp.employer_place_id,
+          employer_name: emp.employer_name,
+          employer_address: emp.employer_address,
+          avg_rating,
+          star_rating_count: stars?.count || 0,
+          review_count: reviews.length,
+          good_count,
+          neutral_count,
+          bad_count,
+          total_likes: emp.total_likes,
+        };
       })
       .filter(emp => emp.review_count >= 1);
 
@@ -195,16 +227,32 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
         );
         employers = withCoords
           .filter(e => e && e._dist <= 30)
-          .sort((a, b) => a._dist - b._dist || b.avg_rating - a.avg_rating)
+          .sort((a, b) => {
+            // Closest first, then by star rating desc (nulls last), then upvotes
+            if (a._dist !== b._dist) return a._dist - b._dist;
+            if (b.avg_rating === null && a.avg_rating === null) return b.total_likes - a.total_likes;
+            if (b.avg_rating === null) return -1;
+            if (a.avg_rating === null) return 1;
+            return b.avg_rating !== a.avg_rating ? b.avg_rating - a.avg_rating : b.total_likes - a.total_likes;
+          })
           .map(({ _dist, ...rest }) => rest);
       } else {
-        // Fallback: city string filter
         employers = employers
           .filter(e => e.employer_address.toLowerCase().includes(location.toLowerCase()))
-          .sort((a, b) => b.avg_rating - a.avg_rating || b.review_count - a.review_count);
+          .sort((a, b) => {
+            if (b.avg_rating === null && a.avg_rating === null) return b.total_likes - a.total_likes;
+            if (b.avg_rating === null) return -1;
+            if (a.avg_rating === null) return 1;
+            return b.avg_rating !== a.avg_rating ? b.avg_rating - a.avg_rating : b.total_likes - a.total_likes;
+          });
       }
     } else {
-      employers = employers.sort((a, b) => b.avg_rating - a.avg_rating || b.review_count - a.review_count);
+      employers = employers.sort((a, b) => {
+        if (b.avg_rating === null && a.avg_rating === null) return b.total_likes - a.total_likes;
+        if (b.avg_rating === null) return -1;
+        if (a.avg_rating === null) return 1;
+        return b.avg_rating !== a.avg_rating ? b.avg_rating - a.avg_rating : b.total_likes - a.total_likes;
+      });
     }
 
     res.json(employers.slice(0, 50));
