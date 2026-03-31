@@ -8,7 +8,7 @@ const OPTIONS = [
 
 export default function RatingSelector({ value, onChange }) {
   return (
-    <div className="rating-selector">
+    <div className="rating-selector" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {OPTIONS.map(opt => {
         const selected = value === opt.value;
         return (
@@ -29,6 +29,27 @@ export default function RatingSelector({ value, onChange }) {
           </button>
         );
       })}
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          title="Clear rating"
+          style={{
+            marginLeft: 2,
+            background: 'none',
+            border: '1.5px solid var(--border)',
+            borderRadius: 8,
+            padding: '4px 8px',
+            fontSize: 13,
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 }
