@@ -99,7 +99,7 @@ export default function CompanyProfile() {
                 style={{ padding: '6px 14px', fontSize: 13 }}
                 onClick={() => navigate('/create', { state: { employer: employerInfo } })}
               >
-                Write a Review
+                Post a Review
               </button>
             </div>
           </div>

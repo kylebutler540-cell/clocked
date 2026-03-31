@@ -7,6 +7,8 @@ export default function StarRating({ placeId }) {
   const [totalRatings, setTotalRatings] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [clearArmed, setClearArmed] = useState(false); // two-tap clear safety
+  const debounceRef = React.useRef(null);
 
   useEffect(() => {
     api.get(`/ratings/${placeId}`)
@@ -18,12 +20,19 @@ export default function StarRating({ placeId }) {
       .catch(() => {});
   }, [placeId]);
 
-  async function handleRate(star) {
+  function handleRate(star) {
     if (saving) return;
+    setClearArmed(false); // reset clear arm if they tap a star
+    // Debounce rapid star taps — only commit after 400ms of no changes
+    setRating(star); // instant visual feedback
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => commitRate(star), 400);
+  }
+
+  async function commitRate(star) {
     const prevRating = rating;
     const prevAverage = average;
     const prevTotal = totalRatings;
-    setRating(star);
     const newTotal = prevRating === 0 ? prevTotal + 1 : prevTotal;
     const newAverage = prevRating === 0
       ? (prevAverage * prevTotal + star) / newTotal
@@ -34,6 +43,7 @@ export default function StarRating({ placeId }) {
     try {
       await api.post('/ratings', { placeId, rating: star });
       const res = await api.get(`/ratings/${placeId}`);
+      setRating(res.data.userRating || star);
       setAverage(res.data.averageRating || 0);
       setTotalRatings(res.data.totalRatings || 0);
     } catch {
@@ -45,17 +55,28 @@ export default function StarRating({ placeId }) {
     }
   }
 
-  async function handleClear() {
+  function handleClearTap() {
     if (saving || rating === 0) return;
+    if (!clearArmed) {
+      // First tap: arm it (shows "Tap again to clear" briefly)
+      setClearArmed(true);
+      setTimeout(() => setClearArmed(false), 2500);
+      return;
+    }
+    // Second tap: actually clear
+    setClearArmed(false);
+    commitClear();
+  }
+
+  async function commitClear() {
     const prevRating = rating;
     const prevAverage = average;
     const prevTotal = totalRatings;
-    // Optimistic update
     setRating(0);
     const newTotal = prevTotal - 1;
     const newAverage = newTotal > 0 ? (prevAverage * prevTotal - prevRating) / newTotal : 0;
     setAverage(newAverage);
-    setTotalRatings(newTotal);
+    setTotalRatings(Math.max(0, newTotal));
     setSaving(true);
     try {
       const res = await api.delete(`/ratings/${placeId}`);
@@ -92,7 +113,7 @@ export default function StarRating({ placeId }) {
             onMouseLeave={() => setHovered(0)}
             onTouchStart={() => setHovered(star)}
             onTouchEnd={() => setHovered(0)}
-            onClick={() => handleRate(star)}
+            onClick={() => { if (debounceRef.current) clearTimeout(debounceRef.current); handleRate(star); }}
             aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
           >
             ★
@@ -102,22 +123,23 @@ export default function StarRating({ placeId }) {
       {rating > 0 && (
         <button
           type="button"
-          onClick={handleClear}
-          title="Clear your rating"
+          onClick={handleClearTap}
+          title={clearArmed ? 'Tap again to confirm' : 'Clear your rating'}
           style={{
-            background: 'none',
-            border: '1.5px solid var(--border)',
+            background: clearArmed ? 'rgba(239,68,68,0.1)' : 'none',
+            border: `1.5px solid ${clearArmed ? '#EF4444' : 'var(--border)'}`,
             borderRadius: 6,
             padding: '2px 7px',
             fontSize: 12,
-            color: 'var(--text-muted)',
+            color: clearArmed ? '#EF4444' : 'var(--text-muted)',
             cursor: 'pointer',
             lineHeight: 1,
             marginLeft: 4,
             flexShrink: 0,
+            transition: 'all 0.15s ease',
           }}
         >
-          ✕
+          {clearArmed ? 'Clear?' : '✕'}
         </button>
       )}
       {totalRatings > 0 && (
