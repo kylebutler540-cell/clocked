@@ -2882,3 +2882,10 @@ body[data-comments-open] .mobile-only-header {
 }
 
 /* Inside comment sheet: no override needed — X is inline */
+
+/* Remove lingering focus styles after tap on mobile */
+.action-btn:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
