@@ -160,12 +160,7 @@ export default function EmployerLeaderboard({ location }) {
             <div className="employer-rank">#{index + 1}</div>
 
             <div className="employer-info-col">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                <div className="employer-name">{employer.employer_name}</div>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  ({employer.review_count})
-                </span>
-              </div>
+              <div className="employer-name">{employer.employer_name}</div>
               <div className="employer-city">{cityPart}</div>
               {employer.distance_miles != null && (
                 <div className="employer-distance">{employer.distance_miles} mi away</div>
@@ -176,7 +171,7 @@ export default function EmployerLeaderboard({ location }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <StarDisplay rating={employer.avg_rating} />
                 <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  ({employer.avg_rating})
+                  ({employer.review_count})
                 </span>
               </div>
               <div className="employer-emoji-row">
