@@ -888,7 +888,7 @@ img, video {
   background: var(--bg-card);
   border-radius: 0;
   padding: 16px;
-  margin: 0;
+  margin: 0 0 4px 0;
   border-bottom: 1px solid var(--border);
   /* Not a button — no hover/press states, no cursor change */
   cursor: default;
@@ -2888,4 +2888,10 @@ body[data-comments-open] .mobile-only-header {
   outline: none;
   box-shadow: none;
   background: transparent;
+}
+
+/* Kill focus ring on all action buttons — no bubble after tap */
+.action-btn:focus {
+  outline: none;
+  box-shadow: none;
 }
