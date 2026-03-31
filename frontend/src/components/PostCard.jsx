@@ -247,7 +247,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
   return (
     <>
-      <article className="post-card" onClick={() => { if (!isMock && !editing) navigate(`/post/${post.id}`); }}>
+      <article className="post-card">
 
         {/* Top row: avatar + display name + time — rating badge — ⋮ */}
         <div className="post-employer-row">
