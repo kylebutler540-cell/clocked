@@ -143,19 +143,18 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       .finally(() => setLoading(false));
   }, [isOpen, postId]);
 
-  // Lock body scroll + hide bottom nav when open
+  // Lock body scroll + hide sidebars/topbar/bottom nav when open
   useEffect(() => {
-    const bottomNav = document.querySelector('.bottom-nav');
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      if (bottomNav) bottomNav.style.display = 'none';
+      document.body.setAttribute('data-comments-open', 'true');
     } else {
       document.body.style.overflow = '';
-      if (bottomNav) bottomNav.style.display = '';
+      document.body.removeAttribute('data-comments-open');
     }
     return () => {
       document.body.style.overflow = '';
-      if (bottomNav) bottomNav.style.display = '';
+      document.body.removeAttribute('data-comments-open');
     };
   }, [isOpen]);
 
