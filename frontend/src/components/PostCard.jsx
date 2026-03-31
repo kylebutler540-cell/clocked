@@ -300,7 +300,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
                 onClick={() => setShowPostActionModal(true)}
                 aria-label="Post options"
               >
-                <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: 1, lineHeight: 1 }}>•••</span>
+                <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: 1, lineHeight: 1 }}>•••</span>
               </button>
             </div>
           )}

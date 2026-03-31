@@ -74,7 +74,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
           {isOwner && (
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', fontSize: 16, lineHeight: 1 }}
               onClick={() => onActionModal(comment)}>
-              <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: 1, lineHeight: 1 }}>•••</span>
+              <span style={{ fontWeight: 900, fontSize: 15, letterSpacing: 1, lineHeight: 1 }}>•••</span>
             </button>
           )}
         </div>
@@ -175,7 +175,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
     const dy = e.touches[0].clientY - dragStartY.current;
     if (dy < 0) return; // only drag down
     dragCurrentY.current = dy;
-    if (sheetRef.current) sheetRef.current.style.transform = `translateY(${dy}px)`;
+    if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
   }
 
   function onTouchEnd() {
@@ -183,7 +183,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
     if (dragCurrentY.current > 100) {
       onClose();
     } else {
-      if (sheetRef.current) sheetRef.current.style.transform = 'translateY(0)';
+      if (sheetRef.current) sheetRef.current.style.transform = 'translateX(-50%) translateY(0)';
     }
     dragStartY.current = null;
     dragCurrentY.current = 0;
@@ -329,10 +329,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
 
   return (
     <>
-      {/* Overlay */}
-      <div onClick={onClose} style={{
+      {/* Overlay — blocks all background interaction */}
+      <div onClick={onClose} onTouchMove={e => e.preventDefault()} style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
         zIndex: 1000, opacity: visible ? 1 : 0, transition: 'opacity 300ms ease',
+        touchAction: 'none',
       }} />
 
       {/* Sheet */}
@@ -373,23 +374,19 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           {post && (
             <div style={{ position: 'relative' }}>
               <PostCard post={post} />
-              {/* Close button overlay top-right */}
+              {/* Close button — top right, clear of emoji */}
               <button onClick={onClose} style={{
-                position: 'absolute', top: 12, right: 12, zIndex: 10,
+                position: 'absolute', top: 10, right: 10, zIndex: 10,
                 background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                borderRadius: '50%', width: 28, height: 28, cursor: 'pointer',
+                borderRadius: '50%', width: 26, height: 26, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-muted)', fontSize: 16, lineHeight: 1,
+                color: 'var(--text-secondary)', fontSize: 15, lineHeight: 1, fontWeight: 600,
               }}>×</button>
             </div>
           )}
 
-          {/* Comments count — pinned separator */}
-          <div style={{ padding: '4px 16px 8px', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
-              {totalComments > 0 ? `${totalComments} comment${totalComments !== 1 ? 's' : ''}` : 'No comments yet'}
-            </span>
-          </div>
+          {/* Separator line */}
+          <div style={{ borderBottom: '1px solid var(--border)' }} />
         </div>
 
         {/* Comments list — only this scrolls */}
