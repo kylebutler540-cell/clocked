@@ -29,7 +29,6 @@ function StarDisplay({ rating }) {
     </span>
   );
 }
-import { cacheGet, cacheSet } from '../lib/cache';
 
 function SkeletonCard() {
   return (
