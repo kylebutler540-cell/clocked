@@ -3,6 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { cacheGet, cacheSet } from '../lib/cache';
 
+// Read-only star display with half-star support
+function StarDisplay({ rating }) {
+  if (!rating && rating !== 0) return null;
+  return (
+    <span style={{ display: 'inline-flex', gap: 1, lineHeight: 1 }}>
+      {[1, 2, 3, 4, 5].map(i => {
+        const full = rating >= i;
+        const half = !full && rating >= i - 0.5;
+        return (
+          <span key={i} style={{ fontSize: 13, position: 'relative', display: 'inline-block', width: 13, color: 'var(--border)' }}>
+            {full ? (
+              <span style={{ color: '#A855F7' }}>★</span>
+            ) : half ? (
+              <>
+                <span style={{ position: 'absolute', left: 0, top: 0, width: '50%', overflow: 'hidden', color: '#A855F7' }}>★</span>
+                <span>★</span>
+              </>
+            ) : (
+              <span>★</span>
+            )}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+import { cacheGet, cacheSet } from '../lib/cache';
+
 function SkeletonCard() {
   return (
     <div className="employer-card employer-skeleton">
@@ -133,7 +161,12 @@ export default function EmployerLeaderboard({ location }) {
             <div className="employer-rank">#{index + 1}</div>
 
             <div className="employer-info-col">
-              <div className="employer-name">{employer.employer_name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                <div className="employer-name">{employer.employer_name}</div>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  ({employer.review_count})
+                </span>
+              </div>
               <div className="employer-city">{cityPart}</div>
               {employer.distance_miles != null && (
                 <div className="employer-distance">{employer.distance_miles} mi away</div>
@@ -141,12 +174,11 @@ export default function EmployerLeaderboard({ location }) {
             </div>
 
             <div className="employer-rating-col">
-              <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 3 }}>
-                <span>⭐</span>
-                <span>{employer.avg_rating}</span>
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {employer.review_count} {employer.review_count === 1 ? "review" : "reviews"}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <StarDisplay rating={employer.avg_rating} />
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  ({employer.avg_rating})
+                </span>
               </div>
               <div className="employer-emoji-row">
                 {employer.good_count > 0 && <span><span className="emoji">😊</span><span className="count">{employer.good_count}</span></span>}
