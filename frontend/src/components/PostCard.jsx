@@ -72,7 +72,7 @@ function RatingBadge({ value }) {
   );
 }
 
-export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
+export default function PostCard({ post: initialPost, onUpdate, onDelete, closeButton }) {
   // Apply cached reaction as fallback if server didn't return user context
   const getInitialPost = () => {
     if (initialPost.liked || initialPost.disliked) {
@@ -285,6 +285,8 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
           </div>
 
           <RatingBadge value={post.rating_emoji} />
+
+          {closeButton && closeButton}
 
           {isOwner && (
             <div

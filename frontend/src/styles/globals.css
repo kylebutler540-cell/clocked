@@ -2888,7 +2888,4 @@ body[data-comments-open] .mobile-only-header {
   }
 }
 
-/* Inside comment sheet: nudge rating badge left of the X button */
-.comment-sheet-post .post-employer-row {
-  padding-right: 36px;
-}
+/* Inside comment sheet: no override needed — X is inline */

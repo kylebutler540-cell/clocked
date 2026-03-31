@@ -370,17 +370,34 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Full PostCard — pinned at top, full width, X overlaid top-right */}
+          {/* Full PostCard — pinned at top, full width */}
           {post && (
-            <div style={{ position: 'relative' }} className="comment-sheet-post">
-              <PostCard post={post} />
-              <button onClick={onClose} style={{
-                position: 'absolute', top: 10, right: 10, zIndex: 10,
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                borderRadius: '50%', width: 24, height: 24, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1, fontWeight: 600,
-              }}>×</button>
+            <div
+              className="comment-sheet-post"
+              onTouchStart={e => {
+                // Allow drag-to-close from post area when list is scrolled to top
+                if (listRef.current && listRef.current.scrollTop === 0) {
+                  dragStartY.current = e.touches[0].clientY;
+                  dragCurrentY.current = 0;
+                  if (sheetRef.current) sheetRef.current.style.transition = 'none';
+                }
+              }}
+              onTouchMove={e => {
+                if (dragStartY.current === null) return;
+                const dy = e.touches[0].clientY - dragStartY.current;
+                if (dy < 0) return;
+                dragCurrentY.current = dy;
+                if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
+              }}
+              onTouchEnd={onTouchEnd}
+            >
+              <PostCard post={post} closeButton={
+                <button onClick={onClose} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--text-muted)', fontSize: 20, lineHeight: 1,
+                  padding: '0 4px', display: 'flex', alignItems: 'center', flexShrink: 0,
+                }}>×</button>
+              } />
             </div>
           )}
 
