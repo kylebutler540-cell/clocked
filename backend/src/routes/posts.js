@@ -119,6 +119,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
 // Get top-rated employers leaderboard (location-filtered)
 router.get('/top-employers', optionalAuth, async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { location } = req.query;
 
