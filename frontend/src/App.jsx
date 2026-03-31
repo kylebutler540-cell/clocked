@@ -16,6 +16,7 @@ import LocationModal from './components/LocationModal';
 import Home from './pages/Home';
 import Create from './pages/Create';
 import Notifications from './pages/Notifications';
+import Messages from './pages/Messages';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import CompanyProfile from './pages/CompanyProfile';
@@ -27,6 +28,7 @@ import ProfileSetup from './pages/ProfileSetup';
 const PAGE_TITLES = {
   '/create': 'Create Post',
   '/notifications': 'Alerts',
+  '/messages': 'Messages',
   '/profile': 'Profile',
 };
 
@@ -354,6 +356,7 @@ function AppInner() {
               <Route path="/search" element={<Home />} />
               <Route path="/create" element={<Create />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/post/:id" element={<PostDetail />} />
