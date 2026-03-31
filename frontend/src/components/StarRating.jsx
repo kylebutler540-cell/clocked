@@ -20,12 +20,10 @@ export default function StarRating({ placeId }) {
 
   async function handleRate(star) {
     if (saving) return;
-    // Optimistic update — show instantly
     const prevRating = rating;
     const prevAverage = average;
     const prevTotal = totalRatings;
     setRating(star);
-    // Optimistically recalculate average
     const newTotal = prevRating === 0 ? prevTotal + 1 : prevTotal;
     const newAverage = prevRating === 0
       ? (prevAverage * prevTotal + star) / newTotal
@@ -35,12 +33,35 @@ export default function StarRating({ placeId }) {
     setSaving(true);
     try {
       await api.post('/ratings', { placeId, rating: star });
-      // Confirm with server response
       const res = await api.get(`/ratings/${placeId}`);
       setAverage(res.data.averageRating || 0);
       setTotalRatings(res.data.totalRatings || 0);
     } catch {
-      // Revert on failure
+      setRating(prevRating);
+      setAverage(prevAverage);
+      setTotalRatings(prevTotal);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleClear() {
+    if (saving || rating === 0) return;
+    const prevRating = rating;
+    const prevAverage = average;
+    const prevTotal = totalRatings;
+    // Optimistic update
+    setRating(0);
+    const newTotal = prevTotal - 1;
+    const newAverage = newTotal > 0 ? (prevAverage * prevTotal - prevRating) / newTotal : 0;
+    setAverage(newAverage);
+    setTotalRatings(newTotal);
+    setSaving(true);
+    try {
+      const res = await api.delete(`/ratings/${placeId}`);
+      setAverage(res.data.averageRating || 0);
+      setTotalRatings(res.data.totalRatings || 0);
+    } catch {
       setRating(prevRating);
       setAverage(prevAverage);
       setTotalRatings(prevTotal);
@@ -78,6 +99,27 @@ export default function StarRating({ placeId }) {
           </button>
         );
       })}
+      {rating > 0 && (
+        <button
+          type="button"
+          onClick={handleClear}
+          title="Clear your rating"
+          style={{
+            background: 'none',
+            border: '1.5px solid var(--border)',
+            borderRadius: 6,
+            padding: '2px 7px',
+            fontSize: 12,
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            lineHeight: 1,
+            marginLeft: 4,
+            flexShrink: 0,
+          }}
+        >
+          ✕
+        </button>
+      )}
       {totalRatings > 0 && (
         <span style={{
           fontSize: 13,

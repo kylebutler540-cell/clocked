@@ -55,4 +55,22 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/ratings/:placeId — remove user's star rating
+router.delete('/:placeId', requireAuth, async (req, res) => {
+  try {
+    await prisma.companyRating.deleteMany({
+      where: { user_id: req.user.id, place_id: req.params.placeId },
+    });
+    const agg = await prisma.companyRating.aggregate({
+      where: { place_id: req.params.placeId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+    res.json({ success: true, averageRating: agg._avg.rating || 0, totalRatings: agg._count.rating });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to clear rating' });
+  }
+});
+
 module.exports = router;
