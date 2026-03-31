@@ -889,13 +889,11 @@ img, video {
   border-radius: 16px;
   padding: 16px;
   margin: 10px 12px;
-  transition: background var(--transition), box-shadow var(--transition);
   box-shadow: 0 1px 4px var(--shadow);
-}
-
-.post-card:hover {
-  background: var(--bg-elevated);
-  box-shadow: 0 2px 8px var(--shadow);
+  /* Not a button — no hover/press states, no cursor change */
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 @media (min-width: 768px) {
@@ -905,12 +903,7 @@ img, video {
     padding: 16px 20px;
     border: 1px solid var(--border);
     box-shadow: none;
-    cursor: pointer;
-  }
-
-  .post-card:hover {
-    border-color: var(--border-light);
-    box-shadow: none;
+    cursor: default;
   }
 
   .feed {

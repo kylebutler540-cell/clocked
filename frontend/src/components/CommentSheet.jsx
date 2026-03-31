@@ -360,38 +360,20 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       >
         {/* Drag handle + pinned post header — never scrolls */}
         <div style={{ flexShrink: 0 }}>
-          {/* Drag handle — mobile only */}
+          {/* Drag handle — mobile only, tall hit area */}
           <div
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             className="comment-sheet-handle"
-            style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', cursor: 'grab' }}
+            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 0 12px', cursor: 'grab', minHeight: 44 }}
           >
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
           {/* Full PostCard — pinned at top, full width */}
           {post && (
-            <div
-              className="comment-sheet-post"
-              onTouchStart={e => {
-                // Allow drag-to-close from post area when list is scrolled to top
-                if (listRef.current && listRef.current.scrollTop === 0) {
-                  dragStartY.current = e.touches[0].clientY;
-                  dragCurrentY.current = 0;
-                  if (sheetRef.current) sheetRef.current.style.transition = 'none';
-                }
-              }}
-              onTouchMove={e => {
-                if (dragStartY.current === null) return;
-                const dy = e.touches[0].clientY - dragStartY.current;
-                if (dy < 0) return;
-                dragCurrentY.current = dy;
-                if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
-              }}
-              onTouchEnd={onTouchEnd}
-            >
+            <div className="comment-sheet-post" style={{ WebkitTapHighlightColor: 'transparent' }}>
               <PostCard post={post} closeButton={
                 <button onClick={onClose} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
