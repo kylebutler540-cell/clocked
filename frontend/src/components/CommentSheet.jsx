@@ -493,7 +493,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
 
       {/* Comment action modal */}
       {commentActionModal && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setCommentActionModal(null)}>
+        <div className="modal-overlay" style={{ zIndex: 1300 }} onClick={() => setCommentActionModal(null)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', padding: '24px 20px 20px' }}>
             <div className="modal-handle" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
