@@ -76,6 +76,7 @@ export default function PostDetail() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editText, setEditText] = useState('');
   const [menuCommentId, setMenuCommentId] = useState(null);
+  const [commentActionModal, setCommentActionModal] = useState(null); // { comment } or null
   const longPressTimer = useRef(null);
   const menuRefs = useRef({});
 
@@ -147,8 +148,7 @@ export default function PostDetail() {
   }
 
   async function handleDeleteComment(commentId) {
-    setMenuCommentId(null);
-    if (!window.confirm('Delete this comment?')) return;
+    setCommentActionModal(null);
     try {
       await api.delete(`/posts/${id}/comments/${commentId}`);
       setComments(prev => prev.filter(c => c.id !== commentId));
@@ -307,42 +307,16 @@ export default function PostDetail() {
                       {timeAgo(comment.created_at)}
                     </span>
                     {isOwner && (
-                      <div style={{ position: 'relative' }} ref={el => { if (el) menuRefs.current[comment.id] = el; }}>
-                        <button
-                          style={{
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-muted)', padding: '2px 4px',
-                            fontSize: 18, lineHeight: 1, display: 'flex', alignItems: 'center',
-                          }}
-                          onClick={() => setMenuCommentId(menuOpen ? null : comment.id)}
-                        >
-                          ⋮
-                        </button>
-                        {menuOpen && (
-                          <div style={{
-                            position: 'absolute', right: 0, top: '100%', zIndex: 200,
-                            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                            borderRadius: 8, padding: '4px 0', minWidth: 160,
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                          }}>
-                            <button
-                              className="topbar-dropdown-item"
-                              onClick={() => startEditComment(comment)}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              Edit Comment
-                            </button>
-                            <button
-                              className="topbar-dropdown-item"
-                              style={{ color: '#EF4444' }}
-                              onClick={() => handleDeleteComment(comment.id)}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                              Delete Comment
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--text-muted)', padding: '2px 4px',
+                          fontSize: 18, lineHeight: 1, display: 'flex', alignItems: 'center',
+                        }}
+                        onClick={() => setCommentActionModal(comment)}
+                      >
+                        ⋮
+                      </button>
                     )}
                   </div>
                 </div>
@@ -394,6 +368,46 @@ export default function PostDetail() {
           })
         )}
       </div>
+
+      {/* Comment action modal — Edit / Delete / Cancel */}
+      {commentActionModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setCommentActionModal(null)}
+        >
+          <div
+            className="modal-sheet"
+            onClick={e => e.stopPropagation()}
+            style={{ textAlign: 'center', padding: '24px 20px 20px' }}
+          >
+            <div className="modal-handle" />
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>What would you like to do?</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                className="btn btn-secondary btn-full"
+                style={{ padding: '12px', fontSize: 15, fontWeight: 600 }}
+                onClick={() => { setCommentActionModal(null); startEditComment(commentActionModal); }}
+              >
+                Edit
+              </button>
+              <button
+                className="btn btn-full"
+                style={{ padding: '12px', fontSize: 15, fontWeight: 600, background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)' }}
+                onClick={() => handleDeleteComment(commentActionModal.id)}
+              >
+                Delete
+              </button>
+              <button
+                className="btn btn-ghost btn-full"
+                style={{ padding: '12px', fontSize: 15 }}
+                onClick={() => setCommentActionModal(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
