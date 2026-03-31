@@ -64,6 +64,7 @@ function RatingBadge({ value }) {
       color: r.color,
       border: `1px solid ${r.color}44`,
       flexShrink: 0,
+
     }}>
       <span style={{ fontSize: 15, filter: r.greenFilter ? 'hue-rotate(85deg) saturate(1.4) brightness(1.1)' : 'none' }}>{r.emoji}</span>
       {value === 'BAD' ? 'Bad' : value === 'NEUTRAL' ? 'Neutral' : 'Good'}
@@ -300,7 +301,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
                 onClick={() => setShowPostActionModal(true)}
                 aria-label="Post options"
               >
-                <span style={{ fontWeight: 900, fontSize: 13, letterSpacing: 0, lineHeight: 1 }}>•••</span>
+                <span style={{ fontWeight: 900, fontSize: 11, letterSpacing: '-1px', lineHeight: 1 }}>•••</span>
               </button>
             </div>
           )}

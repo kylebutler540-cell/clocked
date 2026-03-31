@@ -2887,3 +2887,8 @@ body[data-comments-open] .mobile-only-header {
     display: none !important;
   }
 }
+
+/* Inside comment sheet: nudge rating badge left of the X button */
+.comment-sheet-post .post-employer-row {
+  padding-right: 36px;
+}
