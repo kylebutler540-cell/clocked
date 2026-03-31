@@ -176,8 +176,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
       document.body.setAttribute('data-comments-open', 'true');
-      const bottomNav = document.querySelector('.bottom-nav');
-      if (bottomNav) bottomNav.style.display = 'none';
       return () => {
         document.body.style.overflow = '';
         document.body.style.position = '';
@@ -185,7 +183,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
         document.body.style.width = '';
         document.body.removeAttribute('data-comments-open');
         window.scrollTo(0, scrollY);
-        if (bottomNav) bottomNav.style.display = '';
       };
     }
   }, [isOpen]);

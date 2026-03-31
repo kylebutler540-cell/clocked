@@ -2864,7 +2864,8 @@ body[data-comments-open] .desktop-topbar,
 body[data-comments-open] .app-layout > .left-sidebar,
 body[data-comments-open] .bottom-nav,
 body[data-comments-open] .mobile-only-header {
-  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* Hide drag handle bar on desktop */
