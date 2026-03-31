@@ -39,7 +39,7 @@ export default function FlagModal({ postId, onClose }) {
 
   if (submitted) {
     return (
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onClick={e => { e.stopPropagation(); onClose(); }}>
         <div
           className="modal-sheet"
           onClick={e => e.stopPropagation()}
@@ -95,7 +95,7 @@ export default function FlagModal({ postId, onClose }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={e => { e.stopPropagation(); onClose(); }}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
         <h2 className="modal-title">Report Post</h2>

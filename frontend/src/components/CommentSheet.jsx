@@ -455,7 +455,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
               onChange={e => setCommentText(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
               placeholder={replyingTo ? 'Write a reply...' : 'Add a comment...'}
-              maxLength={1000} style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14 }} />
+              maxLength={250} style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14 }} />
             <button onClick={handleSubmit}
               disabled={submitting || (!commentText.trim() && !selectedImage)}
               style={{

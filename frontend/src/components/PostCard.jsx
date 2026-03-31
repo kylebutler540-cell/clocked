@@ -428,7 +428,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           </div>
 
           {/* Comments */}
-          <button className="action-btn" onClick={e => { e.stopPropagation(); if (!isMock) setShowComments(true); }} aria-label="Comments" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <button className="action-btn" onClick={e => { e.stopPropagation(); if (!isMock && !showComments) setShowComments(true); }} aria-label="Comments" style={{ whiteSpace: 'nowrap', flexShrink: 0, opacity: showComments ? 0.4 : 1, pointerEvents: showComments ? 'none' : 'auto' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
