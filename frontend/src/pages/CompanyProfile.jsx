@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { cacheGet, cacheSet } from '../lib/cache';
 import Feed from '../components/Feed';
 import StarRating from '../components/StarRating';
 
@@ -26,8 +27,11 @@ export default function CompanyProfile() {
   const inputRef = useRef(null);
 
   useEffect(() => {
+    const cacheKey = `employer-profile/${placeId}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) setProfile(cached);
     api.get(`/employers/profile/${placeId}`)
-      .then(res => setProfile(res.data))
+      .then(res => { cacheSet(cacheKey, res.data); setProfile(res.data); })
       .catch(() => {});
   }, [placeId]);
 

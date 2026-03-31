@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
+import { cacheGet, cacheSet, cacheDelete } from '../lib/cache';
 
 export default function StarRating({ placeId }) {
   const [rating, setRating] = useState(0);
@@ -11,8 +12,18 @@ export default function StarRating({ placeId }) {
   const debounceRef = React.useRef(null);
 
   useEffect(() => {
+    const cacheKey = `ratings/${placeId}`;
+    // Show cached data instantly
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      setRating(cached.userRating || 0);
+      setAverage(cached.averageRating || 0);
+      setTotalRatings(cached.totalRatings || 0);
+    }
+    // Always revalidate in background
     api.get(`/ratings/${placeId}`)
       .then(res => {
+        cacheSet(cacheKey, res.data);
         setRating(res.data.userRating || 0);
         setAverage(res.data.averageRating || 0);
         setTotalRatings(res.data.totalRatings || 0);
@@ -43,6 +54,7 @@ export default function StarRating({ placeId }) {
     try {
       await api.post('/ratings', { placeId, rating: star });
       const res = await api.get(`/ratings/${placeId}`);
+      cacheSet(`ratings/${placeId}`, res.data);
       setRating(res.data.userRating || star);
       setAverage(res.data.averageRating || 0);
       setTotalRatings(res.data.totalRatings || 0);
@@ -80,6 +92,7 @@ export default function StarRating({ placeId }) {
     setSaving(true);
     try {
       const res = await api.delete(`/ratings/${placeId}`);
+      cacheSet(`ratings/${placeId}`, { ...res.data, userRating: 0 });
       setAverage(res.data.averageRating || 0);
       setTotalRatings(res.data.totalRatings || 0);
     } catch {
