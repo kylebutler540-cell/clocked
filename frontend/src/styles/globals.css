@@ -1102,9 +1102,9 @@ img, video {
 .feed {
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background: var(--bg-card);
   min-height: 100%;
-  padding: 4px 0;
+  padding: 0;
 }
 
 .feed-empty {
