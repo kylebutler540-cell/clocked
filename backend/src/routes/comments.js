@@ -32,7 +32,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const allComments = await prisma.comment.findMany({
       where: { post_id: req.params.postId },
-      orderBy: { created_at: 'asc' },
+      orderBy: { created_at: 'desc' },
       include: {
         user: { select: { anon_number: true } },
         likes_rel: currentUserId ? { where: { user_id: currentUserId }, select: { user_id: true } } : false,

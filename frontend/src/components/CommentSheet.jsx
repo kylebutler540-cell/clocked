@@ -214,7 +214,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           return c;
         }));
       } else {
-        setComments(prev => [...prev, newComment]);
+        setComments(prev => [newComment, ...prev]);
       }
       setCommentText('');
       setSelectedImage(null);
@@ -323,63 +323,63 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Drag handle — touch to close */}
-        <div
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', cursor: 'grab', flexShrink: 0 }}
-        >
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
-        </div>
+        {/* Drag handle + pinned post header — never scrolls */}
+        <div style={{ flexShrink: 0 }}>
+          {/* Drag handle */}
+          <div
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', cursor: 'grab' }}
+          >
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+          </div>
 
-        {/* Full post at top */}
-        {post && (
-          <div style={{
-            margin: '0 12px 12px',
-            padding: '12px 14px',
-            background: 'var(--bg-elevated)',
-            borderRadius: 12,
-            border: '1px solid var(--border)',
-            flexShrink: 0,
-          }}>
-            {/* Employer + rating */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 20 }}>{ratingEmoji}</span>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {post.employer_name}
+          {/* Full post — pinned, never pushed by comments */}
+          {post && (
+            <div style={{ padding: '0 12px 12px' }}>
+              <div style={{
+                padding: '12px 14px',
+                background: 'var(--bg-elevated)',
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: post.header || post.body ? 8 : 0 }}>
+                  <span style={{ fontSize: 20 }}>{ratingEmoji}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {post.employer_name}
+                    </div>
+                    {post.employer_address && (
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {post.employer_address}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>
                 </div>
-                {post.employer_address && (
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {post.employer_address}
+                {post.header && (
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{post.header}</div>
+                )}
+                {post.body && (
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {post.body}
                   </div>
                 )}
               </div>
-              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>
             </div>
-            {/* Headline */}
-            {post.header && (
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{post.header}</div>
-            )}
-            {/* Body */}
-            {post.body && (
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {post.body}
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {/* Comments count bar */}
-        <div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
-            {totalComments > 0 ? `${totalComments} comment${totalComments !== 1 ? 's' : ''}` : 'No comments yet'}
-          </span>
+          {/* Comments count — pinned separator */}
+          <div style={{ padding: '4px 16px 8px', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
+              {totalComments > 0 ? `${totalComments} comment${totalComments !== 1 ? 's' : ''}` : 'No comments yet'}
+            </span>
+          </div>
         </div>
 
-        {/* Comments list — scrollable */}
-        <div ref={listRef} style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', borderTop: '1px solid var(--border)' }}>
+        {/* Comments list — only this scrolls */}
+        <div ref={listRef} style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
           {loading ? (
             <div style={{ padding: '32px 16px', textAlign: 'center' }}><div className="spinner" /></div>
           ) : comments.length === 0 ? (
