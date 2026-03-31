@@ -68,8 +68,8 @@ router.post('/', optionalAuth, async (req, res) => {
     if ((!body || body.trim().length < 1) && !image_url) {
       return res.status(400).json({ error: 'Comment must have text or an image' });
     }
-    if (body && body.length > 250) {
-      return res.status(400).json({ error: 'Comment too long (max 250 chars)' });
+    if (body && body.length > 1600) {
+      return res.status(400).json({ error: 'Comment too long (max 1600 chars)' });
     }
 
     // Verify post exists
