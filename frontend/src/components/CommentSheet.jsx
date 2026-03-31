@@ -372,7 +372,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
 
           {/* Full PostCard — pinned at top, never pushed by comments */}
           {post && (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', paddingRight: 36 }}>
               <PostCard post={post} />
               {/* Close button — top right, clear of emoji */}
               <button onClick={onClose} style={{
