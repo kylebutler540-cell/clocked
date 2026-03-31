@@ -119,7 +119,11 @@ export default function EmployerLeaderboard({ location }) {
   return (
     <div className="employer-leaderboard">
       {employers.map((employer, index) => {
-        const cityPart = employer.employer_address.split(",").slice(0, 2).join(",").trim();
+        // Extract "City, State" from address like "123 Main St, Grand Rapids, MI, USA"
+        const addrParts = employer.employer_address.split(",").map(s => s.trim());
+        const cityPart = addrParts.length >= 3
+          ? `${addrParts[addrParts.length - 3]}, ${addrParts[addrParts.length - 2]}`
+          : addrParts.slice(0, 2).join(", ");
         return (
           <div
             key={employer.employer_place_id}

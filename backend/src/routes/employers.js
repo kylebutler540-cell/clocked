@@ -117,12 +117,18 @@ router.get('/profile/:placeId', async (req, res) => {
     const ratingCounts = { BAD: 0, NEUTRAL: 0, GOOD: 0 };
     ratings.forEach(r => { ratingCounts[r.rating_emoji] = r._count.rating_emoji; });
 
+    // Calculate avg star rating from post emojis (GOOD=5, NEUTRAL=3, BAD=1)
+    const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
+    const starSum = ratings.reduce((s, r) => s + (emojiToStar[r.rating_emoji] || 3) * r._count.rating_emoji, 0);
+    const avg_rating = totalReviews > 0 ? Math.round((starSum / totalReviews) * 10) / 10 : null;
+
     res.json({
       place_id: placeId,
       employer_name: posts[0]?.employer_name || null,
       employer_address: posts[0]?.employer_address || null,
       total_reviews: totalReviews,
       rating_counts: ratingCounts,
+      avg_rating,
     });
   } catch (err) {
     console.error(err);

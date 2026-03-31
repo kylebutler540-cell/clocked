@@ -2,6 +2,29 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { cacheGet, cacheSet } from '../lib/cache';
+
+// Read-only star display with half-star support
+function StarDisplay({ rating }) {
+  if (!rating) return null;
+  return (
+    <span style={{ display: 'inline-flex', gap: 1, lineHeight: 1 }}>
+      {[1, 2, 3, 4, 5].map(i => {
+        const full = rating >= i;
+        const half = !full && rating >= i - 0.5;
+        return (
+          <span key={i} style={{ fontSize: 15, color: full || half ? '#A855F7' : 'var(--border)', position: 'relative', display: 'inline-block', width: 15 }}>
+            {full ? '★' : half ? (
+              <span>
+                <span style={{ position: 'absolute', left: 0, top: 0, width: '50%', overflow: 'hidden', color: '#A855F7' }}>★</span>
+                <span style={{ color: 'var(--border)' }}>★</span>
+              </span>
+            ) : '★'}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 import Feed from '../components/Feed';
 import StarRating from '../components/StarRating';
 
@@ -85,19 +108,26 @@ export default function CompanyProfile() {
             🏢
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <h1 className="company-name" style={{ margin: 0 }}>
-                {profile?.employer_name || stateInfo.name || 'Company'}
-              </h1>
-              <StarRating placeId={placeId} />
-            </div>
-            <p className="company-address">
+            <h1 className="company-name" style={{ margin: '0 0 4px' }}>
+              {profile?.employer_name || stateInfo.name || 'Company'}
+            </h1>
+            <p className="company-address" style={{ margin: '0 0 6px' }}>
               {profile?.employer_address || stateInfo.address || ''}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                {total} {total === 1 ? 'review' : 'reviews'}
-              </p>
+            {/* Review count + stars + avg rating inline */}
+            {total > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
+                  {total} {total === 1 ? 'review' : 'reviews'}
+                </span>
+                <StarDisplay rating={profile?.avg_rating || 0} />
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  ({profile?.avg_rating != null ? profile.avg_rating : '—'})
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2, flexWrap: 'wrap' }}>
+              <StarRating placeId={placeId} />
               <button
                 className="btn btn-primary"
                 style={{ padding: '6px 14px', fontSize: 13 }}
