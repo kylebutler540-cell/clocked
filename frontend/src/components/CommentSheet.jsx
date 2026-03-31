@@ -4,8 +4,8 @@ import api from '../lib/api';
 import { timeAgo, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import PostCard from './PostCard';
 
-const RATING_EMOJI = { BAD: '😡', NEUTRAL: '😐', GOOD: '😊' };
 
 function CommentAvatar({ anonNumber, size = 32 }) {
   const initial = anonNumber != null ? String(anonNumber)[0] : 'A';
@@ -73,7 +73,9 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
           </button>
           {isOwner && (
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', fontSize: 16, lineHeight: 1 }}
-              onClick={() => onActionModal(comment)}>⋮</button>
+              onClick={() => onActionModal(comment)}>
+              <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: 1, lineHeight: 1 }}>•••</span>
+            </button>
           )}
         </div>
       </div>
@@ -199,30 +201,63 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!commentText.trim() && !selectedImage) return;
-    setSubmitting(true);
+
+    // Optimistic comment — show instantly
+    const optimisticComment = {
+      id: `optimistic-${Date.now()}`,
+      post_id: postId,
+      anonymous_user_id: user?.id || 'anon',
+      author_anon_number: user?.anon_number ?? null,
+      body: commentText.trim() || '',
+      image_url: selectedImage?.dataUrl || null,
+      created_at: new Date().toISOString(),
+      likes: 0,
+      liked: false,
+      replies: [],
+      _optimistic: true,
+    };
+
+    const capturedText = commentText.trim();
+    const capturedImage = selectedImage;
+    const capturedReplyingTo = replyingTo;
+
+    setCommentText('');
+    setSelectedImage(null);
+    setReplyingTo(null);
+
+    if (capturedReplyingTo) {
+      setComments(prev => prev.map(c => {
+        if (c.id === capturedReplyingTo.id) return { ...c, replies: [optimisticComment, ...(c.replies || [])] };
+        if (c.replies) return { ...c, replies: c.replies.map(r =>
+          r.id === capturedReplyingTo.id ? { ...r, replies: [optimisticComment, ...(r.replies || [])] } : r) };
+        return c;
+      }));
+    } else {
+      setComments(prev => [optimisticComment, ...prev]);
+    }
+    listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+
     try {
-      const payload = { body: commentText.trim() || '', image_url: selectedImage?.dataUrl || null };
-      if (replyingTo) payload.parent_id = replyingTo.id;
+      const payload = { body: capturedText || '', image_url: capturedImage?.dataUrl || null };
+      if (capturedReplyingTo) payload.parent_id = capturedReplyingTo.id;
       const res = await api.post(`/posts/${postId}/comments`, payload);
       const newComment = res.data;
-      if (replyingTo) {
-        setComments(prev => prev.map(c => {
-          if (c.id === replyingTo.id) return { ...c, replies: [...(c.replies || []), newComment] };
-          if (c.replies) return { ...c, replies: c.replies.map(r =>
-            r.id === replyingTo.id ? { ...r, replies: [...(r.replies || []), newComment] } : r) };
-          return c;
-        }));
-      } else {
-        setComments(prev => [newComment, ...prev]);
-      }
-      setCommentText('');
-      setSelectedImage(null);
-      setReplyingTo(null);
-      setTimeout(() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+
+      // Replace optimistic with real
+      const replaceOptimistic = list => list.map(c => {
+        if (c.id === optimisticComment.id) return newComment;
+        if (c.replies) return { ...c, replies: replaceOptimistic(c.replies) };
+        return c;
+      });
+      setComments(prev => replaceOptimistic(prev));
     } catch (err) {
+      // Remove optimistic on failure
+      const remove = list => list.filter(c => c.id !== optimisticComment.id)
+        .map(c => c.replies ? { ...c, replies: remove(c.replies) } : c);
+      setComments(prev => remove(prev));
+      setCommentText(capturedText);
+      setSelectedImage(capturedImage);
       addToast(err.response?.status === 401 ? 'Sign in to comment' : 'Failed to post comment');
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -291,7 +326,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   if (!isOpen) return null;
 
   const totalComments = comments.reduce((sum, c) => sum + 1 + (c.replies?.length || 0), 0);
-  const ratingEmoji = post ? RATING_EMOJI[post.rating_emoji] : '';
 
   return (
     <>
@@ -335,38 +369,18 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Full post — pinned, never pushed by comments */}
+          {/* Full PostCard — pinned at top, never pushed by comments */}
           {post && (
-            <div style={{ padding: '0 12px 12px' }}>
-              <div style={{
-                padding: '12px 14px',
-                background: 'var(--bg-elevated)',
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: post.header || post.body ? 8 : 0 }}>
-                  <span style={{ fontSize: 20 }}>{ratingEmoji}</span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {post.employer_name}
-                    </div>
-                    {post.employer_address && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {post.employer_address}
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>
-                </div>
-                {post.header && (
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{post.header}</div>
-                )}
-                {post.body && (
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {post.body}
-                  </div>
-                )}
-              </div>
+            <div style={{ position: 'relative' }}>
+              <PostCard post={post} />
+              {/* Close button overlay top-right */}
+              <button onClick={onClose} style={{
+                position: 'absolute', top: 12, right: 12, zIndex: 10,
+                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                borderRadius: '50%', width: 28, height: 28, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-muted)', fontSize: 16, lineHeight: 1,
+              }}>×</button>
             </div>
           )}
 
@@ -469,8 +483,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
         <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setCommentActionModal(null)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', padding: '24px 20px 20px' }}>
             <div className="modal-handle" />
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>What would you like to do?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
               <button className="btn btn-secondary btn-full" style={{ padding: '12px', fontSize: 15, fontWeight: 600 }}
                 onClick={() => startEditComment(commentActionModal)}>Edit</button>
               <button className="btn btn-full"

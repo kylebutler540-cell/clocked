@@ -89,6 +89,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPostActionModal, setShowPostActionModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
@@ -296,28 +297,11 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
                   color: 'var(--text-muted)', padding: '2px 6px',
                   fontSize: 18, lineHeight: 1, marginLeft: 4,
                 }}
-                onClick={() => setShowMenu(v => !v)}
+                onClick={() => setShowPostActionModal(true)}
                 aria-label="Post options"
               >
-                ⋮
+                <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: 1, lineHeight: 1 }}>•••</span>
               </button>
-              {showMenu && (
-                <div style={{
-                  position: 'absolute', right: 0, top: '100%', zIndex: 200,
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: '4px 0', minWidth: 160,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                }}>
-                  <button className="topbar-dropdown-item" onClick={startEditing}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Edit Post
-                  </button>
-                  <button className="topbar-dropdown-item" style={{ color: '#EF4444' }} onClick={handleDeletePost}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                    Delete Post
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -473,6 +457,23 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete }) {
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       {showFlag && <FlagModal postId={post.id} onClose={() => setShowFlag(false)} />}
       <CommentSheet postId={post.id} post={post} isOpen={showComments} onClose={() => setShowComments(false)} />
+
+      {showPostActionModal && (
+        <div className="modal-overlay" onClick={() => setShowPostActionModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', padding: '24px 20px 20px' }}>
+            <div className="modal-handle" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button className="btn btn-secondary btn-full" style={{ padding: '12px', fontSize: 15, fontWeight: 600 }}
+                onClick={() => { setShowPostActionModal(false); startEditing(); }}>Edit</button>
+              <button className="btn btn-full"
+                style={{ padding: '12px', fontSize: 15, fontWeight: 600, background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)' }}
+                onClick={() => { setShowPostActionModal(false); handleDeletePost(); }}>Delete</button>
+              <button className="btn btn-ghost btn-full" style={{ padding: '12px', fontSize: 15 }}
+                onClick={() => setShowPostActionModal(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
