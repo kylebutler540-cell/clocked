@@ -37229,3 +37229,293 @@ ModuleNotFoundError: No module named 'dotenv'
 
 2026-04-01 07:10:16,247 [INFO]    Sleeping 300s...
 
+2026-04-01 07:15:16,487 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:15:16,487 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:15:16,705 [INFO]    BTC-USDC | RSI(1H): 59.6 | Price: $68,600.44
+2026-04-01 07:15:16,705 [INFO]    BTC-USDC | RSI(1H): 59.6 | Price: $68,600.44
+2026-04-01 07:15:16,921 [INFO]    ETH-USDC | RSI(1H): 62.7 | Price: $2,136.82
+2026-04-01 07:15:16,921 [INFO]    ETH-USDC | RSI(1H): 62.7 | Price: $2,136.82
+2026-04-01 07:15:16,921 [INFO]    Sleeping 300s...
+
+2026-04-01 07:15:16,921 [INFO]    Sleeping 300s...
+
+2026-04-01 07:20:17,122 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:20:17,122 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:20:17,332 [INFO]    BTC-USDC | RSI(1H): 58.9 | Price: $68,536.21
+2026-04-01 07:20:17,332 [INFO]    BTC-USDC | RSI(1H): 58.9 | Price: $68,536.21
+2026-04-01 07:20:17,756 [INFO]    ETH-USDC | RSI(1H): 62.2 | Price: $2,134.26
+2026-04-01 07:20:17,756 [INFO]    ETH-USDC | RSI(1H): 62.2 | Price: $2,134.26
+2026-04-01 07:20:17,756 [INFO]    Sleeping 300s...
+
+2026-04-01 07:20:17,756 [INFO]    Sleeping 300s...
+
+2026-04-01 07:25:17,982 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:25:17,982 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:25:18,218 [INFO]    BTC-USDC | RSI(1H): 59.0 | Price: $68,572.73
+2026-04-01 07:25:18,218 [INFO]    BTC-USDC | RSI(1H): 59.0 | Price: $68,572.73
+2026-04-01 07:25:18,446 [INFO]    ETH-USDC | RSI(1H): 61.7 | Price: $2,133.45
+2026-04-01 07:25:18,446 [INFO]    ETH-USDC | RSI(1H): 61.7 | Price: $2,133.45
+2026-04-01 07:25:18,446 [INFO]    Sleeping 300s...
+
+2026-04-01 07:25:18,446 [INFO]    Sleeping 300s...
+
+2026-04-01 07:30:18,911 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:30:18,911 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:30:19,116 [INFO]    BTC-USDC | RSI(1H): 58.9 | Price: $68,543.99
+2026-04-01 07:30:19,116 [INFO]    BTC-USDC | RSI(1H): 58.9 | Price: $68,543.99
+2026-04-01 07:30:19,324 [INFO]    ETH-USDC | RSI(1H): 61.9 | Price: $2,133.35
+2026-04-01 07:30:19,324 [INFO]    ETH-USDC | RSI(1H): 61.9 | Price: $2,133.35
+2026-04-01 07:30:19,324 [INFO]    Sleeping 300s...
+
+2026-04-01 07:30:19,324 [INFO]    Sleeping 300s...
+
+2026-04-01 07:35:19,555 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:35:19,555 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:35:19,768 [INFO]    BTC-USDC | RSI(1H): 58.5 | Price: $68,572.34
+2026-04-01 07:35:19,768 [INFO]    BTC-USDC | RSI(1H): 58.5 | Price: $68,572.34
+2026-04-01 07:35:19,982 [INFO]    ETH-USDC | RSI(1H): 61.5 | Price: $2,133.54
+2026-04-01 07:35:19,982 [INFO]    ETH-USDC | RSI(1H): 61.5 | Price: $2,133.54
+2026-04-01 07:35:19,983 [INFO]    Sleeping 300s...
+
+2026-04-01 07:35:19,983 [INFO]    Sleeping 300s...
+
+2026-04-01 07:40:20,202 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:40:20,202 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:40:20,415 [INFO]    BTC-USDC | RSI(1H): 59.8 | Price: $68,601.54
+2026-04-01 07:40:20,415 [INFO]    BTC-USDC | RSI(1H): 59.8 | Price: $68,601.54
+2026-04-01 07:40:20,619 [INFO]    ETH-USDC | RSI(1H): 62.6 | Price: $2,135.71
+2026-04-01 07:40:20,619 [INFO]    ETH-USDC | RSI(1H): 62.6 | Price: $2,135.71
+2026-04-01 07:40:20,620 [INFO]    Sleeping 300s...
+
+2026-04-01 07:40:20,620 [INFO]    Sleeping 300s...
+
+2026-04-01 07:45:20,833 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:45:20,833 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:45:21,055 [INFO]    BTC-USDC | RSI(1H): 59.3 | Price: $68,568.50
+2026-04-01 07:45:21,055 [INFO]    BTC-USDC | RSI(1H): 59.3 | Price: $68,568.50
+2026-04-01 07:45:21,276 [INFO]    ETH-USDC | RSI(1H): 62.2 | Price: $2,134.52
+2026-04-01 07:45:21,276 [INFO]    ETH-USDC | RSI(1H): 62.2 | Price: $2,134.52
+2026-04-01 07:45:21,277 [INFO]    Sleeping 300s...
+
+2026-04-01 07:45:21,277 [INFO]    Sleeping 300s...
+
+2026-04-01 07:50:21,584 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:50:21,584 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:50:21,788 [INFO]    BTC-USDC | RSI(1H): 60.4 | Price: $68,651.56
+2026-04-01 07:50:21,788 [INFO]    BTC-USDC | RSI(1H): 60.4 | Price: $68,651.56
+2026-04-01 07:50:22,026 [INFO]    ETH-USDC | RSI(1H): 62.4 | Price: $2,135.15
+2026-04-01 07:50:22,026 [INFO]    ETH-USDC | RSI(1H): 62.4 | Price: $2,135.15
+2026-04-01 07:50:22,026 [INFO]    Sleeping 300s...
+
+2026-04-01 07:50:22,026 [INFO]    Sleeping 300s...
+
+2026-04-01 07:55:22,278 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:55:22,278 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 07:55:22,501 [INFO]    BTC-USDC | RSI(1H): 61.0 | Price: $68,704.47
+2026-04-01 07:55:22,501 [INFO]    BTC-USDC | RSI(1H): 61.0 | Price: $68,704.47
+2026-04-01 07:55:22,712 [INFO]    ETH-USDC | RSI(1H): 62.4 | Price: $2,135.39
+2026-04-01 07:55:22,712 [INFO]    ETH-USDC | RSI(1H): 62.4 | Price: $2,135.39
+2026-04-01 07:55:22,712 [INFO]    Sleeping 300s...
+
+2026-04-01 07:55:22,712 [INFO]    Sleeping 300s...
+
+2026-04-01 08:00:22,969 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:00:22,969 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:00:23,202 [INFO]    BTC-USDC | RSI(1H): 60.6 | Price: $68,672.53
+2026-04-01 08:00:23,202 [INFO]    BTC-USDC | RSI(1H): 60.6 | Price: $68,672.53
+2026-04-01 08:00:23,404 [INFO]    ETH-USDC | RSI(1H): 62.0 | Price: $2,133.86
+2026-04-01 08:00:23,404 [INFO]    ETH-USDC | RSI(1H): 62.0 | Price: $2,133.86
+2026-04-01 08:00:23,404 [INFO]    Sleeping 300s...
+
+2026-04-01 08:00:23,404 [INFO]    Sleeping 300s...
+
+2026-04-01 08:05:23,744 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:05:23,744 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:05:23,955 [INFO]    BTC-USDC | RSI(1H): 57.7 | Price: $68,537.97
+2026-04-01 08:05:23,955 [INFO]    BTC-USDC | RSI(1H): 57.7 | Price: $68,537.97
+2026-04-01 08:05:24,168 [INFO]    ETH-USDC | RSI(1H): 60.9 | Price: $2,132.59
+2026-04-01 08:05:24,168 [INFO]    ETH-USDC | RSI(1H): 60.9 | Price: $2,132.59
+2026-04-01 08:05:24,168 [INFO]    Sleeping 300s...
+
+2026-04-01 08:05:24,168 [INFO]    Sleeping 300s...
+
+2026-04-01 08:10:24,441 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:10:24,441 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:10:24,674 [INFO]    BTC-USDC | RSI(1H): 57.3 | Price: $68,546.72
+2026-04-01 08:10:24,674 [INFO]    BTC-USDC | RSI(1H): 57.3 | Price: $68,546.72
+2026-04-01 08:10:24,886 [INFO]    ETH-USDC | RSI(1H): 60.9 | Price: $2,133.43
+2026-04-01 08:10:24,886 [INFO]    ETH-USDC | RSI(1H): 60.9 | Price: $2,133.43
+2026-04-01 08:10:24,886 [INFO]    Sleeping 300s...
+
+2026-04-01 08:10:24,886 [INFO]    Sleeping 300s...
+
+2026-04-01 08:15:25,066 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:15:25,066 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:15:25,279 [INFO]    BTC-USDC | RSI(1H): 59.1 | Price: $68,610.01
+2026-04-01 08:15:25,279 [INFO]    BTC-USDC | RSI(1H): 59.1 | Price: $68,610.01
+2026-04-01 08:15:25,485 [INFO]    ETH-USDC | RSI(1H): 62.2 | Price: $2,134.40
+2026-04-01 08:15:25,485 [INFO]    ETH-USDC | RSI(1H): 62.2 | Price: $2,134.40
+2026-04-01 08:15:25,485 [INFO]    Sleeping 300s...
+
+2026-04-01 08:15:25,485 [INFO]    Sleeping 300s...
+
+2026-04-01 08:20:25,819 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:20:25,819 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:20:26,026 [INFO]    BTC-USDC | RSI(1H): 59.4 | Price: $68,621.17
+2026-04-01 08:20:26,026 [INFO]    BTC-USDC | RSI(1H): 59.4 | Price: $68,621.17
+2026-04-01 08:20:26,248 [INFO]    ETH-USDC | RSI(1H): 62.1 | Price: $2,134.60
+2026-04-01 08:20:26,248 [INFO]    ETH-USDC | RSI(1H): 62.1 | Price: $2,134.60
+2026-04-01 08:20:26,248 [INFO]    Sleeping 300s...
+
+2026-04-01 08:20:26,248 [INFO]    Sleeping 300s...
+
+2026-04-01 08:25:26,556 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:25:26,556 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:25:26,774 [INFO]    BTC-USDC | RSI(1H): 58.8 | Price: $68,597.98
+2026-04-01 08:25:26,774 [INFO]    BTC-USDC | RSI(1H): 58.8 | Price: $68,597.98
+2026-04-01 08:25:26,983 [INFO]    ETH-USDC | RSI(1H): 61.9 | Price: $2,134.49
+2026-04-01 08:25:26,983 [INFO]    ETH-USDC | RSI(1H): 61.9 | Price: $2,134.49
+2026-04-01 08:25:26,983 [INFO]    Sleeping 300s...
+
+2026-04-01 08:25:26,983 [INFO]    Sleeping 300s...
+
+2026-04-01 08:30:27,175 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:30:27,175 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:30:27,428 [INFO]    BTC-USDC | RSI(1H): 57.7 | Price: $68,557.60
+2026-04-01 08:30:27,428 [INFO]    BTC-USDC | RSI(1H): 57.7 | Price: $68,557.60
+2026-04-01 08:30:27,633 [INFO]    ETH-USDC | RSI(1H): 61.3 | Price: $2,134.10
+2026-04-01 08:30:27,633 [INFO]    ETH-USDC | RSI(1H): 61.3 | Price: $2,134.10
+2026-04-01 08:30:27,634 [INFO]    Sleeping 300s...
+
+2026-04-01 08:30:27,634 [INFO]    Sleeping 300s...
+
+2026-04-01 08:35:27,991 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:35:27,991 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:35:28,210 [INFO]    BTC-USDC | RSI(1H): 55.4 | Price: $68,397.35
+2026-04-01 08:35:28,210 [INFO]    BTC-USDC | RSI(1H): 55.4 | Price: $68,397.35
+2026-04-01 08:35:28,422 [INFO]    ETH-USDC | RSI(1H): 59.4 | Price: $2,127.81
+2026-04-01 08:35:28,422 [INFO]    ETH-USDC | RSI(1H): 59.4 | Price: $2,127.81
+2026-04-01 08:35:28,423 [INFO]    Sleeping 300s...
+
+2026-04-01 08:35:28,423 [INFO]    Sleeping 300s...
+
+2026-04-01 08:40:28,622 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:40:28,622 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:40:28,833 [INFO]    BTC-USDC | RSI(1H): 53.6 | Price: $68,288.32
+2026-04-01 08:40:28,833 [INFO]    BTC-USDC | RSI(1H): 53.6 | Price: $68,288.32
+2026-04-01 08:40:29,080 [INFO]    ETH-USDC | RSI(1H): 57.6 | Price: $2,124.10
+2026-04-01 08:40:29,080 [INFO]    ETH-USDC | RSI(1H): 57.6 | Price: $2,124.10
+2026-04-01 08:40:29,080 [INFO]    Sleeping 300s...
+
+2026-04-01 08:40:29,080 [INFO]    Sleeping 300s...
+
+2026-04-01 08:45:29,351 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:45:29,351 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:45:29,566 [INFO]    BTC-USDC | RSI(1H): 58.3 | Price: $68,497.77
+2026-04-01 08:45:29,566 [INFO]    BTC-USDC | RSI(1H): 58.3 | Price: $68,497.77
+2026-04-01 08:45:29,794 [INFO]    ETH-USDC | RSI(1H): 62.7 | Price: $2,134.21
+2026-04-01 08:45:29,794 [INFO]    ETH-USDC | RSI(1H): 62.7 | Price: $2,134.21
+2026-04-01 08:45:29,794 [INFO]    Sleeping 300s...
+
+2026-04-01 08:45:29,794 [INFO]    Sleeping 300s...
+
+2026-04-01 08:50:30,082 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:50:30,082 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:50:30,339 [INFO]    BTC-USDC | RSI(1H): 56.5 | Price: $68,454.24
+2026-04-01 08:50:30,339 [INFO]    BTC-USDC | RSI(1H): 56.5 | Price: $68,454.24
+2026-04-01 08:50:30,564 [INFO]    ETH-USDC | RSI(1H): 61.7 | Price: $2,133.99
+2026-04-01 08:50:30,564 [INFO]    ETH-USDC | RSI(1H): 61.7 | Price: $2,133.99
+2026-04-01 08:50:30,564 [INFO]    Sleeping 300s...
+
+2026-04-01 08:50:30,564 [INFO]    Sleeping 300s...
+
+2026-04-01 08:55:30,824 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:55:30,824 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 08:55:31,047 [INFO]    BTC-USDC | RSI(1H): 54.6 | Price: $68,337.36
+2026-04-01 08:55:31,047 [INFO]    BTC-USDC | RSI(1H): 54.6 | Price: $68,337.36
+2026-04-01 08:55:31,260 [INFO]    ETH-USDC | RSI(1H): 59.2 | Price: $2,127.93
+2026-04-01 08:55:31,260 [INFO]    ETH-USDC | RSI(1H): 59.2 | Price: $2,127.93
+2026-04-01 08:55:31,260 [INFO]    Sleeping 300s...
+
+2026-04-01 08:55:31,260 [INFO]    Sleeping 300s...
+
+2026-04-01 09:00:31,452 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:00:31,452 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:00:31,719 [INFO]    BTC-USDC | RSI(1H): 54.5 | Price: $68,356.32
+2026-04-01 09:00:31,719 [INFO]    BTC-USDC | RSI(1H): 54.5 | Price: $68,356.32
+2026-04-01 09:00:31,978 [INFO]    ETH-USDC | RSI(1H): 60.0 | Price: $2,130.34
+2026-04-01 09:00:31,978 [INFO]    ETH-USDC | RSI(1H): 60.0 | Price: $2,130.34
+2026-04-01 09:00:31,979 [INFO]    Sleeping 300s...
+
+2026-04-01 09:00:31,979 [INFO]    Sleeping 300s...
+
+2026-04-01 09:05:32,328 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:05:32,328 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:05:32,568 [INFO]    BTC-USDC | RSI(1H): 52.3 | Price: $68,217.60
+2026-04-01 09:05:32,568 [INFO]    BTC-USDC | RSI(1H): 52.3 | Price: $68,217.60
+2026-04-01 09:05:32,777 [INFO]    ETH-USDC | RSI(1H): 54.9 | Price: $2,117.81
+2026-04-01 09:05:32,777 [INFO]    ETH-USDC | RSI(1H): 54.9 | Price: $2,117.81
+2026-04-01 09:05:32,778 [INFO]    Sleeping 300s...
+
+2026-04-01 09:05:32,778 [INFO]    Sleeping 300s...
+
+2026-04-01 09:10:33,099 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:10:33,099 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:10:33,349 [INFO]    BTC-USDC | RSI(1H): 53.9 | Price: $68,330.58
+2026-04-01 09:10:33,349 [INFO]    BTC-USDC | RSI(1H): 53.9 | Price: $68,330.58
+2026-04-01 09:10:33,565 [INFO]    ETH-USDC | RSI(1H): 57.0 | Price: $2,123.69
+2026-04-01 09:10:33,565 [INFO]    ETH-USDC | RSI(1H): 57.0 | Price: $2,123.69
+2026-04-01 09:10:33,565 [INFO]    Sleeping 300s...
+
+2026-04-01 09:10:33,565 [INFO]    Sleeping 300s...
+
+2026-04-01 09:15:33,773 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:15:33,773 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:15:33,987 [INFO]    BTC-USDC | RSI(1H): 55.9 | Price: $68,439.47
+2026-04-01 09:15:33,987 [INFO]    BTC-USDC | RSI(1H): 55.9 | Price: $68,439.47
+2026-04-01 09:15:34,202 [INFO]    ETH-USDC | RSI(1H): 59.4 | Price: $2,128.59
+2026-04-01 09:15:34,202 [INFO]    ETH-USDC | RSI(1H): 59.4 | Price: $2,128.59
+2026-04-01 09:15:34,202 [INFO]    Sleeping 300s...
+
+2026-04-01 09:15:34,202 [INFO]    Sleeping 300s...
+
+2026-04-01 09:20:34,499 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:20:34,499 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:20:34,717 [INFO]    BTC-USDC | RSI(1H): 56.4 | Price: $68,474.24
+2026-04-01 09:20:34,717 [INFO]    BTC-USDC | RSI(1H): 56.4 | Price: $68,474.24
+2026-04-01 09:20:34,939 [INFO]    ETH-USDC | RSI(1H): 59.8 | Price: $2,129.50
+2026-04-01 09:20:34,939 [INFO]    ETH-USDC | RSI(1H): 59.8 | Price: $2,129.50
+2026-04-01 09:20:34,939 [INFO]    Sleeping 300s...
+
+2026-04-01 09:20:34,939 [INFO]    Sleeping 300s...
+
+2026-04-01 09:25:35,132 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:25:35,132 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:25:35,358 [INFO]    BTC-USDC | RSI(1H): 55.8 | Price: $68,429.76
+2026-04-01 09:25:35,358 [INFO]    BTC-USDC | RSI(1H): 55.8 | Price: $68,429.76
+2026-04-01 09:25:35,586 [INFO]    ETH-USDC | RSI(1H): 59.4 | Price: $2,128.25
+2026-04-01 09:25:35,586 [INFO]    ETH-USDC | RSI(1H): 59.4 | Price: $2,128.25
+2026-04-01 09:25:35,586 [INFO]    Sleeping 300s...
+
+2026-04-01 09:25:35,586 [INFO]    Sleeping 300s...
+
+2026-04-01 09:30:35,801 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:30:35,801 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:30:36,108 [INFO]    BTC-USDC | RSI(1H): 56.6 | Price: $68,495.99
+2026-04-01 09:30:36,108 [INFO]    BTC-USDC | RSI(1H): 56.6 | Price: $68,495.99
+2026-04-01 09:30:36,339 [INFO]    ETH-USDC | RSI(1H): 59.7 | Price: $2,129.39
+2026-04-01 09:30:36,339 [INFO]    ETH-USDC | RSI(1H): 59.7 | Price: $2,129.39
+2026-04-01 09:30:36,339 [INFO]    Sleeping 300s...
+
+2026-04-01 09:30:36,339 [INFO]    Sleeping 300s...
+
+2026-04-01 09:35:36,599 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:35:36,599 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:35:36,829 [INFO]    BTC-USDC | RSI(1H): 56.7 | Price: $68,497.76
+2026-04-01 09:35:36,829 [INFO]    BTC-USDC | RSI(1H): 56.7 | Price: $68,497.76
+2026-04-01 09:35:37,041 [INFO]    ETH-USDC | RSI(1H): 59.1 | Price: $2,128.37
+2026-04-01 09:35:37,041 [INFO]    ETH-USDC | RSI(1H): 59.1 | Price: $2,128.37
+2026-04-01 09:35:37,041 [INFO]    Sleeping 300s...
+
+2026-04-01 09:35:37,041 [INFO]    Sleeping 300s...
+
