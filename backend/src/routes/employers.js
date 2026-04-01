@@ -99,7 +99,7 @@ router.get('/profile/:placeId', async (req, res) => {
   try {
     const { placeId } = req.params;
 
-    const [posts, ratings] = await Promise.all([
+    const [posts, ratings, starAgg] = await Promise.all([
       prisma.post.findMany({
         where: { employer_place_id: placeId },
         orderBy: { created_at: 'desc' },
@@ -111,16 +111,22 @@ router.get('/profile/:placeId', async (req, res) => {
         where: { employer_place_id: placeId },
         _count: { rating_emoji: true },
       }),
+      prisma.companyRating.aggregate({
+        where: { place_id: placeId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
     ]);
 
     const totalReviews = ratings.reduce((acc, r) => acc + r._count.rating_emoji, 0);
     const ratingCounts = { BAD: 0, NEUTRAL: 0, GOOD: 0 };
     ratings.forEach(r => { ratingCounts[r.rating_emoji] = r._count.rating_emoji; });
 
-    // Calculate avg star rating from post emojis (GOOD=5, NEUTRAL=3, BAD=1)
-    const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
-    const starSum = ratings.reduce((s, r) => s + (emojiToStar[r.rating_emoji] || 3) * r._count.rating_emoji, 0);
-    const avg_rating = totalReviews > 0 ? Math.round((starSum / totalReviews) * 10) / 10 : null;
+    // Use explicit star ratings only (not emoji-derived)
+    const star_rating_count = starAgg._count.rating || 0;
+    const avg_rating = star_rating_count > 0
+      ? Math.round((starAgg._avg.rating) * 10) / 10
+      : null;
 
     res.json({
       place_id: placeId,
@@ -129,6 +135,7 @@ router.get('/profile/:placeId', async (req, res) => {
       total_reviews: totalReviews,
       rating_counts: ratingCounts,
       avg_rating,
+      star_rating_count,
     });
   } catch (err) {
     console.error(err);
