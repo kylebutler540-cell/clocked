@@ -37519,3 +37519,33 @@ ModuleNotFoundError: No module named 'dotenv'
 
 2026-04-01 09:35:37,041 [INFO]    Sleeping 300s...
 
+2026-04-01 09:40:37,265 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:40:37,265 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:40:37,506 [INFO]    BTC-USDC | RSI(1H): 54.5 | Price: $68,318.43
+2026-04-01 09:40:37,506 [INFO]    BTC-USDC | RSI(1H): 54.5 | Price: $68,318.43
+2026-04-01 09:40:37,722 [INFO]    ETH-USDC | RSI(1H): 56.8 | Price: $2,121.74
+2026-04-01 09:40:37,722 [INFO]    ETH-USDC | RSI(1H): 56.8 | Price: $2,121.74
+2026-04-01 09:40:37,722 [INFO]    Sleeping 300s...
+
+2026-04-01 09:40:37,722 [INFO]    Sleeping 300s...
+
+2026-04-01 09:45:38,025 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:45:38,025 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:45:38,263 [INFO]    BTC-USDC | RSI(1H): 50.0 | Price: $68,100.03
+2026-04-01 09:45:38,263 [INFO]    BTC-USDC | RSI(1H): 50.0 | Price: $68,100.03
+2026-04-01 09:45:38,504 [INFO]    ETH-USDC | RSI(1H): 53.1 | Price: $2,114.41
+2026-04-01 09:45:38,504 [INFO]    ETH-USDC | RSI(1H): 53.1 | Price: $2,114.41
+2026-04-01 09:45:38,505 [INFO]    Sleeping 300s...
+
+2026-04-01 09:45:38,505 [INFO]    Sleeping 300s...
+
+2026-04-01 09:50:38,693 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:50:38,693 [INFO] 💰 Portfolio: $89.59 USDC | Open positions: []
+2026-04-01 09:50:38,942 [INFO]    BTC-USDC | RSI(1H): 48.5 | Price: $67,970.53
+2026-04-01 09:50:38,942 [INFO]    BTC-USDC | RSI(1H): 48.5 | Price: $67,970.53
+2026-04-01 09:50:39,180 [INFO]    ETH-USDC | RSI(1H): 52.8 | Price: $2,112.95
+2026-04-01 09:50:39,180 [INFO]    ETH-USDC | RSI(1H): 52.8 | Price: $2,112.95
+2026-04-01 09:50:39,180 [INFO]    Sleeping 300s...
+
+2026-04-01 09:50:39,180 [INFO]    Sleeping 300s...
+
