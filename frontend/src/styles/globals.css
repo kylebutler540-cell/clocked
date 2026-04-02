@@ -980,6 +980,9 @@ img, video {
   font-size: 15px;
   color: var(--text-secondary);
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .post-text-blurred {

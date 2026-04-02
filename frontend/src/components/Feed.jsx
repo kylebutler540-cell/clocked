@@ -34,7 +34,7 @@ const MOCK_POST = {
   rating_emoji: 'BAD',
   header: 'Management is an absolute joke',
   body: 'The store manager on shift literally does nothing but walk around and yell at people. Throws associates under the bus for his own mistakes constantly. We lost 4 good employees in 2 months because of how he treats people. HR does nothing. If you need a job it works but do NOT expect to be treated like a human being. The favoritism is unreal.',
-  body_truncated: true,
+  body_truncated: false,
   likes: 0,
   dislikes: 0,
   comment_count: 0,
