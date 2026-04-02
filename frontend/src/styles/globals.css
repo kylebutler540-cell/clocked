@@ -883,8 +883,8 @@ img, video {
   background: var(--bg-card);
   border-radius: 0;
   padding: 16px;
-  margin: 0;
-  border-bottom: 8px solid var(--separator-color);
+  margin: 0 0 8px 0;
+  border: none;
   /* Not a button — no hover/press states, no cursor change */
   cursor: default;
   -webkit-tap-highlight-color: transparent;
@@ -893,10 +893,10 @@ img, video {
 
 @media (min-width: 768px) {
   .post-card {
-    margin: 0 0 8px 0;
+    margin: 0 0 10px 0;
     border-radius: 12px;
     padding: 16px 20px;
-    border: 1px solid var(--border);
+    border: none;
     box-shadow: none;
     cursor: default;
   }
@@ -1102,7 +1102,7 @@ img, video {
 .feed {
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
+  background: var(--bg-primary);
   min-height: 100%;
   padding: 0;
 }
