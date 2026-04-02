@@ -426,7 +426,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           {post && (
             <div
               className="comment-sheet-post"
-              style={{ WebkitTapHighlightColor: 'transparent', maxHeight: '38vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
+              style={{ WebkitTapHighlightColor: 'transparent', maxHeight: '30vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
               onTouchStart={e => {
                 if (listRef.current && listRef.current.scrollTop === 0) {
                   dragStartY.current = e.touches[0].clientY;

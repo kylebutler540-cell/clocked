@@ -881,9 +881,9 @@ img, video {
 /* ========== Post Card ========== */
 .post-card {
   background: var(--bg-card);
-  border-radius: 0;
+  border-radius: 12px;
   padding: 16px;
-  margin: 0 0 8px 0;
+  margin: 0 10px 8px 10px;
   border: none;
   /* Not a button — no hover/press states, no cursor change */
   cursor: default;
@@ -1104,7 +1104,7 @@ img, video {
   flex-direction: column;
   background: var(--bg-primary);
   min-height: 100%;
-  padding: 0;
+  padding: 8px 0 0 0;
 }
 
 .feed-empty {
