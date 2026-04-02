@@ -422,11 +422,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Full PostCard — pinned at top, full width */}
+          {/* Full PostCard — pinned at top, full width, capped height */}
           {post && (
             <div
               className="comment-sheet-post"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              style={{ WebkitTapHighlightColor: 'transparent', maxHeight: '38vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
               onTouchStart={e => {
                 if (listRef.current && listRef.current.scrollTop === 0) {
                   dragStartY.current = e.touches[0].clientY;
