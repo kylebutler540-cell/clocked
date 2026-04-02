@@ -881,8 +881,8 @@ img, video {
   background: var(--bg-card);
   border-radius: 0;
   padding: 16px;
-  margin: 0 0 4px 0;
-  border-bottom: 1px solid var(--border);
+  margin: 0;
+  border-bottom: 8px solid var(--bg-primary);
   /* Not a button — no hover/press states, no cursor change */
   cursor: default;
   -webkit-tap-highlight-color: transparent;

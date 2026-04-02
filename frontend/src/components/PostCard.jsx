@@ -209,14 +209,14 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   }
 
   function startEditing(e) {
-    e.stopPropagation();
+    if (e?.stopPropagation) e.stopPropagation();
     setShowMenu(false);
     setEditText(post.body);
     setEditing(true);
   }
 
   async function handleSaveEdit(e) {
-    e.stopPropagation();
+    if (e?.stopPropagation) e.stopPropagation();
     if (!editText.trim()) return;
     try {
       const res = await api.put(`/posts/${post.id}`, { body: editText.trim() });
@@ -228,7 +228,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   }
 
   async function handleDeletePost(e) {
-    e.stopPropagation();
+    if (e?.stopPropagation) e.stopPropagation();
     setShowMenu(false);
     if (!window.confirm('Delete this post?')) return;
     try {
