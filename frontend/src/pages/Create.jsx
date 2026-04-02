@@ -185,10 +185,10 @@ export default function Create() {
             onChange={e => setBody(e.target.value)}
             placeholder="Tell other workers what it's really like — pay, management, culture, hours, safety..."
             rows={6}
-            maxLength={5000}
+            maxLength={20000}
           />
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, textAlign: 'right' }}>
-            {body.length}/5000
+            {body.length}/20000
           </div>
         </div>
 
@@ -259,7 +259,7 @@ export default function Create() {
           color: 'var(--text-muted)',
         }}>
           <span style={{ fontSize: 16 }}>🛡️</span>
-          <span>Your review is completely anonymous. No account required.</span>
+          <span>Your review is completely anonymous.</span>
         </div>
 
         <button

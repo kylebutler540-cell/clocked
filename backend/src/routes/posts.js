@@ -569,8 +569,8 @@ router.post('/', optionalAuth, async (req, res) => {
     if (body && body.trim().length > 0 && body.trim().length < 10) {
       return res.status(400).json({ error: 'Review body must be at least 10 characters' });
     }
-    if (body && body.length > 5000) {
-      return res.status(400).json({ error: 'Review body too long (max 5000 chars)' });
+    if (body && body.length > 20000) {
+      return res.status(400).json({ error: 'Review body too long (max 20000 chars)' });
     }
 
     let userId = req.user?.id;
@@ -747,8 +747,8 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!body || body.trim().length < 10) {
       return res.status(400).json({ error: 'Review body must be at least 10 characters' });
     }
-    if (body.length > 5000) {
-      return res.status(400).json({ error: 'Review body too long (max 5000 chars)' });
+    if (body.length > 20000) {
+      return res.status(400).json({ error: 'Review body too long (max 20000 chars)' });
     }
     const post = await prisma.post.findUnique({ where: { id: req.params.id } });
     if (!post) return res.status(404).json({ error: 'Post not found' });

@@ -1023,8 +1023,8 @@ img, video {
 
 .post-media img, .post-media video {
   width: 100%;
-  max-height: 300px;
-  object-fit: cover;
+  max-height: none;
+  object-fit: contain;
   border-radius: 14px;
 }
 
@@ -1041,7 +1041,7 @@ img, video {
 .media-grid.cols-3 .media-item:first-child { grid-column: span 2; }
 
 .media-item {
-  aspect-ratio: 1;
+  aspect-ratio: unset;
   overflow: hidden;
 }
 
