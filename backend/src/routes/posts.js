@@ -743,7 +743,7 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
 // Edit post (owner only)
 router.put('/:id', requireAuth, async (req, res) => {
   try {
-    const { body, header, rating_emoji, media_urls } = req.body;
+    const { body, header, rating_emoji, media_urls, employer_place_id, employer_name, employer_address } = req.body;
     if (!body || body.trim().length < 10) {
       return res.status(400).json({ error: 'Review body must be at least 10 characters' });
     }
@@ -759,6 +759,9 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (header) updateData.header = header.trim();
     if (rating_emoji) updateData.rating_emoji = rating_emoji;
     if (Array.isArray(media_urls)) updateData.media_urls = media_urls.slice(0, 10);
+    if (employer_place_id) updateData.employer_place_id = employer_place_id;
+    if (employer_name) updateData.employer_name = employer_name;
+    if (employer_address !== undefined) updateData.employer_address = employer_address;
     const updated = await prisma.post.update({
       where: { id: req.params.id },
       data: updateData,

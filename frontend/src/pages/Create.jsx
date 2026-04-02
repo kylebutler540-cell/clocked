@@ -91,6 +91,9 @@ export default function Create() {
 
       if (isEditMode) {
         await api.put(`/posts/${editPost.id}`, {
+          employer_place_id: employer.place_id,
+          employer_name: employer.name,
+          employer_address: employer.address || employer.description || '',
           rating_emoji: rating,
           header: header.trim(),
           body: body.trim(),
