@@ -67,6 +67,25 @@ router.post('/anonymous', async (req, res) => {
   }
 });
 
+// Check if email is already registered (used for real-time validation)
+router.post('/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const existing = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+      select: { id: true, password_hash: true, google_id: true },
+    });
+    if (!existing) return res.json({ exists: false });
+    // Has google_id but no password — must sign in with Google
+    const googleOnly = !!existing.google_id && !existing.password_hash;
+    res.json({ exists: true, googleOnly });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Check failed' });
+  }
+});
+
 // Register with email (optional account upgrade)
 router.post('/register', async (req, res) => {
   try {
@@ -111,13 +130,17 @@ router.post('/login', async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.password_hash) {
+    if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    if (!user.password_hash) {
+      // Account exists but was created via Google — no password set
+      return res.status(401).json({ error: 'This account was created with Google. Please sign in with Google instead.', googleOnly: true });
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Incorrect password' });
     }
 
     const token = signToken(user.id);

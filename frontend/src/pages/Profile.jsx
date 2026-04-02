@@ -85,7 +85,7 @@ function FollowListModal({ userId, type, onClose }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '60vh', overflowY: 'auto' }}>
             {users.map(u => {
               const isFollowing = followStates[u.id] ?? false;
-              const name = u.display_name || (u.anon_number ? `Anonymous ${u.anon_number}` : 'Anonymous');
+              const name = u.display_name || 'Anonymous';
               return (
                 <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
@@ -140,36 +140,42 @@ function TabSpinner() {
   );
 }
 
-// Module-level cache for profile tab data — instant switching after first load
+// Module-level cache for profile tab data — key → { data, ts }
 const _profileTabCache = new Map();
+const PROFILE_TAB_TTL = 5 * 60 * 1000;
 
-// Post list for posts/videos/photos/liked/disliked tabs
+function profileTabFresh(key) {
+  const e = _profileTabCache.get(key);
+  return e && (Date.now() - e.ts < PROFILE_TAB_TTL);
+}
+
+// Post list for posts/liked/disliked tabs
 function UserPostList({ url, emptyState }) {
   const navigate = useNavigate();
-  const cached = _profileTabCache.get(url);
-  const [posts, setPosts] = useState(cached || []);
-  const [loading, setLoading] = useState(!cached);
+  const entry = _profileTabCache.get(url);
+  const fresh = profileTabFresh(url);
+  const [posts, setPosts] = useState(fresh ? entry.data : []);
+  const [loading, setLoading] = useState(!fresh);
   const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
-    if (cached) {
-      setPosts(cached);
+    if (profileTabFresh(url)) {
+      setPosts(_profileTabCache.get(url).data);
       setLoading(false);
+      return;
     }
 
+    setLoading(true);
     setAuthError(false);
     api.get(url)
       .then(res => {
         const data = Array.isArray(res.data) ? res.data : [];
-        const changed = JSON.stringify(data) !== JSON.stringify(_profileTabCache.get(url));
-        _profileTabCache.set(url, data);
-        if (changed) setPosts(data);
+        _profileTabCache.set(url, { data, ts: Date.now() });
+        setPosts(data);
       })
       .catch(err => {
-        if (!cached) {
-          if (err.response?.status === 401) setAuthError(true);
-          setPosts([]);
-        }
+        if (err.response?.status === 401) setAuthError(true);
+        setPosts([]);
       })
       .finally(() => setLoading(false));
   }, [url]);
@@ -204,25 +210,26 @@ function UserPostList({ url, emptyState }) {
 
 // Comment history tab
 function UserCommentList() {
-  const cachedComments = _profileTabCache.get('comments');
-  const [comments, setComments] = useState(cachedComments || []);
-  const [loading, setLoading] = useState(!cachedComments);
+  const fresh = profileTabFresh('comments');
+  const [comments, setComments] = useState(fresh ? _profileTabCache.get('comments').data : []);
+  const [loading, setLoading] = useState(!fresh);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (cachedComments) {
-      setComments(cachedComments);
+    if (profileTabFresh('comments')) {
+      setComments(_profileTabCache.get('comments').data);
       setLoading(false);
+      return;
     }
 
+    setLoading(true);
     api.get('/posts/user/comments')
       .then(res => {
         const data = Array.isArray(res.data) ? res.data : [];
-        const changed = JSON.stringify(data) !== JSON.stringify(_profileTabCache.get('comments'));
-        _profileTabCache.set('comments', data);
-        if (changed) setComments(data);
+        _profileTabCache.set('comments', { data, ts: Date.now() });
+        setComments(data);
       })
-      .catch(() => { if (!cachedComments) setComments([]); })
+      .catch(() => setComments([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -404,7 +411,7 @@ export default function Profile() {
 
   // Public profile view (viewing another user's profile)
   if (!isOwnProfile) {
-    const pubName = publicUser?.display_name || (publicUser?.anon_number ? `Anonymous ${publicUser.anon_number}` : 'Anonymous User');
+    const pubName = publicUser?.display_name || 'Anonymous';
     return (
       <div className="profile-page">
         <div className="profile-hero">
@@ -456,70 +463,70 @@ export default function Profile() {
     <div className="profile-page">
 
       {/* Hero: avatar + info */}
-      <div className="profile-hero">
-        <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
-        <div className="profile-hero-info">
-          <div className="profile-username-large">{ownDisplayName}</div>
-          {user?.username && (
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
-          )}
-          {user?.anon_number && (
-            <div className="profile-hero-anon">Anonymous {user.anon_number}</div>
-          )}
-          {isSubscribed && <span className="sub-badge" style={{ marginTop: 8 }}>✦ Pro Member</span>}
-
-          {user?.email && (
-            <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-              <button
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                onClick={() => setFollowListModal('followers')}
-              >
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.follower_count)}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Followers</span>
-              </button>
-              <button
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                onClick={() => setFollowListModal('following')}
-              >
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.following_count)}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Following</span>
-              </button>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            {user?.email && (
-              <button
-                className="btn btn-secondary"
-                style={{ padding: '7px 16px', fontSize: 13 }}
-                onClick={() => navigate('/profile-setup')}
-              >
-                Edit Profile
-              </button>
-            )}
-            {!user?.email && user && (
-              <button
-                className="btn btn-primary"
-                style={{ padding: '8px 20px', fontSize: 13 }}
-                onClick={() => setShowLogin(true)}
-              >
-                Sign In
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {!user && (
-        <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-          <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 16 }}>Sign in to view your profile</p>
-          <button className="btn btn-primary" style={{ padding: '9px 24px', fontSize: 14 }} onClick={() => setShowLogin(true)}>
-            Sign In
+      {!user?.email ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px 24px', textAlign: 'center' }}>
+          <svg width="64" height="64" viewBox="0 0 100 100" style={{ marginBottom: 20 }}>
+            <rect width="100" height="100" rx="22" fill="rgba(168,85,247,0.12)" />
+            <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="#A855F7" textAnchor="middle">c</text>
+          </svg>
+          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>You're not signed in</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 15, marginBottom: 28, maxWidth: 320 }}>
+            Sign in to manage your profile, posts, and reviews.
+          </p>
+          <button
+            className="btn btn-primary"
+            style={{ padding: '11px 32px', fontSize: 15, fontWeight: 700 }}
+            onClick={() => navigate('/signup?mode=login')}
+          >
+            Sign In / Create Account
           </button>
+        </div>
+      ) : (
+        <div className="profile-hero">
+          <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
+          <div className="profile-hero-info">
+            <div className="profile-username-large">{ownDisplayName}</div>
+            {user?.username && (
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
+            )}
+  
+            {isSubscribed && <span className="sub-badge" style={{ marginTop: 8 }}>✦ Pro Member</span>}
+
+            {user?.email && (
+              <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+                <button
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                  onClick={() => setFollowListModal('followers')}
+                >
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.follower_count)}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Followers</span>
+                </button>
+                <button
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                  onClick={() => setFollowListModal('following')}
+                >
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.following_count)}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Following</span>
+                </button>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              {user?.email && (
+                <button
+                  className="btn btn-secondary"
+                  style={{ padding: '7px 16px', fontSize: 13 }}
+                  onClick={() => navigate('/profile-setup')}
+                >
+                  Edit Profile
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {user && (
+      {user?.email && (
         <>
           {/* Tab bar */}
           <div className="profile-tabs">

@@ -792,20 +792,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
 function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set()) {
   const body = post.body;
-  let previewBody = body;
-  let truncated = false;
-
-  if (!isSubscribed) {
-    // Show first 2 sentences
-    const sentenceMatch = body.match(/^([^.!?]*[.!?]){1,2}/);
-    if (sentenceMatch && sentenceMatch[0].length < body.length) {
-      previewBody = sentenceMatch[0].trim();
-      truncated = true;
-    } else if (body.length > 200) {
-      previewBody = body.slice(0, 200);
-      truncated = true;
-    }
-  }
 
   return {
     id: post.id,
@@ -819,8 +805,8 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     employer_address: post.employer_address,
     rating_emoji: post.rating_emoji,
     header: post.header,
-    body: previewBody,
-    body_truncated: truncated,
+    body: body,
+    body_truncated: false,
     media_urls: post.media_urls,
     likes: post.likes,
     dislikes: post.dislikes,

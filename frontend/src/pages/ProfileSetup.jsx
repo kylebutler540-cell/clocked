@@ -126,10 +126,14 @@ export default function ProfileSetup() {
         {step === 1 && (
           <>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
-              Set up your profile
+              Set up your identity
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 28px' }}>
-              You can always change this later.
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 4px' }}>
+              This is how other users will see you on Clocked.
+            </p>
+            <p style={{ color: '#A855F7', fontSize: 13, fontWeight: 600, margin: '0 0 24px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Keep it anonymous — don't use your real name
             </p>
 
             <form onSubmit={handleStep1Next}>

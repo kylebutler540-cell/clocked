@@ -2181,6 +2181,14 @@ textarea.form-input {
 }
 
 /* ========== Onboarding ========== */
+.onboarding-root {
+  min-height: 100dvh;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .onboarding-screen {
   min-height: 100dvh;
   display: flex;
@@ -2191,7 +2199,6 @@ textarea.form-input {
   background: #ffffff;
   text-align: center;
   max-width: 600px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -2270,7 +2277,7 @@ textarea.form-input {
   display: flex;
   align-items: flex-start;
   gap: 18px;
-  background: #f8f8f8;
+  background: #f4f4f6;
   border-radius: 16px;
   padding: 20px;
   text-align: left;

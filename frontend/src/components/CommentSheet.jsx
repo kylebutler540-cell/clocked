@@ -8,16 +8,19 @@ import { cacheGet, cacheSet } from '../lib/cache';
 import PostCard from './PostCard';
 
 
-function CommentAvatar({ anonNumber, size = 32 }) {
-  const initial = anonNumber != null ? String(anonNumber)[0] : 'A';
+function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
+  const initial = displayName ? displayName[0].toUpperCase() : 'A';
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+      background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontWeight: 700, fontSize: size * 0.4,
+      overflow: 'hidden',
     }}>
-      {initial}
+      {avatarUrl
+        ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : initial}
     </div>
   );
 }
@@ -26,16 +29,14 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   const navigate = useNavigate();
   const isOwner = currentUserId && comment.anonymous_user_id === currentUserId;
   const [showReplies, setShowReplies] = useState(true);
-  const authorName = comment.author_anon_number != null
-    ? `Anonymous ${comment.author_anon_number}`
-    : generateAnonName(comment.anonymous_user_id);
+  const authorName = comment.author_display_name || 'Anonymous';
 
   return (
     <div style={{ marginLeft: depth > 0 ? 36 : 0, borderBottom: depth === 0 ? '1px solid var(--border)' : 'none' }}>
       <div style={{ display: 'flex', gap: 10, padding: '10px 16px', alignItems: 'flex-start' }}>
         <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
           onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
-          <CommentAvatar anonNumber={comment.author_anon_number} size={depth > 0 ? 26 : 32} />
+          <CommentAvatar avatarUrl={comment.author_avatar_url} displayName={comment.author_display_name} size={depth > 0 ? 26 : 32} />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -498,7 +499,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           {replyingTo && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '4px 10px', background: 'var(--purple-glow)', borderRadius: 20, width: 'fit-content' }}>
               <span style={{ fontSize: 12, color: 'var(--purple)', fontWeight: 600 }}>
-                @{replyingTo.author_anon_number != null ? `Anonymous ${replyingTo.author_anon_number}` : generateAnonName(replyingTo.anonymous_user_id)}
+                @{replyingTo.author_display_name || 'Anonymous'}
               </span>
               <button onClick={() => setReplyingTo(null)}
                 style={{ background: 'none', border: 'none', color: 'var(--purple)', fontSize: 14, lineHeight: 1, padding: 0, cursor: 'pointer' }}>×</button>

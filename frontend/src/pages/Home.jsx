@@ -35,31 +35,7 @@ function RightSidebar() {
         </div>
       </div>
 
-      <button
-        className="sidebar-premium-cta"
-        onClick={() => navigate('/profile')}
-        style={{ width: '100%' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="#A855F7" stroke="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-          <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-0.2px' }}>Go Premium</span>
-        </div>
-        <div style={{ fontSize: 12, marginBottom: 10, opacity: 0.7, lineHeight: 1.35 }}>
-          Unlock full reviews from real workers
-        </div>
-        <div style={{
-          background: '#A855F7',
-          color: '#FFFFFF',
-          borderRadius: 8,
-          padding: '7px 0',
-          fontWeight: 800,
-          fontSize: 13,
-          textAlign: 'center',
-          letterSpacing: '-0.2px',
-        }}>
-          Start Free Trial
-        </div>
-      </button>
+
 
       <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '0 2px' }}>
         <a href="#" style={{ marginRight: 8 }}>Terms</a>

@@ -65,7 +65,7 @@ const MOCK_POST_2 = {
   disliked: false,
 };
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes — background refresh after this
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes — serve instantly from cache within this window
 
 export default function Feed({ filters = {}, employerInfo = null, emptyState = null }) {
   const navigate = useNavigate();
@@ -74,10 +74,12 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
   const cacheKey = JSON.stringify(filters);
 
   const cached = _feedCache.get(cacheKey);
-  const [posts, setPosts] = useState(cached?.posts || []);
-  const [nextCursor, setNextCursor] = useState(cached?.nextCursor || null);
-  // If we have cached data, skip the loading skeleton entirely
-  const [loading, setLoading] = useState(!cached);
+  const isFresh = cached && (Date.now() - cached.ts < CACHE_TTL);
+
+  // Only skip skeleton if cache is fresh — stale or missing = show skeleton until real data lands
+  const [posts, setPosts] = useState(isFresh ? cached.posts : []);
+  const [nextCursor, setNextCursor] = useState(isFresh ? cached.nextCursor : null);
+  const [loading, setLoading] = useState(!isFresh);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const observerRef = useRef(null);
@@ -97,34 +99,17 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
 
   useEffect(() => {
     const cached = _feedCache.get(cacheKey);
-    const isStale = !cached || (Date.now() - cached.ts > CACHE_TTL);
+    const isFresh = cached && (Date.now() - cached.ts < CACHE_TTL);
 
-    if (cached && !isStale) {
-      // Fresh cache — show immediately, no fetch needed
+    if (isFresh) {
+      // Fresh cache — render immediately, no fetch needed
       setPosts(cached.posts);
       setNextCursor(cached.nextCursor);
       setLoading(false);
       return;
     }
 
-    if (cached && isStale) {
-      // Stale cache — show cached data instantly, then silently refresh
-      setPosts(cached.posts);
-      setNextCursor(cached.nextCursor);
-      setLoading(false);
-      fetchPosts().then(({ posts, nextCursor }) => {
-        _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
-        // Only update if data actually changed
-        const changed = JSON.stringify(posts) !== JSON.stringify(cached.posts);
-        if (changed) {
-          setPosts(posts);
-          setNextCursor(nextCursor);
-        }
-      }).catch(() => {});
-      return;
-    }
-
-    // No cache — show skeleton but don't clear existing posts until new ones arrive
+    // Stale or no cache — show skeleton, fetch, then reveal all at once
     setLoading(true);
     fetchPosts()
       .then(({ posts, nextCursor }) => {

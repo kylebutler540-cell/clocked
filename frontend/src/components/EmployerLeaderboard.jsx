@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { cacheGet, cacheSet } from '../lib/cache';
+import { cacheGet, cacheSet, isFresh } from '../lib/cache';
 
 // Read-only star display with half-star support
 function StarDisplay({ rating }) {
@@ -54,33 +54,31 @@ export default function EmployerLeaderboard({ location }) {
 
     // Load from cache first
     const cached = cacheGet(cacheKey);
-    if (cached) {
+    const fresh = isFresh(cacheKey);
+
+    if (cached && fresh) {
+      // Fresh cache — show immediately, no fetch
       setEmployers(cached);
       setLoading(false);
       setError(null);
+      return;
     }
 
-    // Always revalidate in background
+    // Stale or no cache — show skeleton, fetch, reveal all at once
+    setLoading(true);
     const fetchEmployers = async () => {
       try {
         setError(null);
         const params = {};
-        if (location) {
-          params.location = location;
-        }
+        if (location) params.location = location;
         const res = await api.get('/posts/employer-leaderboard', { params });
-        const changed = JSON.stringify(res.data) !== JSON.stringify(cached);
         cacheSet(cacheKey, res.data);
-        if (changed) {
-          setEmployers(res.data);
-        }
+        setEmployers(res.data);
       } catch (err) {
         console.error('Failed to fetch top employers:', err);
-        if (!cached) {
-          setError('Failed to load employers');
-        }
+        setError('Failed to load employers');
       } finally {
-        if (!cached) setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -146,11 +144,7 @@ export default function EmployerLeaderboard({ location }) {
   return (
     <div className="employer-leaderboard">
       {employers.map((employer, index) => {
-        // Extract "City, State" from address like "123 Main St, Grand Rapids, MI, USA"
-        const addrParts = employer.employer_address.split(",").map(s => s.trim());
-        const cityPart = addrParts.length >= 3
-          ? `${addrParts[addrParts.length - 3]}, ${addrParts[addrParts.length - 2]}`
-          : addrParts.slice(0, 2).join(", ");
+        const fullAddr = (employer.employer_address || '').replace(/,?\s*USA\s*$/, '').trim();
         return (
           <div
             key={employer.employer_place_id}
@@ -161,23 +155,28 @@ export default function EmployerLeaderboard({ location }) {
 
             <div className="employer-info-col">
               <div className="employer-name">{employer.employer_name}</div>
-              <div className="employer-city">{cityPart}</div>
+              <div className="employer-city">{fullAddr}</div>
               {employer.distance_miles != null && (
                 <div className="employer-distance">{employer.distance_miles} mi away</div>
               )}
             </div>
 
             <div className="employer-rating-col">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <StarDisplay rating={employer.avg_rating} />
-                {employer.star_rating_count > 0 && (
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    ({employer.star_rating_count})
+              {employer.avg_rating != null && employer.star_rating_count > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {employer.avg_rating}
                   </span>
-                )}
-              </div>
+                  <StarDisplay rating={employer.avg_rating} />
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    ({employer.star_rating_count >= 1000
+                      ? `${(employer.star_rating_count / 1000).toFixed(1)}K`
+                      : employer.star_rating_count})
+                  </span>
+                </div>
+              )}
               <div className="employer-emoji-row">
-                {employer.good_count > 0 && <span><span className="emoji">😊</span><span className="count">{employer.good_count}</span></span>}
+                {employer.good_count > 0 && <span><span className="emoji" style={{ filter: 'sepia(1) saturate(4) hue-rotate(65deg) brightness(0.9)' }}>😊</span><span className="count">{employer.good_count}</span></span>}
                 {employer.neutral_count > 0 && <span><span className="emoji">😐</span><span className="count">{employer.neutral_count}</span></span>}
                 {employer.bad_count > 0 && <span><span className="emoji">😡</span><span className="count">{employer.bad_count}</span></span>}
               </div>

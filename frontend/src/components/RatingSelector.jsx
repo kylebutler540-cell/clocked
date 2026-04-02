@@ -24,7 +24,7 @@ export default function RatingSelector({ value, onChange }) {
               borderStyle: 'solid',
             }}
           >
-            <span className="emoji" style={opt.greenFilter ? { filter: 'hue-rotate(85deg) saturate(1.4) brightness(1.1)' } : {}}>{opt.emoji}</span>
+            <span className="emoji" style={opt.greenFilter ? { filter: 'sepia(1) saturate(4) hue-rotate(65deg) brightness(0.9)' } : {}}>{opt.emoji}</span>
             <span className="label">{opt.label}</span>
           </button>
         );

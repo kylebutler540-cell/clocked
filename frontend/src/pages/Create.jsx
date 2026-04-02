@@ -5,6 +5,7 @@ import EmployerSearch from '../components/EmployerSearch';
 import RatingSelector from '../components/RatingSelector';
 import { useToast } from '../context/ToastContext';
 import { clearFeedCache } from '../components/Feed';
+import { useAuth } from '../context/AuthContext';
 
 export default function Create() {
   const routeLocation = useLocation();
@@ -18,6 +19,7 @@ export default function Create() {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
   const { addToast } = useToast();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   function handleMediaChange(e) {
@@ -101,6 +103,28 @@ export default function Create() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!user?.email) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '40px 24px', textAlign: 'center' }}>
+        <svg width="48" height="48" viewBox="0 0 100 100" style={{ marginBottom: 20 }}>
+          <rect width="100" height="100" rx="20" fill="rgba(168,85,247,0.12)" />
+          <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="#A855F7" textAnchor="middle">c</text>
+        </svg>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Sign in to post</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 15, marginBottom: 28, maxWidth: 320 }}>
+          Create an account to share your workplace experience anonymously.
+        </p>
+        <button
+          className="btn btn-primary"
+          style={{ padding: '11px 32px', fontSize: 15, fontWeight: 700 }}
+          onClick={() => navigate('/signup')}
+        >
+          Sign In / Create Account
+        </button>
+      </div>
+    );
   }
 
   return (

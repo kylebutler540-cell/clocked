@@ -16,6 +16,8 @@ function formatComment(c, currentUserId) {
     post_id: c.post_id,
     anonymous_user_id: c.anonymous_user_id,
     author_anon_number: c.user?.anon_number ?? null,
+    author_display_name: c.user?.display_name ?? null,
+    author_avatar_url: c.user?.avatar_url ?? null,
     body: c.body,
     image_url: c.image_url ?? null,
     parent_id: c.parent_id ?? null,
@@ -34,7 +36,7 @@ router.get('/', optionalAuth, async (req, res) => {
       where: { post_id: req.params.postId },
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { anon_number: true } },
+        user: { select: { anon_number: true, display_name: true, avatar_url: true } },
         likes_rel: currentUserId ? { where: { user_id: currentUserId }, select: { user_id: true } } : false,
       },
     });
@@ -100,7 +102,7 @@ router.post('/', optionalAuth, async (req, res) => {
         image_url: image_url || null,
         parent_id: parent_id || null,
       },
-      include: { user: { select: { anon_number: true } } },
+      include: { user: { select: { anon_number: true, display_name: true, avatar_url: true } } },
     });
 
     const result = {
@@ -108,6 +110,8 @@ router.post('/', optionalAuth, async (req, res) => {
       post_id: comment.post_id,
       anonymous_user_id: comment.anonymous_user_id,
       author_anon_number: comment.user?.anon_number ?? null,
+      author_display_name: comment.user?.display_name ?? null,
+      author_avatar_url: comment.user?.avatar_url ?? null,
       body: comment.body,
       image_url: comment.image_url ?? null,
       parent_id: comment.parent_id ?? null,

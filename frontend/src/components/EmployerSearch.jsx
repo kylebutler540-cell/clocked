@@ -113,8 +113,19 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  function handleSelect(place) {
-    onSelect(place);
+  async function handleSelect(place) {
+    // Fetch full place details to get the complete formatted address (street number included)
+    let enriched = { ...place };
+    try {
+      const details = await api.get(`/employers/details/${place.place_id}`);
+      if (details.data?.formatted_address) {
+        enriched.address = details.data.formatted_address;
+      }
+      if (details.data?.name) {
+        enriched.name = details.data.name;
+      }
+    } catch { /* fall back to autocomplete data */ }
+    onSelect(enriched);
     setQuery('');
     setResults([]);
     setOpen(false);

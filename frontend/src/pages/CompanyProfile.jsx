@@ -111,18 +111,39 @@ export default function CompanyProfile() {
             <h1 className="company-name" style={{ margin: '0 0 4px' }}>
               {profile?.employer_name || stateInfo.name || 'Company'}
             </h1>
-            <p className="company-address" style={{ margin: '0 0 6px' }}>
-              {profile?.employer_address || stateInfo.address || ''}
-            </p>
-            {/* Review count + stars + avg rating inline */}
-            {total > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
-                  {total} {total === 1 ? 'review' : 'reviews'}
+            {(() => {
+              const addr = profile?.employer_address || stateInfo.address || '';
+              const name = profile?.employer_name || stateInfo.name || '';
+              const mapsQuery = encodeURIComponent(`${name} ${addr}`.trim());
+              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+              return addr ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="company-address"
+                  style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--purple)', textDecoration: 'none', fontSize: 13 }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  {addr.replace(/,?\s*USA\s*$/, '').trim()}
+                </a>
+              ) : null;
+            })()}
+            {/* Star rating row — 4.1 ★★★★☆ (247) */}
+            {(profile?.star_rating_count > 0) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {profile.avg_rating}
                 </span>
-                <StarDisplay rating={profile?.avg_rating || 0} />
+                <StarDisplay rating={profile.avg_rating} />
                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  ({profile?.avg_rating != null ? profile.avg_rating : '—'})
+                  ({profile.star_rating_count >= 1000
+                    ? `${(profile.star_rating_count / 1000).toFixed(1)}K`
+                    : profile.star_rating_count})
                 </span>
               </div>
             )}

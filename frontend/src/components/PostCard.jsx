@@ -5,7 +5,7 @@ import api from '../lib/api';
 import { timeAgo, ratingToEmoji, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import PaywallModal from './PaywallModal';
+
 import FlagModal from './FlagModal';
 import CommentSheet from './CommentSheet';
 
@@ -41,13 +41,7 @@ const RATING_EMOJIS = [
   { value: 'GOOD', emoji: '😊', color: '#22C55E', greenFilter: true },
 ];
 
-function getPreviewText(text) {
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
-  if (sentences.length >= 2) {
-    return sentences[0] + sentences[1].slice(0, Math.ceil(sentences[1].length * 0.55));
-  }
-  return text.slice(0, 130);
-}
+
 
 function RatingBadge({ value }) {
   const r = RATING_EMOJIS.find(x => x.value === value);
@@ -67,7 +61,7 @@ function RatingBadge({ value }) {
       flexShrink: 0,
 
     }}>
-      <span style={{ fontSize: 15, filter: r.greenFilter ? 'hue-rotate(85deg) saturate(1.4) brightness(1.1)' : 'none' }}>{r.emoji}</span>
+      <span style={{ fontSize: 15, filter: r.greenFilter ? 'sepia(1) saturate(4) hue-rotate(65deg) brightness(0.9)' : 'none' }}>{r.emoji}</span>
       {value === 'BAD' ? 'Bad' : value === 'NEUTRAL' ? 'Neutral' : 'Good'}
     </span>
   );
@@ -88,14 +82,14 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   };
 
   const [post, setPost] = useState(getInitialPost);
-  const [showPaywall, setShowPaywall] = useState(false);
+
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPostActionModal, setShowPostActionModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
-  const { user, isSubscribed } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const menuRef = useRef(null);
@@ -131,6 +125,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
   async function handleLike() {
     if (isMock) return;
+    if (!user?.email) { navigate('/signup'); return; }
     const prev = { liked: post.liked, disliked: post.disliked, likes: post.likes, dislikes: post.dislikes };
     const prevCached = getCachedReaction(post.id);
 
@@ -162,6 +157,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
   async function handleDislike() {
     if (isMock) return;
+    if (!user?.email) { navigate('/signup'); return; }
     const prev = { liked: post.liked, disliked: post.disliked, likes: post.likes, dislikes: post.dislikes };
     const prevCached = getCachedReaction(post.id);
 
@@ -192,6 +188,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   }
 
   async function handleSave() {
+    if (!user?.email) { navigate('/signup'); return; }
     const prevSaved = post.saved;
     setPost(p => ({ ...p, saved: !p.saved }));
     try {
@@ -244,7 +241,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   }
 
   const mediaUrls = post.media_urls || [];
-  const previewText = post.body_truncated ? getPreviewText(post.body) : post.body;
+  const previewText = post.body;
 
   return (
     <>
@@ -265,7 +262,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             }}>
               {post.author_avatar_url
                 ? <img src={post.author_avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : (post.author_display_name ? post.author_display_name[0].toUpperCase() : (post.author_anon_number != null ? String(post.author_anon_number)[0] : 'A'))
+                : (post.author_display_name ? post.author_display_name[0].toUpperCase() : 'A')
               }
             </span>
           </button>
@@ -277,10 +274,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', fontWeight: 600, fontSize: 14, textAlign: 'left', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline', width: 'fit-content', maxWidth: '100%' }}
               onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
             >
-              {post.author_display_name
-                ? post.author_display_name
-                : (post.author_anon_number != null ? `Anonymous ${post.author_anon_number}` : generateAnonName(post.anonymous_user_id))
-              }
+              {post.author_display_name || 'Anonymous'}
             </button>
             <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.2 }}>{timeAgo(post.created_at)}</span>
           </div>
@@ -318,7 +312,9 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           {post.employer_address && (
             <>
               <span className="post-employer-sep">·</span>
-              <span className="post-meta-time">{post.employer_address.split(',').slice(1, 3).join(',').trim()}</span>
+              <span className="post-meta-time">
+                {post.employer_address.replace(/,?\s*USA\s*$/, '').trim()}
+              </span>
             </>
           )}
         </div>
@@ -359,26 +355,10 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         ) : (
           <>
             <div className="post-text">
-              {post.body_truncated ? (
-                <p style={{
-                  margin: 0,
-                  WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-                  maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-                }}>{previewText}</p>
-              ) : (
-                <p>{previewText}</p>
-              )}
+              <p style={{ margin: 0 }}>{previewText}</p>
             </div>
 
-            {post.body_truncated && !isSubscribed && (
-              <button
-                className="see-more-btn"
-                onClick={e => { e.stopPropagation(); setShowPaywall(true); }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:6,flexShrink:0}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                See Full Review — $2.99/mo
-              </button>
-            )}
+
           </>
         )}
 
@@ -429,7 +409,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           </div>
 
           {/* Comments */}
-          <button className="action-btn" onClick={e => { e.stopPropagation(); if (!isMock && !showComments) setShowComments(true); }} aria-label="Comments" style={{ whiteSpace: 'nowrap', flexShrink: 0, opacity: showComments ? 0.4 : 1, pointerEvents: showComments ? 'none' : 'auto', outline: 'none' }} onBlur={e => e.currentTarget.blur()}>
+          <button className="action-btn" onClick={e => { e.stopPropagation(); if (!user?.email) { navigate('/signup'); return; } if (!isMock && !showComments) setShowComments(true); }} aria-label="Comments" style={{ whiteSpace: 'nowrap', flexShrink: 0, opacity: showComments ? 0.4 : 1, pointerEvents: showComments ? 'none' : 'auto', outline: 'none' }} onBlur={e => e.currentTarget.blur()}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
@@ -449,7 +429,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           {/* Flag */}
           <button
             className="action-btn"
-            onClick={e => { e.stopPropagation(); setShowFlag(true); }}
+            onClick={e => { e.stopPropagation(); if (!user?.email) { navigate('/signup'); return; } setShowFlag(true); }}
             aria-label="Flag"
             style={{ color: 'var(--text-muted)' }}
           >
@@ -458,7 +438,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         </div>
       </article>
 
-      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+
       {showFlag && createPortal(<FlagModal postId={post.id} onClose={() => setShowFlag(false)} />, document.body)}
       <CommentSheet postId={post.id} post={post} isOpen={showComments} onClose={() => setShowComments(false)} />
 

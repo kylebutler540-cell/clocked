@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
 
 export default function Signup() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [mode, setMode] = useState('signup'); // 'signup' or 'login'
+  // Default to login mode if ?mode=login is in the URL
+  const [mode, setMode] = useState(() => searchParams.get('mode') === 'login' ? 'login' : 'signup');
   const { register, login, loginWithGoogle } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -74,7 +76,11 @@ export default function Signup() {
         navigate('/');
       }
     } catch (err) {
-      addToast(err.response?.data?.error || (mode === 'signup' ? 'Failed to create account' : 'Invalid email or password'));
+      if (err.response?.data?.googleOnly) {
+        addToast('This account uses Google sign-in. Please use "Continue with Google" instead.');
+      } else {
+        addToast(err.response?.data?.error || (mode === 'signup' ? 'Failed to create account' : 'Incorrect email or password'));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -87,7 +93,7 @@ export default function Signup() {
         {mode === 'signup' ? 'Create Account' : 'Welcome Back'}
       </h1>
       <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>
-        {mode === 'signup' ? 'Join Clocked — it\'s free.' : 'Sign in to your account.'}
+        {mode === 'signup' ? 'Join Clocked — it\'s free.' : 'Sign in to your Clocked account.'}
       </p>
 
       {/* Google Sign In */}

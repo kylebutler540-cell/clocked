@@ -76,7 +76,7 @@ export default function Search() {
                     {emp.employer_name}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {emp.employer_address}
+                    {(emp.employer_address || '').replace(/,?\s*USA\s*$/, '').trim()}
                   </div>
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>

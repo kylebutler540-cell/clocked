@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function HomeIcon() {
   return (
@@ -57,6 +58,7 @@ const NAV_ITEMS = [
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <nav className="bottom-nav">
@@ -69,7 +71,13 @@ export default function BottomNav() {
           <button
             key={item.path}
             className={`nav-item${isActive ? ' active' : ''}`}
-            onClick={() => navigate(item.path)}
+            onClick={() => {
+              if (item.path === '/create' && !user?.email) {
+                navigate('/signup');
+              } else {
+                navigate(item.path);
+              }
+            }}
           >
             <item.Icon />
             <span className="nav-label">{item.label}</span>
