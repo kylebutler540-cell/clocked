@@ -10,6 +10,7 @@
   --bg-secondary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #F0F0F0;
+  --separator-color: #E0E0E0;
   --bg-input: #F5F5F5;
 
   --text-primary: #111111;
@@ -62,6 +63,7 @@
   --bg-card: #1A1A1A;
   --bg-elevated: #222222;
   --bg-input: #1A1A1A;
+  --separator-color: #000000;
 
   --text-primary: #FFFFFF;
   --text-secondary: #A8A8A8;
@@ -882,7 +884,7 @@ img, video {
   border-radius: 0;
   padding: 16px;
   margin: 0;
-  border-bottom: 8px solid var(--bg-primary);
+  border-bottom: 8px solid var(--separator-color);
   /* Not a button — no hover/press states, no cursor change */
   cursor: default;
   -webkit-tap-highlight-color: transparent;

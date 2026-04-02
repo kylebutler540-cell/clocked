@@ -9,11 +9,17 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Create() {
   const routeLocation = useLocation();
-  const [employer, setEmployer] = useState(routeLocation.state?.employer || null);
-  const [rating, setRating] = useState('');
-  const [header, setHeader] = useState('');
-  const [body, setBody] = useState('');
-  const [mediaPreviews, setMediaPreviews] = useState([]);
+  const editPost = routeLocation.state?.editPost || null;
+  const isEditMode = !!editPost;
+
+  const [employer, setEmployer] = useState(
+    editPost ? { place_id: editPost.employer_place_id, name: editPost.employer_name, address: editPost.employer_address } :
+    routeLocation.state?.employer || null
+  );
+  const [rating, setRating] = useState(editPost?.rating_emoji || '');
+  const [header, setHeader] = useState(editPost?.header || '');
+  const [body, setBody] = useState(editPost?.body || '');
+  const [mediaPreviews, setMediaPreviews] = useState(editPost?.media_urls || []);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -81,25 +87,34 @@ export default function Create() {
 
     setSubmitting(true);
     try {
-      // For MVP, media_urls would come from an upload service
-      // Here we submit data URIs as placeholders (real app would use S3/Cloudinary)
       const media_urls = mediaPreviews.slice(0, 10);
 
-      const res = await api.post('/posts', {
-        employer_place_id: employer.place_id,
-        employer_name: employer.name,
-        employer_address: employer.address || employer.description || '',
-        rating_emoji: rating,
-        header: header.trim(),
-        body: body.trim(),
-        media_urls,
-      });
-
-      addToast('Review posted!');
-      clearFeedCache();
-      navigate('/');
+      if (isEditMode) {
+        await api.put(`/posts/${editPost.id}`, {
+          rating_emoji: rating,
+          header: header.trim(),
+          body: body.trim(),
+          media_urls,
+        });
+        addToast('Changes saved!');
+        clearFeedCache();
+        navigate(-1);
+      } else {
+        await api.post('/posts', {
+          employer_place_id: employer.place_id,
+          employer_name: employer.name,
+          employer_address: employer.address || employer.description || '',
+          rating_emoji: rating,
+          header: header.trim(),
+          body: body.trim(),
+          media_urls,
+        });
+        addToast('Review posted!');
+        clearFeedCache();
+        navigate('/');
+      }
     } catch (err) {
-      addToast(err.response?.data?.error || 'Failed to post review');
+      addToast(err.response?.data?.error || 'Failed to save');
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +144,7 @@ export default function Create() {
 
   return (
     <div className="create-page">
-      <h1>Share Your Experience</h1>
+      <h1>{isEditMode ? 'Edit Your Review' : 'Share Your Experience'}</h1>
 
       <form onSubmit={handleSubmit}>
         {/* Employer */}
@@ -267,7 +282,7 @@ export default function Create() {
           className="btn btn-primary btn-full"
           disabled={submitting || !employer || !rating || !header.trim() || (body.trim().length > 0 && body.trim().length < 10)}
         >
-          {submitting ? 'Posting...' : 'Post Anonymously'}
+          {submitting ? (isEditMode ? 'Saving...' : 'Posting...') : (isEditMode ? 'Save Changes' : 'Post Anonymously')}
         </button>
       </form>
     </div>

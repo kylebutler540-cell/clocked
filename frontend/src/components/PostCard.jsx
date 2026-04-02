@@ -8,6 +8,7 @@ import { useToast } from '../context/ToastContext';
 
 import FlagModal from './FlagModal';
 import CommentSheet from './CommentSheet';
+import { clearFeedCache } from './Feed';
 
 // Module-level reaction cache: survives navigation within the same browser session
 // Falls back to localStorage for cross-session persistence
@@ -86,6 +87,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPostActionModal, setShowPostActionModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
@@ -211,8 +213,8 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   function startEditing(e) {
     if (e?.stopPropagation) e.stopPropagation();
     setShowMenu(false);
-    setEditText(post.body);
-    setEditing(true);
+    setShowPostActionModal(false);
+    navigate('/create', { state: { editPost: post } });
   }
 
   async function handleSaveEdit(e) {
@@ -227,12 +229,11 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     }
   }
 
-  async function handleDeletePost(e) {
-    if (e?.stopPropagation) e.stopPropagation();
-    setShowMenu(false);
-    if (!window.confirm('Delete this post?')) return;
+  async function handleDeletePost() {
+    setShowDeleteConfirm(false);
     try {
       await api.delete(`/posts/${post.id}`);
+      clearFeedCache();
       if (onDelete) onDelete();
       else navigate('/');
     } catch {
@@ -451,9 +452,27 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
                 onClick={() => { setShowPostActionModal(false); startEditing(); }}>Edit</button>
               <button className="btn btn-full"
                 style={{ padding: '12px', fontSize: 15, fontWeight: 600, background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)' }}
-                onClick={() => { setShowPostActionModal(false); handleDeletePost(); }}>Delete</button>
+                onClick={() => { setShowPostActionModal(false); setShowDeleteConfirm(true); }}>Delete</button>
               <button className="btn btn-ghost btn-full" style={{ padding: '12px', fontSize: 15 }}
                 onClick={() => setShowPostActionModal(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', padding: '28px 24px 20px' }}>
+            <div className="modal-handle" />
+            <div style={{ fontSize: 22, marginBottom: 8 }}>🗑️</div>
+            <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>Delete this post?</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>This can't be undone.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button className="btn btn-full"
+                style={{ padding: '13px', fontSize: 15, fontWeight: 700, background: '#EF4444', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)' }}
+                onClick={handleDeletePost}>Yes, delete it</button>
+              <button className="btn btn-ghost btn-full" style={{ padding: '13px', fontSize: 15 }}
+                onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
             </div>
           </div>
         </div>

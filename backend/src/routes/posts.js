@@ -743,7 +743,7 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
 // Edit post (owner only)
 router.put('/:id', requireAuth, async (req, res) => {
   try {
-    const { body } = req.body;
+    const { body, header, rating_emoji, media_urls } = req.body;
     if (!body || body.trim().length < 10) {
       return res.status(400).json({ error: 'Review body must be at least 10 characters' });
     }
@@ -755,9 +755,13 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (post.anonymous_user_id !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
+    const updateData = { body: body.trim() };
+    if (header) updateData.header = header.trim();
+    if (rating_emoji) updateData.rating_emoji = rating_emoji;
+    if (Array.isArray(media_urls)) updateData.media_urls = media_urls.slice(0, 10);
     const updated = await prisma.post.update({
       where: { id: req.params.id },
-      data: { body: body.trim() },
+      data: updateData,
       include: {
         user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
         _count: { select: { comments: true } },
