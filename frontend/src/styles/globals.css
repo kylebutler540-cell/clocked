@@ -1023,8 +1023,9 @@ img, video {
 
 .post-media img, .post-media video {
   width: 100%;
-  max-height: none;
+  max-height: 512px;
   object-fit: contain;
+  background: #000;
   border-radius: 14px;
 }
 
@@ -1042,6 +1043,7 @@ img, video {
 
 .media-item {
   aspect-ratio: unset;
+  overflow: hidden;
   overflow: hidden;
 }
 
