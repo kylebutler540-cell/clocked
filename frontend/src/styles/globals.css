@@ -74,6 +74,24 @@
 
   --shadow: rgba(0, 0, 0, 0.6);
   --shadow-lg: rgba(0, 0, 0, 0.85);
+
+  color-scheme: dark;
+  scrollbar-color: #444444 #111111;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #111111;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #444444;
+  border-radius: 4px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #555555;
 }
 
 /* ========== Reset ========== */

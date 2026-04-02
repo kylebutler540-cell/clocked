@@ -427,22 +427,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
             <div
               className="comment-sheet-post"
               style={{ WebkitTapHighlightColor: 'transparent', maxHeight: '30vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
-              onTouchStart={e => {
-                if (listRef.current && listRef.current.scrollTop === 0) {
-                  dragStartY.current = e.touches[0].clientY;
-                  dragCurrentY.current = 0;
-                  if (sheetRef.current) sheetRef.current.style.transition = 'none';
-                }
-              }}
-              onTouchMove={e => {
-                if (dragStartY.current === null) return;
-                const dy = e.touches[0].clientY - dragStartY.current;
-                if (dy <= 0) return;
-                e.stopPropagation();
-                dragCurrentY.current = dy;
-                if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
-              }}
-              onTouchEnd={onTouchEnd}
             >
               <PostCard post={post} closeButton={
                 <button onClick={handleClose} style={{
