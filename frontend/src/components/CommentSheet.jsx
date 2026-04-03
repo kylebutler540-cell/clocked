@@ -32,7 +32,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   const authorName = comment.author_display_name || 'Anonymous';
 
   return (
-    <div style={{ marginLeft: depth > 0 ? 36 : 0, borderBottom: depth === 0 ? '1px solid var(--border)' : 'none' }}>
+    <div style={{ marginLeft: depth > 0 ? 36 : 0 }}>
       <div style={{ display: 'flex', gap: 10, padding: '10px 16px', alignItems: 'flex-start' }}>
         <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
           onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
@@ -441,8 +441,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
             </div>
           )}
 
-          {/* Separator line */}
-          <div style={{ borderBottom: '1px solid var(--border)' }} />
+          {/* Separator removed */}
         </div>
 
         {/* Comments list — only this scrolls */}
@@ -456,7 +455,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           ) : (
             comments.map(comment => (
               editingCommentId === comment.id ? (
-                <div key={comment.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div key={comment.id} style={{ padding: '12px 16px' }}>
                   <textarea className="form-input" value={editText} onChange={e => setEditText(e.target.value)}
                     rows={3} maxLength={1000} style={{ width: '100%', resize: 'none', marginBottom: 8, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', overflow: 'auto' }} autoFocus />
                   <div style={{ display: 'flex', gap: 8 }}>

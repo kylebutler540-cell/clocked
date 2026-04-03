@@ -644,10 +644,13 @@ router.post('/:id/like', optionalAuth, async (req, res) => {
 
     // New like
     await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'like' } });
-    const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
+    const [post, actor] = await Promise.all([
+      prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true, header: true } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { id: true, display_name: true, avatar_url: true, anon_number: true } }),
+    ]);
     // Notify post owner (not self)
     if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
-      await notify({ userId: post.anonymous_user_id, type: 'like', message: 'Someone liked your post.', data: { post_id: req.params.id } });
+      await notify({ userId: post.anonymous_user_id, type: 'like', message: `${actor?.display_name || 'Someone'} liked your post.`, data: { post_id: req.params.id, post_header: post.header, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } });
     }
     res.json({ likes: post.likes, dislikes: post.dislikes, liked: true, disliked: false });
   } catch (err) {
@@ -682,10 +685,13 @@ router.post('/:id/dislike', optionalAuth, async (req, res) => {
 
     // New dislike
     await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'dislike' } });
-    const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
+    const [post, actor] = await Promise.all([
+      prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true, header: true } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { id: true, display_name: true, avatar_url: true } }),
+    ]);
     // Notify post owner (not self)
     if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
-      await notify({ userId: post.anonymous_user_id, type: 'dislike', message: 'Someone disliked your post.', data: { post_id: req.params.id } });
+      await notify({ userId: post.anonymous_user_id, type: 'dislike', message: `${actor?.display_name || 'Someone'} disliked your post.`, data: { post_id: req.params.id, post_header: post.header, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } });
     }
     res.json({ likes: post.likes, dislikes: post.dislikes, liked: false, disliked: true });
   } catch (err) {

@@ -1069,21 +1069,24 @@ img, video {
   background: transparent;
 }
 
-.post-media .media-wrapper::before {
-  content: '';
+.post-media .media-blur-bg {
   position: absolute;
-  inset: 0;
-  background-image: var(--blur-src);
+  inset: -10%;
   background-size: cover;
   background-position: center;
-  filter: blur(24px) brightness(0.55) saturate(0.7);
-  transform: scale(1.1);
+  filter: blur(24px) brightness(0.82) saturate(0.5);
   z-index: 0;
-  border-radius: 14px;
+  border-radius: 0;
 }
 
-.dark .post-media .media-wrapper::before {
+.dark .post-media .media-blur-bg {
   filter: blur(24px) brightness(0.35) saturate(0.6);
+}
+
+.post-media .media-wrapper img,
+.post-media .media-wrapper video {
+  position: relative;
+  z-index: 1;
 }
 
 .media-grid {
@@ -1431,7 +1434,6 @@ textarea.form-input {
 /* ========== Company Profile ========== */
 .company-header {
   padding: 20px 16px;
-  border-bottom: 1px solid var(--border);
 }
 
 .company-name {
@@ -1492,7 +1494,6 @@ textarea.form-input {
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  border-bottom: 1px solid var(--border);
 }
 
 .filter-tabs::-webkit-scrollbar { display: none; }

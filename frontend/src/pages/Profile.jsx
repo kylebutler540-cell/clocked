@@ -282,6 +282,7 @@ export default function Profile() {
   const [isRegister, setIsRegister] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [publicUser, setPublicUser] = useState(null);
+  const [publicUserLoading, setPublicUserLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [followListModal, setFollowListModal] = useState(null); // 'followers' | 'following' | null
@@ -291,9 +292,11 @@ export default function Profile() {
   // For public profile (/profile/:userId)
   useEffect(() => {
     if (viewingUserId && !isOwnProfile) {
+      setPublicUserLoading(true);
       api.get(`/auth/user/${viewingUserId}`)
         .then(res => setPublicUser(res.data))
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setPublicUserLoading(false));
 
       if (user?.email) {
         api.get(`/follows/${viewingUserId}/is-following`)
@@ -411,6 +414,15 @@ export default function Profile() {
 
   // Public profile view (viewing another user's profile)
   if (!isOwnProfile) {
+    // Hold until profile data is loaded — prevents anonymous/0-followers flash
+    if (publicUserLoading) {
+      return (
+        <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+          <div className="spinner" style={{ margin: '0 auto' }} />
+        </div>
+      );
+    }
+
     const pubName = publicUser?.display_name || 'Anonymous';
     return (
       <div className="profile-page">

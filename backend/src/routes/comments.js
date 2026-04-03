@@ -121,13 +121,16 @@ router.post('/', optionalAuth, async (req, res) => {
       created_at: comment.created_at,
     };
 
+    const actorName = comment.user?.display_name || null;
+    const actorAvatar = comment.user?.avatar_url || null;
+
     // Notify post owner of new comment (not self)
     if (post.anonymous_user_id && post.anonymous_user_id !== userId && !parent_id) {
       await notify({
         userId: post.anonymous_user_id,
         type: 'comment',
-        message: 'Someone commented on your post.',
-        data: { post_id: post.id, comment_id: comment.id },
+        message: `${actorName || 'Someone'} commented on your post.`,
+        data: { post_id: post.id, comment_id: comment.id, comment_body: comment.body, post_header: post.header, actor_id: userId, actor_name: actorName, actor_avatar: actorAvatar },
       });
     }
 
@@ -136,8 +139,8 @@ router.post('/', optionalAuth, async (req, res) => {
       await notify({
         userId: parentComment.anonymous_user_id,
         type: 'reply',
-        message: 'Someone replied to your comment.',
-        data: { post_id: post.id, comment_id: comment.id, parent_id: parent_id },
+        message: `${actorName || 'Someone'} replied to your comment.`,
+        data: { post_id: post.id, comment_id: comment.id, comment_body: comment.body, parent_id: parent_id, actor_id: userId, actor_name: actorName, actor_avatar: actorAvatar },
       });
     }
 

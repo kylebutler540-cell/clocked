@@ -386,7 +386,8 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         {mediaUrls.length > 0 && (
           <div className="post-media">
             {mediaUrls.length === 1 ? (
-              <div className="media-wrapper" style={{ '--blur-src': `url(${mediaUrls[0]})`, cursor: 'zoom-in' }} onClick={e => { e.stopPropagation(); setLightboxUrl(mediaUrls[0]); }}>
+              <div className="media-wrapper" style={{ cursor: 'zoom-in' }} onClick={e => { e.stopPropagation(); setLightboxUrl(mediaUrls[0]); }}>
+                <div className="media-blur-bg" style={{ backgroundImage: `url(${mediaUrls[0]})` }} />
                 <img src={mediaUrls[0]} alt="Review media" loading="lazy" />
               </div>
             ) : (

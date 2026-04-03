@@ -156,9 +156,7 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
   if (loading) {
     return (
       <div className="feed">
-        {!filters.employer_place_id && !isTopRated && !filters.userId && <PostCard key={MOCK_POST.id} post={MOCK_POST} />}
-        {!filters.employer_place_id && !isTopRated && !filters.userId && <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />}
-        {[1,2,3].map(i => <SkeletonCard key={i} />)}
+        {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
       </div>
     );
   }
@@ -191,20 +189,31 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
 
       {!nextCursor && posts.length === 0 && (
         emptyState ? emptyState : (
-          <div className="feed-first-cta">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
-            <h3>{isCompanyFeed ? 'Be the first to review this workplace' : 'Be the first to review a workplace near you'}</h3>
-            <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}
-              onClick={() => navigate('/create', employerInfo ? { state: { employer: employerInfo } } : {})}
-            >
-              Write a Review
-            </button>
-          </div>
+          <>
+            {/* Show seed posts on home feed only so it never looks empty to new users */}
+            {!isCompanyFeed && !isTopRated && !filters.userId && (
+              <>
+                <PostCard key={MOCK_POST.id} post={MOCK_POST} />
+                <PostCard key={MOCK_POST_2.id} post={MOCK_POST_2} />
+              </>
+            )}
+            {(isCompanyFeed || isTopRated || filters.userId) && (
+              <div className="feed-first-cta">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                </svg>
+                <h3>{isCompanyFeed ? 'Be the first to review this workplace' : 'Be the first to review a workplace near you'}</h3>
+                <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
+                <button
+                  className="btn btn-primary"
+                  style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}
+                  onClick={() => navigate('/create', employerInfo ? { state: { employer: employerInfo } } : {})}
+                >
+                  Write a Review
+                </button>
+              </div>
+            )}
+          </>
         )
       )}
 
