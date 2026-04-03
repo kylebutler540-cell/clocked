@@ -47,7 +47,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(comment.created_at)}</span>
           </div>
           {comment.body && (
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 4px' }}>{comment.body}</p>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 4px', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', minWidth: 0 }}>{comment.body}</p>
           )}
           {comment.image_url && (
             <img src={comment.image_url} alt="Comment attachment"
@@ -117,6 +117,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
   const [commentActionModal, setCommentActionModal] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [inputHeight, setInputHeight] = useState(36);
   const [visible, setVisible] = useState(false); // for animation
 
   const imageInputRef = useRef(null);
@@ -252,6 +253,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
     setCommentText('');
     setSelectedImage(null);
     setReplyingTo(null);
+    setInputHeight(36);
 
     if (capturedReplyingTo) {
       setComments(prev => prev.map(c => {
@@ -406,6 +408,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
           width: '100%',
           maxWidth: '740px', // matches feed width on desktop
           boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+          overflow: 'hidden',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -455,7 +458,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
               editingCommentId === comment.id ? (
                 <div key={comment.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
                   <textarea className="form-input" value={editText} onChange={e => setEditText(e.target.value)}
-                    rows={3} maxLength={1000} style={{ width: '100%', resize: 'none', marginBottom: 8 }} autoFocus />
+                    rows={3} maxLength={1000} style={{ width: '100%', resize: 'none', marginBottom: 8, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', overflow: 'auto' }} autoFocus />
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: 13 }}
                       onClick={() => handleSaveEdit(comment.id)} disabled={!editText.trim()}>Save</button>
@@ -505,11 +508,19 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
                   style={{ position: 'absolute', top: -4, right: -4, background: '#EF4444', color: '#fff', border: 'none', borderRadius: '50%', width: 14, height: 14, fontSize: 10, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
               </div>
             )}
-            <input ref={inputRef} type="text" className="form-input" value={commentText}
-              onChange={e => setCommentText(e.target.value)}
+            <textarea ref={inputRef} className="form-input" value={commentText}
+              onChange={e => {
+                setCommentText(e.target.value);
+                // Measure natural height, cap at 5 lines (~120px), persist in state
+                e.target.style.height = '36px';
+                const next = Math.min(e.target.scrollHeight, 120);
+                e.target.style.height = next + 'px';
+                setInputHeight(next);
+              }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
               placeholder={replyingTo ? 'Write a reply...' : 'Add a comment...'}
-              maxLength={1600} style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14 }} />
+              maxLength={1600} rows={1}
+              style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14, resize: 'none', overflowY: inputHeight >= 120 ? 'auto' : 'hidden', height: inputHeight, minHeight: 36, maxHeight: 120, lineHeight: '1.4', display: 'block', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }} />
             <button onClick={handleSubmit}
               disabled={submitting || (!commentText.trim() && !selectedImage)}
               style={{

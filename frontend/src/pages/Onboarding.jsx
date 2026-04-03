@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LocationModal from '../components/LocationModal';
 import { useAuth } from '../context/AuthContext';
@@ -181,31 +181,55 @@ function SignupScreen({ onSuccess, onGuest, onBack, onForward, email, setEmail, 
     }
   }
 
+  const googleBtnRef = useRef(null);
+
+  const initGoogleBtn = useCallback(() => {
+    const container = googleBtnRef.current;
+    if (!container || !window.google?.accounts?.id) return;
+    // Clear any stale rendered button so GSI can re-render fresh
+    container.innerHTML = '';
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async (response) => {
+        try {
+          const data = await loginWithGoogle(response.credential);
+          onSuccess(!!data.user?.username);
+        } catch {
+          addToast('Google sign-in failed');
+        }
+      },
+    });
+    window.google.accounts.id.renderButton(container, {
+      theme: 'outline', size: 'large', width: '100%', text: 'continue_with', shape: 'pill',
+    });
+  }, [loginWithGoogle, onSuccess, addToast]);
+
+  // Load GSI script once, then init button
   useEffect(() => {
-    const init = () => {
-      window.google?.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response) => {
-          try {
-            const data = await loginWithGoogle(response.credential);
-            onSuccess(!!data.user?.username);
-          } catch {
-            addToast('Google sign-in failed');
-          }
-        },
-      });
-      window.google?.accounts.id.renderButton(
-        document.getElementById('onboarding-google-btn'),
-        { theme: 'outline', size: 'large', width: '100%', text: 'continue_with', shape: 'pill' }
-      );
-    };
-    if (window.google) { init(); return; }
+    if (window.google) {
+      initGoogleBtn();
+      return;
+    }
+    const existing = document.querySelector('script[src*="accounts.google.com/gsi"]');
+    if (existing) {
+      existing.addEventListener('load', initGoogleBtn);
+      return () => existing.removeEventListener('load', initGoogleBtn);
+    }
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
-    script.onload = init;
+    script.onload = initGoogleBtn;
     document.body.appendChild(script);
-  }, []);
+  }, [initGoogleBtn]);
+
+  // Re-render button whenever the visible container switches (isGoogleOnly toggle)
+  useEffect(() => {
+    if (window.google?.accounts?.id) {
+      // Small timeout so React finishes rendering the new div before we target it
+      const t = setTimeout(initGoogleBtn, 0);
+      return () => clearTimeout(t);
+    }
+  }, [mode, initGoogleBtn]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -268,7 +292,7 @@ function SignupScreen({ onSuccess, onGuest, onBack, onForward, email, setEmail, 
         {/* Google-only mode: just show Google button prominently */}
         {isGoogleOnly ? (
           <>
-            <div id="onboarding-google-btn" style={{ width: '100%', maxWidth: 400, marginBottom: 16 }} />
+            <div id="onboarding-google-btn" ref={googleBtnRef} style={{ width: '100%', maxWidth: 400, marginBottom: 16 }} />
             <button
               className="btn btn-ghost btn-full"
               style={{ maxWidth: 400, fontSize: 14 }}
@@ -282,7 +306,7 @@ function SignupScreen({ onSuccess, onGuest, onBack, onForward, email, setEmail, 
             {/* Show Google on signup mode only */}
             {!isLogin && (
               <>
-                <div id="onboarding-google-btn" style={{ width: '100%', maxWidth: 400, marginBottom: 20 }} />
+                <div id="onboarding-google-btn" ref={googleBtnRef} style={{ width: '100%', maxWidth: 400, marginBottom: 20 }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', maxWidth: 400, marginBottom: 20 }}>
                   <div style={{ flex: 1, height: 1, background: '#E5E5E5' }} />
                   <span style={{ fontSize: 12, color: '#999', whiteSpace: 'nowrap' }}>or sign up with email</span>

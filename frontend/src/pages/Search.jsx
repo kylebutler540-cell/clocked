@@ -1,7 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import EmployerSearch from '../components/EmployerSearch';
+import GlobalSearch from '../components/GlobalSearch';
+
+function getBrandSlug(name) {
+  if (!name) return '';
+  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
+  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
+  return brand.toLowerCase();
+}
+
+function CompanyLogo({ name }) {
+  const [err, setErr] = useState(false);
+  const slug = getBrandSlug(name);
+  const src = `https://logo.clearbit.com/${slug}.com`;
+  if (err || !slug) {
+    return (
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🏢</div>
+    );
+  }
+  return (
+    <img src={src} alt={name} onError={() => setErr(true)}
+      style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 3, border: '1px solid var(--border)' }} />
+  );
+}
 
 export default function Search() {
   const [topEmployers, setTopEmployers] = useState([]);
@@ -15,19 +37,13 @@ export default function Search() {
       .finally(() => setLoading(false));
   }, []);
 
-  function handleSelect(place) {
-    navigate(`/company/${place.place_id}`, {
-      state: { name: place.name, address: place.address },
-    });
-  }
-
   return (
     <div style={{ padding: '16px' }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: 'var(--text-primary)' }}>
         Find an Employer
       </h1>
 
-      <EmployerSearch onSelect={handleSelect} placeholder="Search by company name or location..." />
+      <GlobalSearch placeholder="Search companies, reviews, people..." />
 
       <div style={{ marginTop: 28 }}>
         <div className="section-header" style={{ padding: '8px 0', marginBottom: 8, background: 'transparent' }}>
@@ -62,15 +78,7 @@ export default function Search() {
                   state: { name: emp.employer_name, address: emp.employer_address },
                 })}
               >
-                <div style={{
-                  width: 36, height: 36,
-                  borderRadius: 8,
-                  background: 'var(--bg-elevated)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, flexShrink: 0,
-                }}>
-                  🏢
-                </div>
+                <CompanyLogo name={emp.employer_name} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {emp.employer_name}

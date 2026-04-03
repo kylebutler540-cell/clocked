@@ -11,7 +11,7 @@ import BottomNav from './components/BottomNav';
 import SideDrawer from './components/SideDrawer';
 import LeftSidebar from './components/LeftSidebar';
 import AccountSwitcherMenu from './components/AccountSwitcher';
-import EmployerSearch from './components/EmployerSearch';
+import GlobalSearch from './components/GlobalSearch';
 import LocationModal from './components/LocationModal';
 
 import Home from './pages/Home';
@@ -104,12 +104,6 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [menuOpen]);
 
-  function handleSearchSelect(place) {
-    navigate(`/company/${place.place_id}`, {
-      state: { name: place.name, address: place.address },
-    });
-  }
-
   return (
     <div className="desktop-topbar">
       {/* Left: collapse button + logo + location */}
@@ -123,9 +117,9 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
         <LocationPill />
       </div>
 
-      {/* Center: search bar */}
+      {/* Center: global search bar */}
       <div className="desktop-topbar-search">
-        <EmployerSearch onSelect={handleSearchSelect} placeholder="Search employers..." />
+        <GlobalSearch placeholder="Search companies, reviews, people..." />
       </div>
       {showGetApp && createPortal(<GetAppModal onClose={() => setShowGetApp(false)} />, document.body)}
 
@@ -184,12 +178,6 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
 function MobileHeader({ onOpenDrawer }) {
   const navigate = useNavigate();
 
-  function handleSearchSelect(place) {
-    navigate(`/company/${place.place_id}`, {
-      state: { name: place.name, address: place.address },
-    });
-  }
-
   return (
     <header className="app-header">
       <button className="hamburger-btn" onClick={onOpenDrawer} aria-label="Open menu">
@@ -202,7 +190,7 @@ function MobileHeader({ onOpenDrawer }) {
       </div>
       <div className="header-right">
         <div className="header-search-wrapper">
-          <EmployerSearch onSelect={handleSearchSelect} placeholder="Find anything..." />
+          <GlobalSearch placeholder="Search..." />
         </div>
       </div>
     </header>

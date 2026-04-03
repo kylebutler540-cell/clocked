@@ -91,6 +91,25 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
+  const [lightboxUrl, setLightboxUrl] = useState(null);
+
+  // Lock body scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxUrl) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [lightboxUrl]);
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -367,11 +386,13 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         {mediaUrls.length > 0 && (
           <div className="post-media">
             {mediaUrls.length === 1 ? (
-              <img src={mediaUrls[0]} alt="Review media" loading="lazy" />
+              <div className="media-wrapper" style={{ '--blur-src': `url(${mediaUrls[0]})`, cursor: 'zoom-in' }} onClick={e => { e.stopPropagation(); setLightboxUrl(mediaUrls[0]); }}>
+                <img src={mediaUrls[0]} alt="Review media" loading="lazy" />
+              </div>
             ) : (
               <div className={`media-grid ${mediaUrls.length === 2 ? 'cols-2' : 'cols-3'}`}>
                 {mediaUrls.slice(0, 4).map((url, i) => (
-                  <div key={i} className="media-item">
+                  <div key={i} className="media-item" style={{ cursor: 'zoom-in' }} onClick={e => { e.stopPropagation(); setLightboxUrl(url); }}>
                     <img src={url} alt={`Media ${i + 1}`} loading="lazy" />
                   </div>
                 ))}
@@ -476,6 +497,47 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             </div>
           </div>
         </div>
+      )}
+
+      {lightboxUrl && createPortal(
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out',
+            padding: '16px',
+            touchAction: 'pinch-zoom',
+          }}
+        >
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              borderRadius: 12,
+              boxShadow: '0 8px 48px rgba(0,0,0,0.6)',
+              touchAction: 'pinch-zoom',
+              userSelect: 'none',
+            }}
+          />
+          <button
+            onClick={() => setLightboxUrl(null)}
+            style={{
+              position: 'absolute', top: 16, right: 16,
+              background: 'rgba(255,255,255,0.15)', border: 'none',
+              borderRadius: '50%', width: 36, height: 36,
+              color: '#fff', fontSize: 20, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >×</button>
+        </div>,
+        document.body
       )}
     </>
   );

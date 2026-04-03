@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { cacheGet, cacheSet } from '../lib/cache';
@@ -26,6 +26,31 @@ function StarDisplay({ rating }) {
   );
 }
 import Feed from '../components/Feed';
+
+function getBrandSlug(name) {
+  if (!name) return '';
+  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
+  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
+  return brand.toLowerCase();
+}
+
+function CompanyLogo({ name, size = 52 }) {
+  const [err, setErr] = useState(false);
+  const slug = getBrandSlug(name);
+  const src = `https://logo.clearbit.com/${slug}.com`;
+  const base = { width: size, height: size, borderRadius: 12, flexShrink: 0 };
+  if (err || !slug) {
+    return (
+      <div style={{ ...base, background: 'linear-gradient(135deg, #A855F7, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.46 }}>
+        🏢
+      </div>
+    );
+  }
+  return (
+    <img src={src} alt={name} onError={() => setErr(true)}
+      style={{ ...base, objectFit: 'contain', background: '#fff', padding: 6, border: '1px solid var(--border)' }} />
+  );
+}
 import StarRating from '../components/StarRating';
 
 const GREEN_EMOJI_FILTER = 'hue-rotate(85deg) saturate(1.4) brightness(1.1)';
@@ -98,15 +123,7 @@ export default function CompanyProfile() {
       {/* Company header */}
       <div className="company-header">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
-          <div style={{
-            width: 52, height: 52,
-            borderRadius: 12,
-            background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, flexShrink: 0,
-          }}>
-            🏢
-          </div>
+          <CompanyLogo name={profile?.employer_name || stateInfo.name} size={52} />
           <div style={{ flex: 1 }}>
             <h1 className="company-name" style={{ margin: '0 0 4px' }}>
               {profile?.employer_name || stateInfo.name || 'Company'}
