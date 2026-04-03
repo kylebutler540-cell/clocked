@@ -4,7 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get notifications for current user
+// Get notifications for current user — enriches actor info if missing
 router.get('/', requireAuth, async (req, res) => {
   try {
     const notifications = await prisma.notification.findMany({
@@ -12,7 +12,41 @@ router.get('/', requireAuth, async (req, res) => {
       orderBy: { created_at: 'desc' },
       take: 50,
     });
-    res.json(notifications);
+
+    // Collect actor_ids that are missing actor_name so we can batch-fetch them
+    const missingActorIds = [
+      ...new Set(
+        notifications
+          .filter(n => n.data?.actor_id && !n.data?.actor_name)
+          .map(n => n.data.actor_id)
+      ),
+    ];
+
+    let actorMap = {};
+    if (missingActorIds.length > 0) {
+      const actors = await prisma.user.findMany({
+        where: { id: { in: missingActorIds } },
+        select: { id: true, display_name: true, avatar_url: true },
+      });
+      actors.forEach(a => { actorMap[a.id] = a; });
+    }
+
+    const enriched = notifications.map(n => {
+      if (n.data?.actor_id && !n.data?.actor_name && actorMap[n.data.actor_id]) {
+        const actor = actorMap[n.data.actor_id];
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            actor_name: actor.display_name || null,
+            actor_avatar: actor.avatar_url || null,
+          },
+        };
+      }
+      return n;
+    });
+
+    res.json(enriched);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch notifications' });
