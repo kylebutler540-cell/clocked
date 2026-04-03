@@ -13,7 +13,7 @@ router.get('/', requireAuth, async (req, res) => {
       take: 50,
     });
 
-    // Collect actor_ids that are missing actor_name so we can batch-fetch them
+    // 1. Batch-fetch by actor_id (new-style notifications)
     const missingActorIds = [
       ...new Set(
         notifications
@@ -21,7 +21,6 @@ router.get('/', requireAuth, async (req, res) => {
           .map(n => n.data.actor_id)
       ),
     ];
-
     let actorMap = {};
     if (missingActorIds.length > 0) {
       const actors = await prisma.user.findMany({
@@ -31,19 +30,54 @@ router.get('/', requireAuth, async (req, res) => {
       actors.forEach(a => { actorMap[a.id] = a; });
     }
 
+    // 2. For old comment/reply notifications with comment_id but no actor_id,
+    //    look up the comment author directly
+    const missingCommentIds = [
+      ...new Set(
+        notifications
+          .filter(n =>
+            (n.type === 'comment' || n.type === 'reply') &&
+            n.data?.comment_id &&
+            !n.data?.actor_id &&
+            !n.data?.actor_name
+          )
+          .map(n => n.data.comment_id)
+      ),
+    ];
+    let commentActorMap = {}; // comment_id -> { id, display_name, avatar_url }
+    if (missingCommentIds.length > 0) {
+      const comments = await prisma.comment.findMany({
+        where: { id: { in: missingCommentIds } },
+        select: {
+          id: true,
+          anonymous_user_id: true,
+          user: { select: { id: true, display_name: true, avatar_url: true } },
+        },
+      });
+      comments.forEach(c => {
+        if (c.user) commentActorMap[c.id] = c.user;
+      });
+    }
+
     const enriched = notifications.map(n => {
-      if (n.data?.actor_id && !n.data?.actor_name && actorMap[n.data.actor_id]) {
-        const actor = actorMap[n.data.actor_id];
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            actor_name: actor.display_name || null,
-            actor_avatar: actor.avatar_url || null,
-          },
-        };
+      let data = { ...n.data };
+
+      // Enrich via actor_id
+      if (data.actor_id && !data.actor_name && actorMap[data.actor_id]) {
+        const a = actorMap[data.actor_id];
+        data.actor_name = a.display_name || null;
+        data.actor_avatar = a.avatar_url || null;
       }
-      return n;
+
+      // Enrich old comment/reply notifications via comment lookup
+      if (!data.actor_id && !data.actor_name && data.comment_id && commentActorMap[data.comment_id]) {
+        const a = commentActorMap[data.comment_id];
+        data.actor_id = a.id;
+        data.actor_name = a.display_name || null;
+        data.actor_avatar = a.avatar_url || null;
+      }
+
+      return { ...n, data };
     });
 
     res.json(enriched);
