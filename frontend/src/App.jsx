@@ -11,7 +11,7 @@ import BottomNav from './components/BottomNav';
 import SideDrawer from './components/SideDrawer';
 import LeftSidebar from './components/LeftSidebar';
 import AccountSwitcherMenu from './components/AccountSwitcher';
-import GlobalSearch from './components/GlobalSearch';
+import EmployerSearch from './components/EmployerSearch';
 import LocationModal from './components/LocationModal';
 
 import Home from './pages/Home';
@@ -117,9 +117,9 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
         <LocationPill />
       </div>
 
-      {/* Center: global search bar */}
+      {/* Center: search bar */}
       <div className="desktop-topbar-search">
-        <GlobalSearch placeholder="Search companies, reviews, people..." />
+        <EmployerSearch onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })} placeholder="Search employers..." />
       </div>
       {showGetApp && createPortal(<GetAppModal onClose={() => setShowGetApp(false)} />, document.body)}
 
@@ -190,7 +190,7 @@ function MobileHeader({ onOpenDrawer }) {
       </div>
       <div className="header-right">
         <div className="header-search-wrapper">
-          <GlobalSearch placeholder="Search..." />
+          <EmployerSearch onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })} placeholder="Search employers..." />
         </div>
       </div>
     </header>

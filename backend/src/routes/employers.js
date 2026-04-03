@@ -94,6 +94,45 @@ router.get('/details/:placeId', async (req, res) => {
   }
 });
 
+// Get logo domain for a company via Google Places website field
+// Returns { domain } — frontend uses this with clearbit
+const logoCache = new Map(); // placeId -> domain string or null, in-memory cache
+
+router.get('/logo/:placeId', async (req, res) => {
+  const { placeId } = req.params;
+
+  // Serve from cache if available
+  if (logoCache.has(placeId)) {
+    return res.json({ domain: logoCache.get(placeId) });
+  }
+
+  try {
+    const response = await axios.get(`${GOOGLE_PLACES_BASE}/details/json`, {
+      params: {
+        place_id: placeId,
+        fields: 'website',
+        key: process.env.GOOGLE_MAPS_API_KEY,
+      },
+    });
+
+    let domain = null;
+    const website = response.data?.result?.website;
+    if (website) {
+      try {
+        const url = new URL(website);
+        // Strip www. prefix
+        domain = url.hostname.replace(/^www\./, '');
+      } catch { /* bad URL, skip */ }
+    }
+
+    logoCache.set(placeId, domain);
+    res.json({ domain });
+  } catch (err) {
+    console.error('Logo lookup error:', err.message);
+    res.json({ domain: null });
+  }
+});
+
 // Get employer profile (aggregated from our DB)
 router.get('/profile/:placeId', async (req, res) => {
   try {

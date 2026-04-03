@@ -1,21 +1,32 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
-// Strip generic suffixes to get the brand name for logo lookup
-function getBrandSlug(name) {
-  if (!name) return '';
-  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
-  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
-  return brand.toLowerCase();
-}
+const _logoDomainCache = {};
 
-// Company logo using Clearbit
-function CompanyLogo({ name }) {
-  const [err, setErr] = useState(false);
-  const slug = getBrandSlug(name);
-  const src = `https://logo.clearbit.com/${slug}.com`;
+// Company logo — fetches real domain from backend via Google Places, then uses Clearbit
+function CompanyLogo({ placeId, name }) {
+  const [domain, setDomain] = useState(_logoDomainCache[placeId] ?? undefined);
+  const [imgErr, setImgErr] = useState(false);
 
-  if (err || !slug) {
+  useEffect(() => {
+    if (!placeId) return;
+    if (_logoDomainCache[placeId] !== undefined) {
+      setDomain(_logoDomainCache[placeId]);
+      return;
+    }
+    api.get(`/employers/logo/${placeId}`)
+      .then(res => {
+        const d = res.data.domain || null;
+        _logoDomainCache[placeId] = d;
+        setDomain(d);
+      })
+      .catch(() => {
+        _logoDomainCache[placeId] = null;
+        setDomain(null);
+      });
+  }, [placeId]);
+
+  if (!domain || imgErr) {
     return (
       <div style={{
         width: 36, height: 36, borderRadius: 8, background: 'var(--bg-elevated)',
@@ -26,9 +37,9 @@ function CompanyLogo({ name }) {
   }
   return (
     <img
-      src={src}
+      src={`https://logo.clearbit.com/${domain}`}
       alt={name}
-      onError={() => setErr(true)}
+      onError={() => setImgErr(true)}
       style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 3, border: '1px solid var(--border)' }}
     />
   );

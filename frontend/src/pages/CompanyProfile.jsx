@@ -27,28 +27,50 @@ function StarDisplay({ rating }) {
 }
 import Feed from '../components/Feed';
 
-function getBrandSlug(name) {
-  if (!name) return '';
-  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
-  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
-  return brand.toLowerCase();
-}
+// Logo domain cache (survives re-renders, resets on page refresh — fine)
+const _logoDomainCache = {};
 
-function CompanyLogo({ name, size = 52 }) {
-  const [err, setErr] = useState(false);
-  const slug = getBrandSlug(name);
-  const src = `https://logo.clearbit.com/${slug}.com`;
+function CompanyLogo({ placeId, name, size = 52 }) {
+  const [domain, setDomain] = useState(_logoDomainCache[placeId] ?? undefined); // undefined = not yet fetched
+  const [imgErr, setImgErr] = useState(false);
   const base = { width: size, height: size, borderRadius: 12, flexShrink: 0 };
-  if (err || !slug) {
-    return (
-      <div style={{ ...base, background: 'linear-gradient(135deg, #A855F7, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.46 }}>
-        🏢
-      </div>
-    );
-  }
+
+  useEffect(() => {
+    if (!placeId) return;
+    if (_logoDomainCache[placeId] !== undefined) {
+      setDomain(_logoDomainCache[placeId]);
+      return;
+    }
+    api.get(`/employers/logo/${placeId}`)
+      .then(res => {
+        const d = res.data.domain || null;
+        _logoDomainCache[placeId] = d;
+        setDomain(d);
+      })
+      .catch(() => {
+        _logoDomainCache[placeId] = null;
+        setDomain(null);
+      });
+  }, [placeId]);
+
+  const Fallback = () => (
+    <div style={{ ...base, background: 'linear-gradient(135deg, #A855F7, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.46 }}>
+      🏢
+    </div>
+  );
+
+  // Still loading
+  if (domain === undefined) return <Fallback />;
+  // No domain found or image failed
+  if (!domain || imgErr) return <Fallback />;
+
   return (
-    <img src={src} alt={name} onError={() => setErr(true)}
-      style={{ ...base, objectFit: 'contain', background: '#fff', padding: 6, border: '1px solid var(--border)' }} />
+    <img
+      src={`https://logo.clearbit.com/${domain}`}
+      alt={name}
+      onError={() => setImgErr(true)}
+      style={{ ...base, objectFit: 'contain', background: '#fff', padding: 6, border: '1px solid var(--border)' }}
+    />
   );
 }
 import StarRating from '../components/StarRating';
@@ -123,7 +145,7 @@ export default function CompanyProfile() {
       {/* Company header */}
       <div className="company-header">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
-          <CompanyLogo name={profile?.employer_name || stateInfo.name} size={52} />
+          <CompanyLogo placeId={placeId} name={profile?.employer_name || stateInfo.name} size={52} />
           <div style={{ flex: 1 }}>
             <h1 className="company-name" style={{ margin: '0 0 4px' }}>
               {profile?.employer_name || stateInfo.name || 'Company'}
