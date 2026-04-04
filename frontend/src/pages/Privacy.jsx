@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CONTACT_EMAIL = 'support@theclocked.com';
+const CONTACT_EMAIL = 'clockedsupport@gmail.com';
 const LAST_UPDATED = 'April 4, 2025';
 
 function Section({ number, title, children }) {
