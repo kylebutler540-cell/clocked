@@ -2,4 +2,4 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "cd backend && npx prisma migrate resolve --applied 20260328000000_add_company_ratings --schema=../prisma/schema.prisma; npx prisma migrate deploy --schema=../prisma/schema.prisma && node src/index.js"
+startCommand = "cd backend && npx prisma db push --schema=../prisma/schema.prisma --accept-data-loss && node src/index.js"
