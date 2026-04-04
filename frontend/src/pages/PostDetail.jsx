@@ -43,6 +43,7 @@ export default function PostDetail() {
           isOpen={sheetOpen}
           highlightCommentId={highlightCommentId}
           preloadedLikes={preloadedLikes}
+          fullscreen={true}
           onClose={() => { setSheetOpen(false); navigate(-1); }}
         />
       ) : null}

@@ -137,7 +137,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null, preloadedLikes = null }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null, preloadedLikes = null, fullscreen = false }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -444,7 +444,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
     <>
       {/* Overlay — blocks all background interaction */}
       <div onClick={handleClose} onTouchMove={e => e.preventDefault()} style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+        position: 'fixed', inset: 0, background: fullscreen ? 'var(--bg-base)' : 'rgba(0,0,0,0.4)',
         zIndex: 1000, opacity: visible ? 1 : 0, transition: 'opacity 300ms ease',
         touchAction: 'none',
       }} />
@@ -460,10 +460,10 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
           transition: 'transform 300ms ease',
           zIndex: 1001,
           background: 'var(--bg-card)',
-          borderRadius: '16px 16px 0 0',
+          borderRadius: fullscreen ? 0 : '16px 16px 0 0',
           display: 'flex',
           flexDirection: 'column',
-          height: 'min(92dvh, 92vh)',
+          height: fullscreen ? '100dvh' : 'min(92dvh, 92vh)',
           width: '100%',
           maxWidth: '740px', // matches feed width on desktop
           boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
