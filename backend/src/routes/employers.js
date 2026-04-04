@@ -34,6 +34,13 @@ const DEPARTMENT_PATTERNS = [
   /\bfloral\b/i,
   /\bbank\s*branch\b/i,
   /\bmcdonald'?s\b.*\binside\b/i, // e.g. "McDonald's inside Walmart"
+  /\bfood\s*court\b/i,
+  /\bcafe\b/i,
+  /\bsnack\s*bar\b/i,
+  /\bwarehouse\s*pick\b/i,
+  /\bonline\s*order\b/i,
+  /\bcurbside\b/i,
+  /\bself.checkout\b/i,
 ];
 
 // Returns true if the user's query is explicitly asking for a department
