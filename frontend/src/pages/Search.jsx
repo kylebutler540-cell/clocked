@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { cacheGet, cacheSet } from '../lib/cache';
 import EmployerSearch from '../components/EmployerSearch';
 import BusinessLogo from '../components/BusinessLogo';
 
@@ -19,8 +20,7 @@ function formatDist(miles) {
 }
 
 export default function Search() {
-  const [topEmployers, setTopEmployers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [topEmployers, setTopEmployers] = useState(() => cacheGet('top-employers') || []);
   const [logoBatch, setLogoBatch] = useState(null);
   const [userCoords, setUserCoords] = useState(null);
   const navigate = useNavigate();
@@ -47,9 +47,8 @@ export default function Search() {
   useEffect(() => {
     const location = localStorage.getItem('userLocation') || '';
     api.get('/employers/top', { params: location ? { location } : {} })
-      .then(res => setTopEmployers(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then(res => { setTopEmployers(res.data); cacheSet('top-employers', res.data); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -78,9 +77,7 @@ export default function Search() {
           {userCoords ? 'Nearest to You' : 'Most Reviewed'}
         </div>
 
-        {loading ? (
-          <div className="loading-spinner"><div className="spinner" /></div>
-        ) : topEmployers.length === 0 ? (
+        {topEmployers.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🏢</div>
             <h3>No employers yet</h3>

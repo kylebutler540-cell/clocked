@@ -6,34 +6,16 @@ import { useAuth } from '../context/AuthContext';
 import { cacheGet, cacheSet, isFresh } from '../lib/cache';
 
 export default function Saved() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState(() => cacheGet('saved-posts') || []);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user?.email) { setLoading(false); return; }
-
-    const cached = cacheGet('saved-posts');
-    if (cached && isFresh('saved-posts')) {
-      setPosts(cached);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
+    if (!user?.email) return;
     api.get('/posts/user/saved')
-      .then(res => {
-        cacheSet('saved-posts', res.data);
-        setPosts(res.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then(res => { cacheSet('saved-posts', res.data); setPosts(res.data); })
+      .catch(() => {});
   }, [user]);
-
-  if (loading) {
-    return <div className="loading-spinner"><div className="spinner" /></div>;
-  }
 
   if (!user?.email) {
     return (
