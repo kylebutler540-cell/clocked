@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ function NavItem({ icon, label, path, collapsed, active, onClick }) {
 }
 
 export default function LeftSidebar({ collapsed = false }) {
+  const [contactOpen, setContactOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -76,6 +77,16 @@ export default function LeftSidebar({ collapsed = false }) {
 
       <div className="sidebar-divider" />
 
+      {/* About — only expanded */}
+      {!collapsed && (
+        <div className="sidebar-about">
+          <a href="/terms" className="sidebar-about-link">Terms</a>
+          <a href="/privacy" className="sidebar-about-link">Privacy</a>
+          <button onClick={() => setContactOpen(true)} className="sidebar-about-link" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Contact</button>
+          <div className="sidebar-version">v1.0.0</div>
+        </div>
+      )}
+
       {/* Dark/Light mode toggle */}
       <NavItem
         collapsed={collapsed}
@@ -89,15 +100,25 @@ export default function LeftSidebar({ collapsed = false }) {
         )}
       />
 
-
-
-      {/* About — only expanded */}
-      {!collapsed && (
-        <div className="sidebar-about">
-          <a href="/terms" className="sidebar-about-link">Terms</a>
-          <a href="/privacy" className="sidebar-about-link">Privacy</a>
-          <a href="#" className="sidebar-about-link">Contact</a>
-          <div className="sidebar-version">v1.0.0</div>
+      {/* Contact modal */}
+      {contactOpen && (
+        <div
+          onClick={() => setContactOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--bg-card)', borderRadius: 16, padding: '28px 32px', boxShadow: '0 8px 32px rgba(0,0,0,0.22)', maxWidth: 320, width: '90%', textAlign: 'center' }}
+          >
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Contact Us</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              Email —{' '}
+              <a href="mailto:clockedsupport@gmail.com" style={{ color: 'var(--purple)', fontWeight: 600, textDecoration: 'none' }}>
+                clockedsupport@gmail.com
+              </a>
+            </p>
+            <button onClick={() => setContactOpen(false)} style={{ fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Close</button>
+          </div>
         </div>
       )}
     </div>
