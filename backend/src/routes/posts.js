@@ -106,7 +106,16 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const isSubscribed = req.user && ['ACTIVE', 'TRIALING'].includes(req.user.subscription_status);
 
-    const formatted = posts.map(post => formatPost(post, savedPostIds, isSubscribed, likedPostIds, dislikedPostIds));
+    // Batch fetch logos for all posts
+    const placeIds = [...new Set(posts.map(p => p.employer_place_id).filter(Boolean))];
+    let logoMap = {};
+    if (placeIds.length) {
+      const { getOrResolveLogosBatch } = require('../lib/employerLogo');
+      const resolved = await getOrResolveLogosBatch(placeIds);
+      logoMap = Object.fromEntries(Object.entries(resolved).map(([k, v]) => [k, v.logoUrl]));
+    }
+
+    const formatted = posts.map(post => formatPost(post, savedPostIds, isSubscribed, likedPostIds, dislikedPostIds, logoMap));
 
     res.json({ posts: formatted, nextCursor });
   } catch (err) {
@@ -814,7 +823,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set()) {
+function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set(), logoMap = {}) {
   const body = post.body;
 
   return {
@@ -827,6 +836,7 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     employer_place_id: post.employer_place_id,
     employer_name: post.employer_name,
     employer_address: post.employer_address,
+    employer_logo_url: logoMap[post.employer_place_id] ?? null,
     rating_emoji: post.rating_emoji,
     header: post.header,
     body: body,
