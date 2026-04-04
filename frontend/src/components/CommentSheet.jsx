@@ -25,7 +25,8 @@ function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
   );
 }
 
-function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, depth = 0, highlightId }) {
+function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, depth = 0, highlightId,
+  editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit }) {
   const navigate = useNavigate();
   const isOwner = currentUserId && comment.anonymous_user_id === currentUserId;
   const [showReplies, setShowReplies] = useState(true);
@@ -33,6 +34,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   const itemRef = React.useRef(null);
   const authorName = comment.author_display_name || 'Anonymous';
   const isHighlighted = comment.id === highlightId;
+  const isEditing = editingCommentId === comment.id;
 
   // Scroll to and briefly highlight this comment if it's the target
   React.useEffect(() => {
@@ -45,56 +47,72 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
     }
   }, [isHighlighted]);
 
+  const editProps = { editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit };
+
   return (
     <div ref={itemRef} style={{ marginLeft: depth > 0 ? 36 : 0, transition: 'background 0.3s ease', background: highlighted ? 'var(--purple-glow)' : 'transparent', borderRadius: highlighted ? 10 : 0 }}>
-      <div style={{ display: 'flex', gap: 10, padding: '10px 16px', alignItems: 'flex-start' }}>
-        <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
-          onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
-          <CommentAvatar avatarUrl={comment.author_avatar_url} displayName={comment.author_display_name} size={depth > 0 ? 26 : 32} />
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-            <button style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-              onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
-              {authorName}
-            </button>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(comment.created_at)}</span>
-          </div>
-          {comment.body && (
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 4px', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', minWidth: 0 }}>{comment.body}</p>
-          )}
-          {comment.image_url && (
-            <img src={comment.image_url} alt="Comment attachment"
-              style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, marginBottom: 4, display: 'block', objectFit: 'contain' }} />
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-            <button style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-              onClick={() => onReply(comment)}>
-              Reply
-            </button>
+      {isEditing ? (
+        /* Inline edit form — same style as top-level edit */
+        <div style={{ padding: '12px 16px' }}>
+          <textarea className="form-input" value={editText} onChange={e => onEditText(e.target.value)}
+            rows={3} maxLength={1000} style={{ width: '100%', resize: 'none', marginBottom: 8, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', overflow: 'auto' }} autoFocus />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: 13 }}
+              onClick={() => onSaveEdit(comment.id)} disabled={!editText.trim()}>Save</button>
+            <button className="btn btn-ghost" style={{ padding: '6px 16px', fontSize: 13 }}
+              onClick={onCancelEdit}>Cancel</button>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-          <button onClick={() => onLike(comment)}
-            style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24"
-              fill={comment.liked ? '#EF4444' : 'none'}
-              stroke={comment.liked ? '#EF4444' : 'var(--text-muted)'}
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            {comment.likes > 0 && (
-              <span style={{ fontSize: 10, color: comment.liked ? '#EF4444' : 'var(--text-muted)', lineHeight: 1 }}>{comment.likes}</span>
-            )}
+      ) : (
+        <div style={{ display: 'flex', gap: 10, padding: '10px 16px', alignItems: 'flex-start' }}>
+          <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
+            onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
+            <CommentAvatar avatarUrl={comment.author_avatar_url} displayName={comment.author_display_name} size={depth > 0 ? 26 : 32} />
           </button>
-          {isOwner && (
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', fontSize: 16, lineHeight: 1 }}
-              onClick={() => onActionModal(comment)}>
-              <span style={{ fontWeight: 900, fontSize: 11, letterSpacing: '-1px', lineHeight: 1 }}>•••</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <button style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
+                {authorName}
+              </button>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(comment.created_at)}</span>
+            </div>
+            {comment.body && (
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 4px', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', minWidth: 0 }}>{comment.body}</p>
+            )}
+            {comment.image_url && (
+              <img src={comment.image_url} alt="Comment attachment"
+                style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, marginBottom: 4, display: 'block', objectFit: 'contain' }} />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+              <button style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                onClick={() => onReply(comment)}>
+                Reply
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <button onClick={() => onLike(comment)}
+              style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24"
+                fill={comment.liked ? '#EF4444' : 'none'}
+                stroke={comment.liked ? '#EF4444' : 'var(--text-muted)'}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              {comment.likes > 0 && (
+                <span style={{ fontSize: 10, color: comment.liked ? '#EF4444' : 'var(--text-muted)', lineHeight: 1 }}>{comment.likes}</span>
+              )}
             </button>
-          )}
+            {isOwner && (
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', fontSize: 16, lineHeight: 1 }}
+                onClick={() => onActionModal(comment)}>
+                <span style={{ fontWeight: 900, fontSize: 11, letterSpacing: '-1px', lineHeight: 1 }}>•••</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       {comment.replies && comment.replies.length > 0 && (
         <>
           {!showReplies ? (
@@ -108,7 +126,8 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
                 onClick={() => setShowReplies(false)}>Hide replies</button>
               {comment.replies.map(reply => (
                 <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId}
-                  onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId} />
+                  onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId}
+                  {...editProps} />
               ))}
             </>
           )}
@@ -468,22 +487,16 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
             </div>
           ) : (
             comments.map(comment => (
-              editingCommentId === comment.id ? (
-                <div key={comment.id} style={{ padding: '12px 16px' }}>
-                  <textarea className="form-input" value={editText} onChange={e => setEditText(e.target.value)}
-                    rows={3} maxLength={1000} style={{ width: '100%', resize: 'none', marginBottom: 8, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', overflow: 'auto' }} autoFocus />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: 13 }}
-                      onClick={() => handleSaveEdit(comment.id)} disabled={!editText.trim()}>Save</button>
-                    <button className="btn btn-ghost" style={{ padding: '6px 16px', fontSize: 13 }}
-                      onClick={() => setEditingCommentId(null)}>Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <CommentItem key={comment.id} comment={comment} currentUserId={user?.id}
-                  onReply={c => setReplyingTo(c)} onLike={handleLike} onActionModal={setCommentActionModal}
-                  highlightId={highlightCommentId} />
-              )
+              <CommentItem key={comment.id} comment={comment} currentUserId={user?.id}
+                onReply={c => setReplyingTo(c)} onLike={handleLike} onActionModal={setCommentActionModal}
+                highlightId={highlightCommentId}
+                editingCommentId={editingCommentId}
+                editText={editText}
+                onEditText={setEditText}
+                onStartEdit={startEditComment}
+                onSaveEdit={handleSaveEdit}
+                onCancelEdit={() => setEditingCommentId(null)}
+              />
             ))
           )}
           <div style={{ height: 8 }} />
