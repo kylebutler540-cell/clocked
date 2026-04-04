@@ -58,8 +58,9 @@ export default function BusinessLogo({
   useEffect(() => {
     if (variant !== 'direct' || !placeId) return undefined;
     let cancelled = false;
+    const params = name ? `?name=${encodeURIComponent(name)}` : '';
     api
-      .get(`/employers/logo/${encodeURIComponent(placeId)}`)
+      .get(`/employers/logo/${encodeURIComponent(placeId)}${params}`)
       .then(res => {
         if (!cancelled) setFetched(res.data);
       })
@@ -69,15 +70,16 @@ export default function BusinessLogo({
     return () => {
       cancelled = true;
     };
-  }, [placeId, variant]);
+  }, [placeId, variant, name]);
 
   useEffect(() => {
     if (variant !== 'batched' || !placeId || batch === null) return undefined;
     if (batchEntry) return undefined;
 
     let cancelled = false;
+    const params = name ? `?name=${encodeURIComponent(name)}` : '';
     api
-      .get(`/employers/logo/${encodeURIComponent(placeId)}`)
+      .get(`/employers/logo/${encodeURIComponent(placeId)}${params}`)
       .then(res => {
         if (!cancelled) setFetched(res.data);
       })

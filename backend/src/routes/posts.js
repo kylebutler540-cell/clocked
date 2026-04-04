@@ -814,16 +814,22 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-function employerLogoUrl(name) {
+const { matchBrandMap, logoUrlFromDomain, batchGetLogoUrls } = require('../lib/brandLogo');
+
+function employerLogoUrl(name, placeId) {
   if (!name) return null;
+  // Use brand map first (instant, no async needed for known brands)
+  const domain = matchBrandMap(name);
+  if (domain) return logoUrlFromDomain(domain);
+  // Fallback: normalize name to domain guess
   const cleaned = name
     .toLowerCase()
-    .replace(/\b(inc|llc|ltd|co|corp|company|supercenter|store|stores|restaurant|cafe|grill|bar|club)\b/gi, '')
+    .replace(/#\d+/g, '')
+    .replace(/\b(supercenter|distribution center|distribution|warehouse|center|store|stores|location|inc|llc|ltd|corp|co|company|restaurant|cafe|grill|bar|club)\b/g, '')
     .replace(/[^a-z0-9]/g, '')
     .trim();
-  if (!cleaned) return null;
-  // Use Google's favicon service — free, reliable, no API key
-  return `https://www.google.com/s2/favicons?sz=64&domain=${cleaned}.com`;
+  if (!cleaned || cleaned.length < 3) return null;
+  return logoUrlFromDomain(`${cleaned}.com`);
 }
 
 function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set()) {
@@ -839,7 +845,7 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     employer_place_id: post.employer_place_id,
     employer_name: post.employer_name,
     employer_address: post.employer_address,
-    employer_logo_url: employerLogoUrl(post.employer_name),
+    employer_logo_url: employerLogoUrl(post.employer_name, post.employer_place_id),
     rating_emoji: post.rating_emoji,
     header: post.header,
     body: body,

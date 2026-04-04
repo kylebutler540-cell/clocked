@@ -6,6 +6,7 @@ const {
   getOrResolveLogosBatch,
   invalidateLogo,
 } = require('../lib/employerLogo');
+const { getLogoUrl } = require('../lib/brandLogo');
 
 const router = express.Router();
 
@@ -99,16 +100,18 @@ router.get('/details/:placeId', async (req, res) => {
   }
 });
 
-// Resolved logo URL (DB cache + Clearbit / og:image). Same shape as TypeScript Business type subset.
+// Resolved logo URL — uses brand map first, then Places lookup, then heuristic.
 router.get('/logo/:placeId', async (req, res) => {
   try {
-    const payload = await getOrResolveLogo(req.params.placeId);
+    const { name } = req.query;
+    const placeId = req.params.placeId;
+    const logoUrl = await getLogoUrl(name || '', placeId);
     res.json({
-      placeId: payload.placeId,
-      domain: payload.domain,
-      logoUrl: payload.logoUrl,
-      logoLastUpdated: payload.logoLastUpdated,
-      source: payload.source,
+      placeId,
+      domain: null,
+      logoUrl,
+      logoLastUpdated: new Date().toISOString(),
+      source: 'brand',
     });
   } catch (err) {
     console.error('Logo endpoint error:', err.message);
