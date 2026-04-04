@@ -22,8 +22,9 @@ export default function PostDetail() {
       .catch(() => navigate('/'));
   }, [id]);
 
-  // Match the app's current theme background — use --bg-primary which is defined in both light and dark
-  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || '#fff';
+  // Read the active theme directly from the data-theme attribute — reliable, no async CSS variable lookup
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const bg = isDark ? '#000000' : '#ffffff';
 
   const content = (
     <div style={{
