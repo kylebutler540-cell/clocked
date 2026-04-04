@@ -11,7 +11,7 @@ function RightSidebar() {
         <div className="right-widget-header">About Clocked</div>
         <div className="right-widget-body">
           <p style={{ marginBottom: 12 }}>
-            Anonymous workplace reviews from real workers. No real names, no HR watching.
+            Anonymous workplace reviews from real workers and customers. No real names, no HR watching.
           </p>
           <p>Browse freely or post your own experience — completely free.</p>
         </div>
