@@ -23,24 +23,29 @@ function Avatar({ url, name, size = 40 }) {
 
 // ActionIcon removed — alerts rely on text + avatar only
 
-function NotificationItem({ n, onCommentLike, onCommentReply }) {
+function NotificationItem({ n, onCommentLike }) {
   const navigate = useNavigate();
   const data = n.data || {};
-  const actorName = data.actor_name || 'A Clocked User';
+  const actorName = data.actor_name || null;
   const actorAvatar = data.actor_avatar || null;
   const actorId = data.actor_id || null;
   const isComment = n.type === 'comment' || n.type === 'reply';
+  const isSimple = n.type === 'like' || n.type === 'dislike' || n.type === 'follow';
   const hasPost = !!data.post_id;
 
-  function handleClick() {
+  // Tapping the card navigates to the post, with comment highlighted if applicable
+  function handleCardClick() {
     if (!hasPost) return;
-    navigate(`/post/${data.post_id}`);
+    if (data.comment_id) {
+      navigate(`/post/${data.post_id}`, { state: { highlightComment: data.comment_id } });
+    } else {
+      navigate(`/post/${data.post_id}`);
+    }
   }
 
-  function handleReply(e) {
+  function handleProfileClick(e) {
     e.stopPropagation();
-    if (!hasPost) return;
-    navigate(`/post/${data.post_id}`, { state: { openReplyTo: data.comment_id } });
+    if (actorId) navigate(`/profile/${actorId}`);
   }
 
   function handleLikeComment(e) {
@@ -49,54 +54,60 @@ function NotificationItem({ n, onCommentLike, onCommentReply }) {
     onCommentLike(n.id, data.post_id, data.comment_id);
   }
 
+  function handleReply(e) {
+    e.stopPropagation();
+    if (!hasPost) return;
+    navigate(`/post/${data.post_id}`, { state: { openReplyTo: data.comment_id } });
+  }
+
+  const commentPreview = isComment && data.comment_body
+    ? (data.comment_body.length > 120 ? data.comment_body.slice(0, 120) + '…' : data.comment_body)
+    : null;
+
   return (
     <div
+      onClick={hasPost ? handleCardClick : undefined}
       style={{
-        display: 'flex', gap: 12, padding: '14px 16px',
+        display: 'flex',
+        alignItems: isSimple ? 'center' : 'flex-start',
+        gap: 12,
+        padding: '14px 16px',
         background: n.read ? 'transparent' : 'var(--purple-glow)',
         borderBottom: '1px solid var(--border)',
-        position: 'relative',
+        cursor: hasPost ? 'pointer' : 'default',
       }}
     >
-      {/* Invisible full-row tap target for post navigation — sits behind everything */}
-      {hasPost && (
-        <div
-          onClick={handleClick}
-          style={{
-            position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 0,
-          }}
-        />
-      )}
-
-      {/* Avatar — tapping opens actor's profile */}
-      <div style={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
-        <div
-          style={{ cursor: actorId ? 'pointer' : 'default' }}
-          onClick={actorId ? (e) => { e.stopPropagation(); navigate(`/profile/${actorId}`); } : undefined}
-        >
-          <Avatar url={actorAvatar} name={actorName} size={44} />
-        </div>
+      {/* Avatar — separate tap target for profile */}
+      <div
+        onClick={handleProfileClick}
+        style={{ flexShrink: 0, cursor: actorId ? 'pointer' : 'default' }}
+      >
+        <Avatar url={actorAvatar} name={actorName || '?'} size={44} />
       </div>
 
-      {/* Content — above the tap target */}
-      <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 2 }}>
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+
+        {/* Top row: text + timestamp */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-            <strong
-              style={{ fontWeight: 700, cursor: actorId ? 'pointer' : 'default' }}
-              onClick={actorId ? (e) => { e.stopPropagation(); navigate(`/profile/${actorId}`); } : undefined}
-            >
-              {actorName}
-            </strong>
-            {' '}
+            {actorName && (
+              <strong
+                onClick={handleProfileClick}
+                style={{ fontWeight: 700, cursor: actorId ? 'pointer' : 'default' }}
+              >
+                {actorName}
+              </strong>
+            )}
+            {actorName && ' '}
             <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>
               {n.type === 'like' && 'liked your post'}
               {n.type === 'dislike' && 'disliked your post'}
-              {n.type === 'comment' && 'commented on your post'}
-              {n.type === 'reply' && 'replied to your comment'}
+              {n.type === 'comment' && (commentPreview ? `commented: "${commentPreview}"` : 'commented on your post')}
+              {n.type === 'reply' && (commentPreview ? `replied: "${commentPreview}"` : 'replied to your comment')}
               {n.type === 'follow' && 'started following you'}
             </span>
-            {data.post_header && (
+            {isSimple && data.post_header && (
               <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
                 {' — '}<em>{data.post_header}</em>
               </span>
@@ -107,29 +118,9 @@ function NotificationItem({ n, onCommentLike, onCommentReply }) {
           </span>
         </div>
 
-        {/* Comment body preview */}
-        {isComment && data.comment_body && (
-          <div style={{
-            margin: '6px 0 8px',
-            padding: '8px 12px',
-            background: 'var(--bg-elevated)',
-            borderRadius: 10,
-            fontSize: 14,
-            color: 'var(--text-secondary)',
-            lineHeight: 1.45,
-            borderLeft: '3px solid var(--purple)',
-            wordBreak: 'break-word',
-            whiteSpace: 'pre-wrap',
-          }}>
-            {data.comment_body.length > 200
-              ? data.comment_body.slice(0, 200) + '…'
-              : data.comment_body}
-          </div>
-        )}
-
-        {/* Comment actions */}
+        {/* Comment action buttons */}
         {isComment && data.comment_id && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button
               onClick={handleLikeComment}
               style={{
@@ -244,7 +235,6 @@ export default function Notifications() {
           key={n.id}
           n={n}
           onCommentLike={handleCommentLike}
-          onCommentReply={() => {}}
         />
       ))}
     </div>

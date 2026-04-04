@@ -67,26 +67,32 @@ router.get('/', requireAuth, async (req, res) => {
       });
     }
 
-    const enriched = notifications.map(n => {
-      let data = { ...n.data };
+    const enriched = notifications
+      .map(n => {
+        let data = { ...n.data };
 
-      // Always re-enrich via actor_id (picks up name changes + fixes null display_name)
-      if (data.actor_id && actorMap[data.actor_id]) {
-        const a = actorMap[data.actor_id];
-        data.actor_name = a._resolved_name;
-        data.actor_avatar = a.avatar_url || null;
-      }
+        // Always re-enrich via actor_id (picks up name changes + null display_name)
+        if (data.actor_id && actorMap[data.actor_id]) {
+          const a = actorMap[data.actor_id];
+          data.actor_name = a._resolved_name;
+          data.actor_avatar = a.avatar_url || null;
+        }
 
-      // Enrich old comment/reply notifications via comment lookup
-      if (!data.actor_id && data.comment_id && commentActorMap[data.comment_id]) {
-        const a = commentActorMap[data.comment_id];
-        data.actor_id = a.id;
-        data.actor_name = a._resolved_name;
-        data.actor_avatar = a.avatar_url || null;
-      }
+        // Enrich old comment/reply notifications via comment lookup
+        if (!data.actor_id && data.comment_id && commentActorMap[data.comment_id]) {
+          const a = commentActorMap[data.comment_id];
+          data.actor_id = a.id;
+          data.actor_name = a._resolved_name;
+          data.actor_avatar = a.avatar_url || null;
+        }
 
-      return { ...n, data };
-    });
+        return { ...n, data };
+      })
+      // Filter out self-notifications (actor is same as recipient) as a safety net
+      .filter(n => {
+        if (!n.data?.actor_id) return true;
+        return n.data.actor_id !== req.user.id;
+      });
 
     res.json(enriched);
   } catch (err) {
