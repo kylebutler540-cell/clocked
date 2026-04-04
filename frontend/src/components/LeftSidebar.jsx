@@ -2,15 +2,30 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useNotif } from '../context/NotifContext';
 
-function NavItem({ icon, label, path, collapsed, active, onClick }) {
+function NavItem({ icon, label, path, collapsed, active, onClick, badge }) {
   return (
     <button
       className={`sidebar-nav-item${active ? ' active' : ''}`}
       onClick={onClick}
       title={collapsed ? label : undefined}
     >
-      <span className="sidebar-nav-icon">{icon}</span>
+      <span className="sidebar-nav-icon" style={{ position: 'relative' }}>
+        {icon}
+        {badge > 0 && (
+          <span style={{
+            position: 'absolute', top: -4, right: -6,
+            background: '#ef4444', color: '#fff',
+            fontSize: 10, fontWeight: 700, lineHeight: 1,
+            minWidth: 16, height: 16, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '0 3px',
+          }}>
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </span>
       {!collapsed && <span className="sidebar-nav-label">{label}</span>}
     </button>
   );
@@ -18,6 +33,7 @@ function NavItem({ icon, label, path, collapsed, active, onClick }) {
 
 export default function LeftSidebar({ collapsed = false }) {
   const [contactOpen, setContactOpen] = useState(false);
+  const { unreadCount } = useNotif();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -48,6 +64,7 @@ export default function LeftSidebar({ collapsed = false }) {
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}
       />
       <NavItem collapsed={collapsed} active={isActive('/notifications')} label="Alerts" onClick={() => navigate('/notifications')}
+        badge={unreadCount}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>}
       />
       <NavItem collapsed={collapsed} active={isActive('/profile')} label="Profile" onClick={() => navigate('/profile')}

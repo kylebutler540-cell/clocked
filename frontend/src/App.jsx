@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-ro
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { NotifProvider } from './context/NotifContext';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 
@@ -395,7 +396,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
+          <NotifProvider>
           <AppInner />
+          </NotifProvider>
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>

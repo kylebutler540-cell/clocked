@@ -4,6 +4,7 @@ import api from '../lib/api';
 import { timeAgo } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { cacheGet, cacheSet, isFresh } from '../lib/cache';
+import { useNotif } from '../context/NotifContext';
 
 function Avatar({ url, name, size = 40 }) {
   const letter = name ? name[0].toUpperCase() : '?';
@@ -197,12 +198,31 @@ function NotificationItem({ n, onCommentLike }) {
 }
 
 export default function Notifications() {
-  const cached = cacheGet('notifications') || [];
-  const [notifications, setNotifications] = useState(cached);
+  // Load from localStorage first so page reload is instant with no empty flash
+  const getPersistedNotifications = () => {
+    try {
+      const raw = localStorage.getItem('clocked_notifications');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+  const saveNotifications = (list) => {
+    try { localStorage.setItem('clocked_notifications', JSON.stringify(list)); } catch {}
+    cacheSet('notifications', list);
+  };
+
+  const [notifications, setNotifications] = useState(() => {
+    const persisted = getPersistedNotifications();
+    if (persisted.length) return persisted;
+    return cacheGet('notifications') || [];
+  });
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { clearUnread } = useNotif();
   // Track which notification IDs the user has manually liked — skip server overwrites for these
   const userToggledRef = React.useRef(new Set());
+
+  // Clear badge as soon as user opens Alerts
+  React.useEffect(() => { clearUnread(); }, []);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -219,7 +239,7 @@ export default function Notifications() {
           _commentLikesCount: prevLikedMap[n.id]?.count ?? null,
         }));
         setNotifications(initial);
-        cacheSet('notifications', initial);
+        saveNotifications(initial);
 
         const unreadIds = notifs.data.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) api.post('/notifications/read', { ids: unreadIds }).catch(() => {});
@@ -240,7 +260,7 @@ export default function Notifications() {
                   if (userToggledRef.current.has(n.id)) return x;
                   return { ...x, _commentLiked: match.liked, _commentLikesCount: match.likes };
                 });
-                cacheSet('notifications', updated); // persist liked state so next visit is instant
+                saveNotifications(updated);
                 return updated;
               });
             }
@@ -264,7 +284,7 @@ export default function Notifications() {
         const updated = prev.map(n =>
           n.id === notifId ? { ...n, _commentLiked: res.data.liked, _commentLikesCount: res.data.likes } : n
         );
-        cacheSet('notifications', updated);
+        saveNotifications(updated);
         return updated;
       });
     } catch {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotif } from '../context/NotifContext';
 
 function HomeIcon() {
   return (
@@ -59,6 +60,7 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { unreadCount } = useNotif();
 
   return (
     <nav className="bottom-nav">
@@ -66,6 +68,7 @@ export default function BottomNav() {
         const isActive = item.path === '/'
           ? location.pathname === '/'
           : location.pathname.startsWith(item.path);
+        const showBadge = item.path === '/notifications' && unreadCount > 0;
 
         return (
           <button
@@ -79,7 +82,21 @@ export default function BottomNav() {
               }
             }}
           >
-            <item.Icon />
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <item.Icon />
+              {showBadge && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -6,
+                  background: '#ef4444', color: '#fff',
+                  fontSize: 10, fontWeight: 700, lineHeight: 1,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 3px',
+                }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </span>
             <span className="nav-label">{item.label}</span>
           </button>
         );
