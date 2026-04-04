@@ -771,7 +771,9 @@ img, video {
   transition: transform 0.25s ease;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden; /* no scroll, no drag — static menu */
+  touch-action: pan-y; /* allow vertical scroll only if content overflows */
+  overscroll-behavior: none;
 }
 
 .side-drawer.open {
