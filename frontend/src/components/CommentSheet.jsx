@@ -444,7 +444,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
     <>
       {/* Overlay — blocks all background interaction */}
       <div onClick={handleClose} onTouchMove={e => e.preventDefault()} style={{
-        position: 'fixed', inset: 0, background: fullscreen ? 'var(--bg-base)' : 'rgba(0,0,0,0.4)',
+        position: 'fixed', inset: 0, background: fullscreen ? 'transparent' : 'rgba(0,0,0,0.4)',
         zIndex: 1000, opacity: visible ? 1 : 0, transition: 'opacity 300ms ease',
         touchAction: 'none',
       }} />

@@ -32,7 +32,8 @@ export default function PostDetail() {
       position: 'fixed',
       inset: 0,
       zIndex: 900,
-      background: 'var(--bg-base)',
+      // Solid black — covers ALL background content completely
+      backgroundColor: '#000',
     }}>
       {loading ? (
         <div className="loading-spinner" style={{ paddingTop: 80 }}><div className="spinner" /></div>
