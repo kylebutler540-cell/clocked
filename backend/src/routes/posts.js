@@ -106,16 +106,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const isSubscribed = req.user && ['ACTIVE', 'TRIALING'].includes(req.user.subscription_status);
 
-    // Batch fetch logos for all posts
-    const placeIds = [...new Set(posts.map(p => p.employer_place_id).filter(Boolean))];
-    let logoMap = {};
-    if (placeIds.length) {
-      const { getOrResolveLogosBatch } = require('../lib/employerLogo');
-      const resolved = await getOrResolveLogosBatch(placeIds);
-      logoMap = Object.fromEntries(Object.entries(resolved).map(([k, v]) => [k, v.logoUrl]));
-    }
-
-    const formatted = posts.map(post => formatPost(post, savedPostIds, isSubscribed, likedPostIds, dislikedPostIds, logoMap));
+    const formatted = posts.map(post => formatPost(post, savedPostIds, isSubscribed, likedPostIds, dislikedPostIds));
 
     res.json({ posts: formatted, nextCursor });
   } catch (err) {
@@ -823,7 +814,19 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set(), logoMap = {}) {
+function employerLogoUrl(name) {
+  if (!name) return null;
+  // Strip common suffixes and clean up the name to get a domain guess
+  const cleaned = name
+    .toLowerCase()
+    .replace(/\b(inc|llc|ltd|co|corp|company|supercenter|store|stores|restaurant|cafe|grill|bar|club)\b/gi, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+  if (!cleaned) return null;
+  return `https://logo.clearbit.com/${cleaned}.com`;
+}
+
+function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set()) {
   const body = post.body;
 
   return {
@@ -836,7 +839,7 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     employer_place_id: post.employer_place_id,
     employer_name: post.employer_name,
     employer_address: post.employer_address,
-    employer_logo_url: logoMap[post.employer_place_id] ?? null,
+    employer_logo_url: employerLogoUrl(post.employer_name),
     rating_emoji: post.rating_emoji,
     header: post.header,
     body: body,
