@@ -3045,6 +3045,7 @@ body[data-comments-open] .mobile-only-header {
 
 .employer-emoji-row .emoji {
   font-size: 16px;
+  margin-right: 3px;
 }
 
 .employer-emoji-row .count {
