@@ -110,11 +110,11 @@ function NotificationItem({ n, onCommentLike }) {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, minWidth: 0, marginRight: postImage ? 8 : 0 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
 
-        {/* Top row: text + timestamp */}
+        {/* Top row: text + image + timestamp */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.4, flex: 1, minWidth: 0 }}>
             {actorName && (
               <strong
                 onClick={handleProfileClick}
@@ -137,9 +137,21 @@ function NotificationItem({ n, onCommentLike }) {
               </span>
             )}
           </p>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
-            {timeAgo(n.created_at)}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {postImage && (
+              <img
+                src={postImage}
+                alt="Post"
+                style={{
+                  width: 44, height: 44, borderRadius: 8, objectFit: 'cover',
+                  border: '1px solid var(--border)',
+                }}
+              />
+            )}
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {timeAgo(n.created_at)}
+            </span>
+          </div>
         </div>
 
         {/* Comment action buttons */}
@@ -182,17 +194,7 @@ function NotificationItem({ n, onCommentLike }) {
         )}
       </div>
 
-      {/* Post image thumbnail — far right, only if post has a photo */}
-      {postImage && (
-        <img
-          src={postImage}
-          alt="Post"
-          style={{
-            width: 52, height: 52, borderRadius: 8, objectFit: 'cover',
-            flexShrink: 0, border: '1px solid var(--border)',
-          }}
-        />
-      )}
+
     </div>
   );
 }
