@@ -25,14 +25,28 @@ function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
   );
 }
 
-function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, depth = 0 }) {
+function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, depth = 0, highlightId }) {
   const navigate = useNavigate();
   const isOwner = currentUserId && comment.anonymous_user_id === currentUserId;
   const [showReplies, setShowReplies] = useState(true);
+  const [highlighted, setHighlighted] = useState(false);
+  const itemRef = React.useRef(null);
   const authorName = comment.author_display_name || 'Anonymous';
+  const isHighlighted = comment.id === highlightId;
+
+  // Scroll to and briefly highlight this comment if it's the target
+  React.useEffect(() => {
+    if (isHighlighted && itemRef.current) {
+      setTimeout(() => {
+        itemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlighted(true);
+        setTimeout(() => setHighlighted(false), 2500);
+      }, 400);
+    }
+  }, [isHighlighted]);
 
   return (
-    <div style={{ marginLeft: depth > 0 ? 36 : 0 }}>
+    <div ref={itemRef} style={{ marginLeft: depth > 0 ? 36 : 0, transition: 'background 0.3s ease', background: highlighted ? 'var(--purple-glow)' : 'transparent', borderRadius: highlighted ? 10 : 0 }}>
       <div style={{ display: 'flex', gap: 10, padding: '10px 16px', alignItems: 'flex-start' }}>
         <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
           onClick={() => navigate(`/profile/${comment.anonymous_user_id}`)}>
@@ -94,7 +108,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
                 onClick={() => setShowReplies(false)}>Hide replies</button>
               {comment.replies.map(reply => (
                 <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId}
-                  onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} />
+                  onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId} />
               ))}
             </>
           )}
@@ -104,7 +118,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -467,7 +481,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose }) {
                 </div>
               ) : (
                 <CommentItem key={comment.id} comment={comment} currentUserId={user?.id}
-                  onReply={c => setReplyingTo(c)} onLike={handleLike} onActionModal={setCommentActionModal} />
+                  onReply={c => setReplyingTo(c)} onLike={handleLike} onActionModal={setCommentActionModal}
+                  highlightId={highlightCommentId} />
               )
             ))
           )}

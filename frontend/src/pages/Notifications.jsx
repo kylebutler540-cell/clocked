@@ -170,12 +170,30 @@ export default function Notifications() {
   useEffect(() => {
     if (!user?.email) { setLoading(false); return; }
 
-    // Always fetch fresh — never serve stale actor names from cache
     api.get('/notifications')
-      .then(res => {
-        cacheSet('notifications', res.data);
-        setNotifications(res.data);
-        const unreadIds = res.data.filter(n => !n.read).map(n => n.id);
+      .then(async res => {
+        const notifs = res.data;
+
+        // For each comment notification, fetch the actual liked state from the comment
+        const commentNotifs = notifs.filter(n => (n.type === 'comment' || n.type === 'reply') && n.data?.comment_id && n.data?.post_id);
+        const likedMap = {};
+        await Promise.all(
+          commentNotifs.map(async n => {
+            try {
+              const comments = await api.get(`/posts/${n.data.post_id}/comments`);
+              const flat = [];
+              const flatten = list => list.forEach(c => { flat.push(c); if (c.replies) flatten(c.replies); });
+              flatten(comments.data || []);
+              const match = flat.find(c => c.id === n.data.comment_id);
+              if (match) likedMap[n.id] = match.liked;
+            } catch { /* ignore */ }
+          })
+        );
+
+        const enriched = notifs.map(n => ({ ...n, _commentLiked: likedMap[n.id] ?? false }));
+        setNotifications(enriched);
+
+        const unreadIds = notifs.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) api.post('/notifications/read', { ids: unreadIds });
       })
       .catch(() => {})
@@ -183,12 +201,18 @@ export default function Notifications() {
   }, [user]);
 
   async function handleCommentLike(notifId, postId, commentId) {
+    // Optimistic toggle
+    setNotifications(prev => prev.map(n =>
+      n.id === notifId ? { ...n, _commentLiked: !n._commentLiked } : n
+    ));
     try {
       await api.post(`/posts/${postId}/comments/${commentId}/like`);
+    } catch {
+      // Revert on failure
       setNotifications(prev => prev.map(n =>
         n.id === notifId ? { ...n, _commentLiked: !n._commentLiked } : n
       ));
-    } catch { /* silent */ }
+    }
   }
 
   if (loading) {
