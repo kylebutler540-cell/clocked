@@ -184,10 +184,15 @@ router.get('/search', async (req, res) => {
     }
 
     // Use Text Search — returns results with geometry, searchable within radius
-    // This guarantees we get ALL nearby matches, not just autocomplete-biased ones
+    // For short queries (≤3 chars), broaden by appending a wildcard-style space
+    // so Google treats it as a prefix and returns major brand matches
+    const searchQuery = query.trim().length <= 3
+      ? `${query.trim()} store`  // e.g. "cos store" → returns Costco, Cost Cutters etc.
+      : query.trim();
+
     const response = await axios.get(`${GOOGLE_PLACES_BASE}/textsearch/json`, {
       params: {
-        query,
+        query: searchQuery,
         location: `${latitude},${longitude}`,
         radius: 80000, // 50 miles — wide enough to catch all local results
         key: process.env.GOOGLE_MAPS_API_KEY,
