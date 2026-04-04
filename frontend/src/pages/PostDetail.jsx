@@ -33,23 +33,18 @@ export default function PostDetail() {
       inset: 0,
       zIndex: 900,
       background: 'var(--bg-base)',
-      overflowY: 'auto',
-      WebkitOverflowScrolling: 'touch',
     }}>
       {loading ? (
         <div className="loading-spinner" style={{ paddingTop: 80 }}><div className="spinner" /></div>
       ) : post ? (
-        <>
-          <PostCard post={post} onDelete={() => navigate('/')} />
-          <CommentSheet
-            postId={id}
-            post={post}
-            isOpen={sheetOpen}
-            highlightCommentId={highlightCommentId}
-            preloadedLikes={preloadedLikes}
-            onClose={() => { setSheetOpen(false); navigate(-1); }}
-          />
-        </>
+        <CommentSheet
+          postId={id}
+          post={post}
+          isOpen={sheetOpen}
+          highlightCommentId={highlightCommentId}
+          preloadedLikes={preloadedLikes}
+          onClose={() => { setSheetOpen(false); navigate(-1); }}
+        />
       ) : null}
     </div>
   );
