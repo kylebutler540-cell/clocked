@@ -13,6 +13,67 @@ const router = express.Router();
 const GOOGLE_PLACES_BASE = 'https://maps.googleapis.com/maps/api/place';
 const GOOGLE_PLACES_V1 = 'https://places.googleapis.com/v1/places';
 
+// Department/sub-listing suffixes to filter out for general searches
+const DEPARTMENT_PATTERNS = [
+  /\bpharmacy\b/i,
+  /\bvision\s*center\b/i,
+  /\boptical\b/i,
+  /\btire\s*(center|shop|service)?\b/i,
+  /\bhearing\s*aid\b/i,
+  /\bauto\s*center\b/i,
+  /\bauto\s*care\b/i,
+  /\bgas\s*station\b/i,
+  /\bfuel\s*station\b/i,
+  /\bjewelry\b/i,
+  /\bportrait\s*studio\b/i,
+  /\bphoto\s*center\b/i,
+  /\bpickup\b/i,
+  /\bdelivery\b/i,
+  /\bdeli\b/i,
+  /\bbakery\b/i,
+  /\bfloral\b/i,
+  /\bbank\s*branch\b/i,
+  /\bmcdonald'?s\b.*\binside\b/i, // e.g. "McDonald's inside Walmart"
+];
+
+// Returns true if the user's query is explicitly asking for a department
+function queryIsDepartmentSpecific(query) {
+  const q = query.toLowerCase();
+  return DEPARTMENT_PATTERNS.some(p => p.test(q));
+}
+
+// Score how "main" a listing name is — lower score = more main/general
+function mainListingScore(name) {
+  const n = name.toLowerCase();
+  // Department-level listings get a high score (less preferred)
+  if (DEPARTMENT_PATTERNS.some(p => p.test(n))) return 100;
+  // Names that are just the brand name are most preferred (score 0)
+  // Names with extra descriptors (Supercenter, Wholesale, etc.) are fine
+  return 0;
+}
+
+// Deduplicate results: for each physical location (rounded coords),
+// keep only the most "main" listing. Removes department sub-entries.
+function deduplicateByLocation(predictions) {
+  const buckets = new Map();
+  for (const p of predictions) {
+    // Round coords to ~100m grid to group same-location entries
+    const key = p.lat && p.lng
+      ? `${Math.round(p.lat * 1000) / 1000},${Math.round(p.lng * 1000) / 1000}`
+      : p.place_id;
+    const existing = buckets.get(key);
+    if (!existing) {
+      buckets.set(key, p);
+    } else {
+      // Keep whichever listing is more "main"
+      if (mainListingScore(p.name) < mainListingScore(existing.name)) {
+        buckets.set(key, p);
+      }
+    }
+  }
+  return Array.from(buckets.values());
+}
+
 // Haversine distance in miles
 function distanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
@@ -70,6 +131,11 @@ router.get('/search', async (req, res) => {
       lat: r.geometry?.location?.lat ?? null,
       lng: r.geometry?.location?.lng ?? null,
     }));
+
+    // For general searches, collapse department sub-listings into one main result per location
+    if (!queryIsDepartmentSpecific(query)) {
+      predictions = deduplicateByLocation(predictions);
+    }
 
     // Sort strictly by distance from user — closest first, always
     predictions = predictions
