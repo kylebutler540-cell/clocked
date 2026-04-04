@@ -77,16 +77,6 @@ export default function LeftSidebar({ collapsed = false }) {
 
       <div className="sidebar-divider" />
 
-      {/* About — only expanded */}
-      {!collapsed && (
-        <div className="sidebar-about">
-          <a href="/terms" className="sidebar-about-link">Terms</a>
-          <a href="/privacy" className="sidebar-about-link">Privacy</a>
-          <button onClick={() => setContactOpen(true)} className="sidebar-about-link" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Contact</button>
-          <div className="sidebar-version">v1.0.0</div>
-        </div>
-      )}
-
       {/* Dark/Light mode toggle */}
       <NavItem
         collapsed={collapsed}
@@ -99,6 +89,16 @@ export default function LeftSidebar({ collapsed = false }) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
         )}
       />
+
+      {/* About — only expanded */}
+      {!collapsed && (
+        <div className="sidebar-about">
+          <a href="/terms" className="sidebar-about-link">Terms</a>
+          <a href="/privacy" className="sidebar-about-link">Privacy</a>
+          <button onClick={() => setContactOpen(true)} className="sidebar-about-link" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Contact</button>
+          <div className="sidebar-version">v1.0.0</div>
+        </div>
+      )}
 
       {/* Contact modal */}
       {contactOpen && (
