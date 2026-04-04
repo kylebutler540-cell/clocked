@@ -41,7 +41,12 @@ function NotificationItem({ n, onCommentLike }) {
       navigate(`/post/${data.post_id}`, {
         state: {
           highlightComment: data.comment_id,
-          commentLikes: { [data.comment_id]: n._commentLiked ?? false },
+          commentLikes: {
+            [data.comment_id]: {
+              liked: n._commentLiked ?? false,
+              likes: n._commentLikesCount ?? null,
+            },
+          },
         },
       });
     } else {
@@ -67,7 +72,12 @@ function NotificationItem({ n, onCommentLike }) {
       state: {
         openReplyTo: data.comment_id,
         highlightComment: data.comment_id,
-        commentLikes: { [data.comment_id]: n._commentLiked ?? false },
+        commentLikes: {
+          [data.comment_id]: {
+            liked: n._commentLiked ?? false,
+            likes: n._commentLikesCount ?? null,
+          },
+        },
       },
     });
   }
@@ -188,7 +198,8 @@ export default function Notifications() {
 
         // For each comment notification, fetch the actual liked state from the comment
         const commentNotifs = notifs.filter(n => (n.type === 'comment' || n.type === 'reply') && n.data?.comment_id && n.data?.post_id);
-        const likedMap = {};
+        const likedMap = {};    // notifId → liked boolean
+        const likesCountMap = {}; // commentId → current likes count
         await Promise.all(
           commentNotifs.map(async n => {
             try {
@@ -197,12 +208,19 @@ export default function Notifications() {
               const flatten = list => list.forEach(c => { flat.push(c); if (c.replies) flatten(c.replies); });
               flatten(comments.data || []);
               const match = flat.find(c => c.id === n.data.comment_id);
-              if (match) likedMap[n.id] = match.liked;
+              if (match) {
+                likedMap[n.id] = match.liked;
+                likesCountMap[n.data.comment_id] = match.likes;
+              }
             } catch { /* ignore */ }
           })
         );
 
-        const enriched = notifs.map(n => ({ ...n, _commentLiked: likedMap[n.id] ?? false }));
+        const enriched = notifs.map(n => ({
+          ...n,
+          _commentLiked: likedMap[n.id] ?? false,
+          _commentLikesCount: likesCountMap[n.data?.comment_id] ?? null,
+        }));
         setNotifications(enriched);
 
         const unreadIds = notifs.filter(n => !n.read).map(n => n.id);

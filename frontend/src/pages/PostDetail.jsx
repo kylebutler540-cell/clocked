@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import api from '../lib/api';
 import PostCard from '../components/PostCard';
 import CommentSheet from '../components/CommentSheet';
@@ -15,7 +16,6 @@ export default function PostDetail() {
 
   // From alert navigation — highlight a specific comment + pre-seed liked state
   const highlightCommentId = location.state?.highlightComment || location.state?.openReplyTo || null;
-  // Map of commentId → liked boolean passed from Alerts tab so the sheet shows correct state immediately
   const preloadedLikes = location.state?.commentLikes || null;
 
   useEffect(() => {
@@ -25,23 +25,34 @@ export default function PostDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
-    return <div className="loading-spinner"><div className="spinner" /></div>;
-  }
-
-  if (!post) return null;
-
-  return (
-    <div className="post-detail-page" style={{ position: 'relative', minHeight: '100dvh', background: '#000' }}>
-      <PostCard post={post} onDelete={() => navigate('/')} />
-      <CommentSheet
-        postId={id}
-        post={post}
-        isOpen={sheetOpen}
-        highlightCommentId={highlightCommentId}
-        preloadedLikes={preloadedLikes}
-        onClose={() => { setSheetOpen(false); navigate(-1); }}
-      />
+  // Render as a full-screen portal so it sits above the entire layout
+  // — no bleed-through from feed, sidebar, or other background content
+  const content = (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 900,
+      background: 'var(--bg-base)',
+      overflowY: 'auto',
+      WebkitOverflowScrolling: 'touch',
+    }}>
+      {loading ? (
+        <div className="loading-spinner" style={{ paddingTop: 80 }}><div className="spinner" /></div>
+      ) : post ? (
+        <>
+          <PostCard post={post} onDelete={() => navigate('/')} />
+          <CommentSheet
+            postId={id}
+            post={post}
+            isOpen={sheetOpen}
+            highlightCommentId={highlightCommentId}
+            preloadedLikes={preloadedLikes}
+            onClose={() => { setSheetOpen(false); navigate(-1); }}
+          />
+        </>
+      ) : null}
     </div>
   );
+
+  return createPortal(content, document.body);
 }

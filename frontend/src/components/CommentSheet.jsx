@@ -184,35 +184,36 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
 
     const cacheKey = 'comments/' + postId;
 
+    // Helper: apply preloaded liked state + count so both render instantly
+    function applyPreloadedLikes(list) {
+      if (!preloadedLikes) return list;
+      return list.map(c => {
+        const pre = preloadedLikes[c.id];
+        const updated = pre != null ? {
+          ...c,
+          liked: typeof pre === 'object' ? pre.liked : pre,
+          likes: (typeof pre === 'object' && pre.likes != null) ? pre.likes : c.likes,
+        } : c;
+        return {
+          ...updated,
+          replies: c.replies ? c.replies.map(r => {
+            const rPre = preloadedLikes[r.id];
+            if (rPre == null) return r;
+            return {
+              ...r,
+              liked: typeof rPre === 'object' ? rPre.liked : rPre,
+              likes: (typeof rPre === 'object' && rPre.likes != null) ? rPre.likes : r.likes,
+            };
+          }) : c.replies,
+        };
+      });
+    }
+
     // Load from cache first — show immediately, skip loading spinner
     const cached = cacheGet(cacheKey);
     if (cached) {
-      // Apply preloaded likes immediately so liked state is correct from first render
-      setComments(preloadedLikes
-        ? cached.map(c => ({
-            ...c,
-            liked: preloadedLikes[c.id] !== undefined ? preloadedLikes[c.id] : c.liked,
-            replies: c.replies ? c.replies.map(r => ({
-              ...r,
-              liked: preloadedLikes[r.id] !== undefined ? preloadedLikes[r.id] : r.liked,
-            })) : c.replies,
-          }))
-        : cached
-      );
+      setComments(applyPreloadedLikes(cached));
       setLoading(false);
-    }
-
-    // Helper: apply preloaded liked states so they show instantly before server responds
-    function applyPreloadedLikes(list) {
-      if (!preloadedLikes) return list;
-      return list.map(c => ({
-        ...c,
-        liked: preloadedLikes[c.id] !== undefined ? preloadedLikes[c.id] : c.liked,
-        replies: c.replies ? c.replies.map(r => ({
-          ...r,
-          liked: preloadedLikes[r.id] !== undefined ? preloadedLikes[r.id] : r.liked,
-        })) : c.replies,
-      }));
     }
 
     // Always revalidate silently
