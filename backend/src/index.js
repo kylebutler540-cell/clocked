@@ -75,21 +75,6 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/search', searchRoutes);
 
-// TEMP: delete self-generated alerts
-app.post('/api/admin/clean-self-alerts', async (req, res) => {
-  if (req.headers['x-admin-secret'] !== 'clocked-clean-2026') return res.status(403).end();
-  const prisma = require('./lib/prisma');
-  const all = await prisma.notification.findMany({ take: 500 });
-  let deleted = 0;
-  for (const n of all) {
-    if (n.data?.actor_id && n.data.actor_id === n.user_id) {
-      await prisma.notification.delete({ where: { id: n.id } });
-      deleted++;
-    }
-  }
-  res.json({ deleted });
-});
-
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
