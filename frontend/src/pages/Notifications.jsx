@@ -197,7 +197,14 @@ export default function Notifications() {
     api.get('/notifications')
       .then(notifs => {
         // Show immediately — no waiting for liked states
-        const initial = notifs.data.map(n => ({ ...n, _commentLiked: false, _commentLikesCount: null }));
+        // Preserve any existing liked states from the previous cache so there's no flicker
+        const prevCached = cacheGet('notifications') || [];
+        const prevLikedMap = Object.fromEntries(prevCached.map(n => [n.id, { liked: n._commentLiked, count: n._commentLikesCount }]));
+        const initial = notifs.data.map(n => ({
+          ...n,
+          _commentLiked: prevLikedMap[n.id]?.liked ?? false,
+          _commentLikesCount: prevLikedMap[n.id]?.count ?? null,
+        }));
         setNotifications(initial);
         cacheSet('notifications', initial);
 
@@ -214,12 +221,15 @@ export default function Notifications() {
             flatten(comments.data || []);
             const match = flat.find(c => c.id === n.data.comment_id);
             if (match) {
-              setNotifications(prev => prev.map(x => {
-                if (x.id !== n.id) return x;
-                // Skip server overwrite if user already interacted with this one
-                if (userToggledRef.current.has(n.id)) return x;
-                return { ...x, _commentLiked: match.liked, _commentLikesCount: match.likes };
-              }));
+              setNotifications(prev => {
+                const updated = prev.map(x => {
+                  if (x.id !== n.id) return x;
+                  if (userToggledRef.current.has(n.id)) return x;
+                  return { ...x, _commentLiked: match.liked, _commentLikesCount: match.likes };
+                });
+                cacheSet('notifications', updated); // persist liked state so next visit is instant
+                return updated;
+              });
             }
           } catch { /* ignore */ }
         });
@@ -236,10 +246,14 @@ export default function Notifications() {
     ));
     try {
       const res = await api.post(`/posts/${postId}/comments/${commentId}/like`);
-      // Sync with actual server state (could differ if double-tapped etc)
-      setNotifications(prev => prev.map(n =>
-        n.id === notifId ? { ...n, _commentLiked: res.data.liked, _commentLikesCount: res.data.likes } : n
-      ));
+      // Sync with actual server state and persist to cache immediately
+      setNotifications(prev => {
+        const updated = prev.map(n =>
+          n.id === notifId ? { ...n, _commentLiked: res.data.liked, _commentLikesCount: res.data.likes } : n
+        );
+        cacheSet('notifications', updated);
+        return updated;
+      });
     } catch {
       // Revert on failure
       userToggledRef.current.delete(notifId);
