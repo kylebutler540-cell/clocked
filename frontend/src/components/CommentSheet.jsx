@@ -137,7 +137,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null, preloadedLikes = null, fullscreen = false }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -251,6 +251,22 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
   useEffect(() => {
     if (replyingTo) inputRef.current?.focus();
   }, [replyingTo]);
+
+  // Auto-set replyingTo when opened from an alert Reply tap
+  const openReplyApplied = React.useRef(false);
+  useEffect(() => {
+    if (!openReplyToId || openReplyApplied.current || comments.length === 0) return;
+    const flat = [];
+    const flatten = list => list.forEach(c => { flat.push(c); if (c.replies) flatten(c.replies); });
+    flatten(comments);
+    const target = flat.find(c => c.id === openReplyToId);
+    if (target) {
+      openReplyApplied.current = true;
+      setReplyingTo(target);
+      // Focus input after sheet animates in
+      setTimeout(() => inputRef.current?.focus(), 500);
+    }
+  }, [openReplyToId, comments]);
 
   // Touch drag-to-close
   function onTouchStart(e) {
@@ -537,12 +553,13 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
           background: 'var(--bg-card)',
         }}>
           {replyingTo && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, padding: '4px 10px', background: 'var(--purple-glow)', borderRadius: 20, width: 'fit-content' }}>
-              <span style={{ fontSize: 12, color: 'var(--purple)', fontWeight: 600 }}>
-                @{replyingTo.author_display_name || 'Anonymous'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, padding: '6px 12px', background: 'var(--purple-glow)', borderRadius: 10, borderLeft: '3px solid var(--purple)' }}>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 400 }}>Replying to</span>
+              <span style={{ fontSize: 13, color: 'var(--purple)', fontWeight: 700 }}>
+                @{replyingTo.author_display_name || replyingTo.author_username || 'Anonymous'}
               </span>
               <button onClick={() => setReplyingTo(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--purple)', fontSize: 14, lineHeight: 1, padding: 0, cursor: 'pointer' }}>×</button>
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 16, lineHeight: 1, padding: '0 2px', cursor: 'pointer' }}>×</button>
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -16,6 +16,7 @@ export default function PostDetail() {
 
   // From alert navigation — highlight a specific comment + pre-seed liked state
   const highlightCommentId = location.state?.highlightComment || location.state?.openReplyTo || null;
+  const openReplyToId = location.state?.openReplyTo || null; // auto-set replyingTo on open
   const preloadedLikes = location.state?.commentLikes || null;
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function PostDetail() {
           post={post}
           isOpen={sheetOpen}
           highlightCommentId={highlightCommentId}
+          openReplyToId={openReplyToId}
           preloadedLikes={preloadedLikes}
           fullscreen={true}
           onClose={() => { setSheetOpen(false); navigate(-1); }}
