@@ -57,7 +57,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const employerRoutes = require('./routes/employers');
+  const logoRoute = employerRoutes.stack?.filter(r => r.route).map(r => r.route.path) || [];
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), employerRoutes: logoRoute });
 });
 
 // Routes
