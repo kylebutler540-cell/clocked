@@ -12,7 +12,7 @@ function isFresh(date) {
 }
 
 function clearbitUrl(domain) {
-  return `https://logo.clearbit.com/${encodeURIComponent(domain)}`;
+  return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 }
 
 function domainFromWebsite(website) {

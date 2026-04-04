@@ -816,14 +816,14 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
 function employerLogoUrl(name) {
   if (!name) return null;
-  // Strip common suffixes and clean up the name to get a domain guess
   const cleaned = name
     .toLowerCase()
     .replace(/\b(inc|llc|ltd|co|corp|company|supercenter|store|stores|restaurant|cafe|grill|bar|club)\b/gi, '')
     .replace(/[^a-z0-9]/g, '')
     .trim();
   if (!cleaned) return null;
-  return `https://logo.clearbit.com/${cleaned}.com`;
+  // Use Google's favicon service — free, reliable, no API key
+  return `https://www.google.com/s2/favicons?sz=64&domain=${cleaned}.com`;
 }
 
 function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), dislikedPostIds = new Set()) {
