@@ -94,8 +94,8 @@ export default function LeftSidebar({ collapsed = false }) {
       {/* About — only expanded */}
       {!collapsed && (
         <div className="sidebar-about">
-          <a href="#" className="sidebar-about-link">Terms</a>
-          <a href="#" className="sidebar-about-link">Privacy</a>
+          <a href="/terms" className="sidebar-about-link">Terms</a>
+          <a href="/privacy" className="sidebar-about-link">Privacy</a>
           <a href="#" className="sidebar-about-link">Contact</a>
           <div className="sidebar-version">v1.0.0</div>
         </div>
