@@ -75,20 +75,6 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/search', searchRoutes);
 
-// TEMP admin fix — remove after running
-app.post('/api/admin/fix-test-company', async (req, res) => {
-  const secret = req.headers['x-admin-secret'];
-  if (secret !== 'clocked-fix-2026') return res.status(403).json({ error: 'forbidden' });
-  const prisma = require('./lib/prisma');
-  const fixed = await prisma.post.updateMany({
-    where: { employer_place_id: 'ChIJgUYJpuBNGIgR8PGiUfuZkEs', employer_name: { not: 'Walmart Supercenter' } },
-    data: { employer_name: 'Walmart Supercenter', employer_address: '5859 28th St SE, Grand Rapids, MI 49546, USA' },
-  });
-  const deleted = await prisma.post.deleteMany({ where: { employer_place_id: 'test123' } });
-  await prisma.employerLogo.deleteMany({ where: { place_id: { in: ['test123', 'ChIJgUYJpuBNGIgR8PGiUfuZkEs'] } } });
-  res.json({ fixed: fixed.count, deleted: deleted.count });
-});
-
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
