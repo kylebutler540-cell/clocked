@@ -56,7 +56,7 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
         predictions = predictions.map(p => {
           if (p.lat && p.lng) {
             const miles = getDistanceMiles(uLat, uLng, p.lat, p.lng);
-            return { ...p, distanceNum: miles, distance: miles < 0.1 ? '< 0.1 mi' : miles < 1 ? `${(miles * 5280).toFixed(0)} ft` : `${miles.toFixed(1)} mi` };
+            return { ...p, distanceNum: miles, distance: miles < 1 ? '< 1 mile' : `${miles.toFixed(1)} mi` };
           }
           return { ...p, distanceNum: 9999 };
         });

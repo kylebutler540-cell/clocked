@@ -13,13 +13,22 @@ const router = express.Router();
 const GOOGLE_PLACES_BASE = 'https://maps.googleapis.com/maps/api/place';
 const GOOGLE_PLACES_V1 = 'https://places.googleapis.com/v1/places';
 
-// Search employers via Google Places API v1 (new, fresher data)
+// Haversine distance in miles
+function distanceMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Search employers — uses Text Search (returns coords) then sorts by true distance
 router.get('/search', async (req, res) => {
   try {
     const { query, lat, lng, location } = req.query;
     if (!query) return res.status(400).json({ error: 'Query required' });
 
-    // Use provided lat/lng or geocode location string, fallback to Grand Rapids
+    // Resolve user coords — prefer explicit lat/lng, fallback to geocoding location string
     let latitude = parseFloat(lat) || null;
     let longitude = parseFloat(lng) || null;
 
@@ -39,48 +48,38 @@ router.get('/search', async (req, res) => {
       longitude = longitude || -85.6681;
     }
 
-    // Use new Places API v1 autocomplete
-    const response = await axios.post(`${GOOGLE_PLACES_V1}:autocomplete`, {
-      input: query,
-      includedPrimaryTypes: ['establishment'],
-      locationBias: {
-        circle: {
-          center: { latitude, longitude },
-          radius: 50000,
-        },
-      },
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+    // Use Text Search — returns results with geometry, searchable within radius
+    // This guarantees we get ALL nearby matches, not just autocomplete-biased ones
+    const response = await axios.get(`${GOOGLE_PLACES_BASE}/textsearch/json`, {
+      params: {
+        query,
+        location: `${latitude},${longitude}`,
+        radius: 80000, // 50 miles — wide enough to catch all local results
+        key: process.env.GOOGLE_MAPS_API_KEY,
       },
     });
 
-    const suggestions = response.data.suggestions || [];
+    const results = response.data.results || [];
 
-    // Fetch geometry for each result so frontend can sort by distance
-    const predictions = await Promise.all(
-      suggestions.slice(0, 8).map(async s => {
-        const p = s.placePrediction;
-        const base = {
-          place_id: p.placeId,
-          name: p.structuredFormat?.mainText?.text || p.text?.text || '',
-          address: p.structuredFormat?.secondaryText?.text || '',
-          description: p.text?.text || '',
-          lat: null,
-          lng: null,
-        };
-        try {
-          const det = await axios.get(`${GOOGLE_PLACES_BASE}/details/json`, {
-            params: { place_id: p.placeId, fields: 'geometry', key: process.env.GOOGLE_MAPS_API_KEY },
-            timeout: 3000,
-          });
-          const loc = det.data?.result?.geometry?.location;
-          if (loc) { base.lat = loc.lat; base.lng = loc.lng; }
-        } catch { /* non-fatal */ }
-        return base;
-      })
-    );
+    // Map to standard shape — geometry is already included in text search
+    let predictions = results.slice(0, 20).map(r => ({
+      place_id: r.place_id,
+      name: r.name,
+      address: r.formatted_address || r.vicinity || '',
+      description: r.name,
+      lat: r.geometry?.location?.lat ?? null,
+      lng: r.geometry?.location?.lng ?? null,
+    }));
+
+    // Sort strictly by distance from user — closest first, always
+    predictions = predictions
+      .map(p => ({
+        ...p,
+        _dist: (p.lat && p.lng) ? distanceMiles(latitude, longitude, p.lat, p.lng) : 9999,
+      }))
+      .sort((a, b) => a._dist - b._dist)
+      .slice(0, 10) // return top 10 closest
+      .map(({ _dist, ...rest }) => rest);
 
     res.json({ predictions });
   } catch (err) {
