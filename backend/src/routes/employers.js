@@ -183,23 +183,41 @@ router.get('/search', async (req, res) => {
       longitude = longitude || -85.6681;
     }
 
-    // Use Text Search — returns results with geometry, searchable within radius
-    // For short queries (≤3 chars), broaden by appending a wildcard-style space
-    // so Google treats it as a prefix and returns major brand matches
-    const searchQuery = query.trim().length <= 3
-      ? `${query.trim()} store`  // e.g. "cos store" → returns Costco, Cost Cutters etc.
-      : query.trim();
+    // Find any known brands whose name starts with the query (for prefix expansion)
+    const qLower = query.trim().toLowerCase();
+    const brandExpansions = [...KNOWN_BRANDS].filter(b => b.startsWith(qLower) && b !== qLower);
 
-    const response = await axios.get(`${GOOGLE_PLACES_BASE}/textsearch/json`, {
-      params: {
-        query: searchQuery,
-        location: `${latitude},${longitude}`,
-        radius: 80000, // 50 miles — wide enough to catch all local results
-        key: process.env.GOOGLE_MAPS_API_KEY,
-      },
-    });
+    // Build search requests: always search the raw query, plus top brand expansion if found
+    const searchRequests = [query.trim()];
+    if (brandExpansions.length > 0) {
+      searchRequests.push(brandExpansions[0]); // top brand match e.g. "costco"
+    }
 
-    const results = response.data.results || [];
+    // Run all searches in parallel
+    const allResponses = await Promise.all(
+      searchRequests.map(q =>
+        axios.get(`${GOOGLE_PLACES_BASE}/textsearch/json`, {
+          params: {
+            query: q,
+            location: `${latitude},${longitude}`,
+            radius: 80000,
+            key: process.env.GOOGLE_MAPS_API_KEY,
+          },
+        }).then(r => r.data.results || []).catch(() => [])
+      )
+    );
+
+    // Merge and deduplicate by place_id
+    const seen = new Set();
+    const results = [];
+    for (const batch of allResponses) {
+      for (const r of batch) {
+        if (!seen.has(r.place_id)) {
+          seen.add(r.place_id);
+          results.push(r);
+        }
+      }
+    }
 
     // Map to standard shape — geometry is already included in text search
     let predictions = results.slice(0, 20).map(r => ({
