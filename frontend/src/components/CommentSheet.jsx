@@ -160,6 +160,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
 
   // Animate out smoothly then fire onClose
   function handleClose() {
+    setReplyingTo(null);
+    setEditingCommentId(null);
     setVisible(false);
     setTimeout(onClose, 320);
   }
@@ -254,6 +256,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
 
   // Auto-set replyingTo when opened from an alert Reply tap
   const openReplyApplied = React.useRef(false);
+  const likingRef = React.useRef(new Set()); // prevent double-tap like race
   useEffect(() => {
     if (!openReplyToId || openReplyApplied.current || comments.length === 0) return;
     const flat = [];
@@ -329,6 +332,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
     setSelectedImage(null);
     setReplyingTo(null);
     setInputHeight(36);
+    inputRef.current?.blur(); // dismiss keyboard on mobile so sheet is scrollable immediately
 
     if (capturedReplyingTo) {
       setComments(prev => prev.map(c => {
@@ -372,6 +376,10 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
 
   async function handleLike(comment) {
     if (!user) { addToast('Sign in to like comments'); return; }
+    // Prevent double-tap race — ignore if already in-flight for this comment
+    if (likingRef.current.has(comment.id)) return;
+    likingRef.current.add(comment.id);
+
     const optimisticLiked = !comment.liked;
     const delta = optimisticLiked ? 1 : -1;
     const update = list => list.map(c => {
@@ -397,6 +405,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
         return updated;
       });
     } catch {
+      // Revert on failure
       const revert = list => list.map(c => {
         if (c.id === comment.id) return { ...c, liked: comment.liked, likes: comment.likes };
         if (c.replies) return { ...c, replies: revert(c.replies) };
@@ -408,6 +417,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
         return updated;
       });
       addToast('Failed to like comment');
+    } finally {
+      likingRef.current.delete(comment.id);
     }
   }
 
@@ -458,12 +469,17 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
 
   return (
     <>
-      {/* Overlay — blocks all background interaction */}
-      <div onClick={handleClose} onTouchMove={e => e.preventDefault()} style={{
-        position: 'fixed', inset: 0, background: fullscreen ? 'transparent' : 'rgba(0,0,0,0.4)',
-        zIndex: 1000, opacity: visible ? 1 : 0, transition: 'opacity 300ms ease',
-        touchAction: 'none',
-      }} />
+      {/* Overlay — tapping closes the sheet (or just dismisses reply state first) */}
+      <div
+        onClick={() => {
+          if (replyingTo) { setReplyingTo(null); return; }
+          handleClose();
+        }}
+        style={{
+          position: 'fixed', inset: 0, background: fullscreen ? 'transparent' : 'rgba(0,0,0,0.4)',
+          zIndex: 1000, opacity: visible ? 1 : 0, transition: 'opacity 300ms ease',
+        }}
+      />
 
       {/* Sheet */}
       <div
@@ -519,8 +535,13 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
           {/* Separator removed */}
         </div>
 
-        {/* Comments list — only this scrolls */}
-        <div ref={listRef} style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        {/* Comments list — only this scrolls. Tapping here dismisses reply state. */}
+        <div ref={listRef} style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}
+          onClick={e => {
+            // Only dismiss reply if user taps the list background, not a button/comment
+            if (replyingTo && e.target === listRef.current) setReplyingTo(null);
+          }}
+        >
           {loading ? (
             <div style={{ padding: '32px 16px', textAlign: 'center' }}><div className="spinner" /></div>
           ) : comments.length === 0 ? (
