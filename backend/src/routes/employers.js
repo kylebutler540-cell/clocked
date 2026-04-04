@@ -57,9 +57,10 @@ function mainListingScore(name) {
 function deduplicateByLocation(predictions) {
   const buckets = new Map();
   for (const p of predictions) {
-    // Round coords to ~100m grid to group same-location entries
+    // Round coords to ~300m grid to group same-location entries
+    // (departments like pharmacy/tire are often listed at slightly offset coords)
     const key = p.lat && p.lng
-      ? `${Math.round(p.lat * 1000) / 1000},${Math.round(p.lng * 1000) / 1000}`
+      ? `${Math.round(p.lat * 333) / 333},${Math.round(p.lng * 333) / 333}`
       : p.place_id;
     const existing = buckets.get(key);
     if (!existing) {
@@ -134,6 +135,9 @@ router.get('/search', async (req, res) => {
 
     // For general searches, collapse department sub-listings into one main result per location
     if (!queryIsDepartmentSpecific(query)) {
+      // First pass: remove any result whose name contains a department keyword
+      predictions = predictions.filter(p => !DEPARTMENT_PATTERNS.some(pat => pat.test(p.name)));
+      // Second pass: deduplicate by physical location, keep most "main" listing
       predictions = deduplicateByLocation(predictions);
     }
 
