@@ -82,6 +82,72 @@ function deduplicateByLocation(predictions) {
   return Array.from(buckets.values());
 }
 
+// Well-known brand names — exact/prefix matches on these get a strong boost
+const KNOWN_BRANDS = new Set([
+  'walmart','target','costco','meijer','kroger','aldi','whole foods','amazon',
+  'home depot','lowes','menards','dollar general','dollar tree','five below',
+  'best buy','apple','microsoft','google','meta',
+  'mcdonalds','burger king','wendys','taco bell','chick-fil-a','chipotle',
+  'culvers','five guys','panera','subway','jersey mikes','dominos','pizza hut',
+  'papa johns','little caesars','starbucks','dunkin','tim hortons','dairy queen',
+  'sonic','applebees','dennys','olive garden','buffalo wild wings',
+  'ups','fedex','usps','dhl','xpo',
+  'cvs','walgreens','rite aid','spectrum health','sparrow','mercy health',
+  'chase','bank of america','wells fargo','fifth third','huntington',
+  'autozone','oreilly','advance auto','napa',
+  'service professor','gtf technologies',
+]);
+
+/**
+ * Relevance score for a result given a query — lower = more relevant.
+ * Blended with distance to produce the final sort order.
+ *
+ * Scoring breakdown:
+ *  0 = perfect prefix match on a known brand
+ *  1 = prefix match on any name
+ *  2 = full word match
+ *  3 = contains match
+ *  4 = no match (shouldn't appear, but just in case)
+ * 
+ * Each tier also gets a "noise penalty" for long/complex names with
+ * many unrelated words, so "Ferguson 987COS" scores worse than "Costco".
+ */
+function relevanceScore(name, query) {
+  const n = name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  const q = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+  // Check if name or normalized name is a known brand
+  const nNoBrand = n
+    .replace(/\b(supercenter|wholesale|store|stores|inc|llc|corp|co|company)\b/g, '')
+    .trim();
+  const isKnown = KNOWN_BRANDS.has(n) || KNOWN_BRANDS.has(nNoBrand) ||
+    [...KNOWN_BRANDS].some(b => n.startsWith(b));
+
+  // Prefix match: name starts with query
+  if (n.startsWith(q) || nNoBrand.startsWith(q)) {
+    return isKnown ? 0 : 1;
+  }
+
+  // Word boundary match: query matches a whole word in name
+  const wordBoundary = new RegExp(`\\b${q.replace(/\s+/g, '\\s+')}`, 'i');
+  if (wordBoundary.test(n)) {
+    // Penalize names where the query word appears late or with lots of surrounding noise
+    const wordCount = n.split(/\s+/).length;
+    const noisePenalty = Math.min(wordCount * 0.1, 0.5);
+    return isKnown ? 2 : 2 + noisePenalty;
+  }
+
+  // Contains match anywhere
+  if (n.includes(q)) {
+    const wordCount = n.split(/\s+/).length;
+    const noisePenalty = Math.min(wordCount * 0.2, 1.0);
+    return isKnown ? 3 : 3 + noisePenalty;
+  }
+
+  // No direct match — text search returned it for some reason, deprioritize
+  return 5;
+}
+
 // Haversine distance in miles
 function distanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
@@ -148,15 +214,23 @@ router.get('/search', async (req, res) => {
       predictions = deduplicateByLocation(predictions);
     }
 
-    // Sort strictly by distance from user — closest first, always
+    // Score and sort: relevance-first within reasonable distance bands,
+    // then distance. This ensures "Costco" beats "Ferguson 987COS" for query "cos"
+    // while still surfacing the closest Costco first.
     predictions = predictions
-      .map(p => ({
-        ...p,
-        _dist: (p.lat && p.lng) ? distanceMiles(latitude, longitude, p.lat, p.lng) : 9999,
-      }))
-      .sort((a, b) => a._dist - b._dist)
-      .slice(0, 10) // return top 10 closest
-      .map(({ _dist, ...rest }) => rest);
+      .map(p => {
+        const dist = (p.lat && p.lng) ? distanceMiles(latitude, longitude, p.lat, p.lng) : 9999;
+        const rel = relevanceScore(p.name, query);
+        // Blend: relevance is primary (0–5 scale), distance is secondary
+        // Normalize distance into a 0–2 scale capped at 50 miles so local results
+        // stay local but don't trump a clearly more relevant result
+        const distNorm = Math.min(dist / 25, 2);
+        const score = rel * 3 + distNorm;
+        return { ...p, _dist: dist, _score: score };
+      })
+      .sort((a, b) => a._score - b._score)
+      .slice(0, 10)
+      .map(({ _dist, _score, ...rest }) => rest);
 
     res.json({ predictions });
   } catch (err) {
