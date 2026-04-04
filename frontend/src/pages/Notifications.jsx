@@ -32,6 +32,7 @@ function NotificationItem({ n, onCommentLike }) {
   const isComment = n.type === 'comment' || n.type === 'reply';
   const isSimple = n.type === 'like' || n.type === 'dislike' || n.type === 'follow';
   const hasPost = !!data.post_id;
+  const postImage = data.post_image || null;
 
   // Tapping the card navigates to the post, with comment highlighted if applicable
   // Also passes the current liked state so CommentSheet renders it immediately (no flicker)
@@ -108,7 +109,7 @@ function NotificationItem({ n, onCommentLike }) {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, marginRight: postImage ? 8 : 0 }}>
 
         {/* Top row: text + timestamp */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -179,6 +180,18 @@ function NotificationItem({ n, onCommentLike }) {
           </div>
         )}
       </div>
+
+      {/* Post image thumbnail — far right, only if post has a photo */}
+      {postImage && (
+        <img
+          src={postImage}
+          alt="Post"
+          style={{
+            width: 52, height: 52, borderRadius: 8, objectFit: 'cover',
+            flexShrink: 0, border: '1px solid var(--border)',
+          }}
+        />
+      )}
     </div>
   );
 }

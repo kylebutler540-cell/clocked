@@ -75,7 +75,7 @@ router.post('/', optionalAuth, async (req, res) => {
     }
 
     // Verify post exists
-    const post = await prisma.post.findUnique({ where: { id: req.params.postId } });
+    const post = await prisma.post.findUnique({ where: { id: req.params.postId }, select: { id: true, anonymous_user_id: true, header: true, media_urls: true } });
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     // Validate parent comment if provided
@@ -124,13 +124,15 @@ router.post('/', optionalAuth, async (req, res) => {
     const actorName = comment.user?.display_name || null;
     const actorAvatar = comment.user?.avatar_url || null;
 
+    const postImage = Array.isArray(post.media_urls) ? post.media_urls[0] || null : null;
+
     // Notify post owner of new comment (not self)
     if (post.anonymous_user_id && post.anonymous_user_id !== userId && !parent_id) {
       await notify({
         userId: post.anonymous_user_id,
         type: 'comment',
         message: `${actorName || 'Someone'} commented on your post.`,
-        data: { post_id: post.id, comment_id: comment.id, comment_body: comment.body, post_header: post.header, actor_id: userId, actor_name: actorName, actor_avatar: actorAvatar },
+        data: { post_id: post.id, comment_id: comment.id, comment_body: comment.body, post_header: post.header, post_image: postImage, actor_id: userId, actor_name: actorName, actor_avatar: actorAvatar },
       });
     }
 
@@ -140,7 +142,7 @@ router.post('/', optionalAuth, async (req, res) => {
         userId: parentComment.anonymous_user_id,
         type: 'reply',
         message: `${actorName || 'Someone'} replied to your comment.`,
-        data: { post_id: post.id, comment_id: comment.id, comment_body: comment.body, parent_id: parent_id, actor_id: userId, actor_name: actorName, actor_avatar: actorAvatar },
+        data: { post_id: post.id, comment_id: comment.id, comment_body: comment.body, parent_id: parent_id, post_image: postImage, actor_id: userId, actor_name: actorName, actor_avatar: actorAvatar },
       });
     }
 
