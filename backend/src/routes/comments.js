@@ -224,6 +224,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
     await prisma.comment.delete({ where: { id: req.params.id } });
+    // Remove any notifications tied to this comment so they don't lead to missing content
+    await prisma.notification.deleteMany({
+      where: { data: { path: ['comment_id'], equals: req.params.id } },
+    }).catch(() => {}); // non-fatal
     res.json({ deleted: true });
   } catch (err) {
     console.error(err);

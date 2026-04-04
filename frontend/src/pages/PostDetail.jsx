@@ -22,8 +22,8 @@ export default function PostDetail() {
       .catch(() => navigate('/'));
   }, [id]);
 
-  // Match the app's current theme background — no hardcoded black
-  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-base').trim() || '#fff';
+  // Match the app's current theme background — use --bg-primary which is defined in both light and dark
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || '#fff';
 
   const content = (
     <div style={{

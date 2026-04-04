@@ -188,6 +188,8 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState(cached);
   const { user } = useAuth();
   const navigate = useNavigate();
+  // Track which notification IDs the user has manually liked — skip server overwrites for these
+  const userToggledRef = React.useRef(new Set());
 
   useEffect(() => {
     if (!user?.email) return;
@@ -202,7 +204,7 @@ export default function Notifications() {
         const unreadIds = notifs.data.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) api.post('/notifications/read', { ids: unreadIds }).catch(() => {});
 
-        // Enrich liked states silently in background — updates as they come in
+        // Enrich liked states silently in background — only update if user hasn't interacted since load
         const commentNotifs = notifs.data.filter(n => (n.type === 'comment' || n.type === 'reply') && n.data?.comment_id && n.data?.post_id);
         commentNotifs.forEach(async n => {
           try {
@@ -212,11 +214,12 @@ export default function Notifications() {
             flatten(comments.data || []);
             const match = flat.find(c => c.id === n.data.comment_id);
             if (match) {
-              setNotifications(prev => prev.map(x =>
-                x.id === n.id
-                  ? { ...x, _commentLiked: match.liked, _commentLikesCount: match.likes }
-                  : x
-              ));
+              setNotifications(prev => prev.map(x => {
+                if (x.id !== n.id) return x;
+                // Skip server overwrite if user already interacted with this one
+                if (userToggledRef.current.has(n.id)) return x;
+                return { ...x, _commentLiked: match.liked, _commentLikesCount: match.likes };
+              }));
             }
           } catch { /* ignore */ }
         });
@@ -225,14 +228,21 @@ export default function Notifications() {
   }, [user]);
 
   async function handleCommentLike(notifId, postId, commentId) {
+    // Mark as user-toggled so background enrichment won't overwrite it
+    userToggledRef.current.add(notifId);
     // Optimistic toggle
     setNotifications(prev => prev.map(n =>
       n.id === notifId ? { ...n, _commentLiked: !n._commentLiked } : n
     ));
     try {
-      await api.post(`/posts/${postId}/comments/${commentId}/like`);
+      const res = await api.post(`/posts/${postId}/comments/${commentId}/like`);
+      // Sync with actual server state (could differ if double-tapped etc)
+      setNotifications(prev => prev.map(n =>
+        n.id === notifId ? { ...n, _commentLiked: res.data.liked, _commentLikesCount: res.data.likes } : n
+      ));
     } catch {
       // Revert on failure
+      userToggledRef.current.delete(notifId);
       setNotifications(prev => prev.map(n =>
         n.id === notifId ? { ...n, _commentLiked: !n._commentLiked } : n
       ));

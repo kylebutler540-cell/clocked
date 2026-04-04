@@ -69,7 +69,25 @@ router.get('/', requireAuth, async (req, res) => {
       Object.entries(commentDataMap).filter(([, v]) => v.actor).map(([k, v]) => [k, v.actor])
     );
 
+    // IDs of comments that still exist (for filtering orphaned notifications)
+    const commentIdsToCheck = [...new Set(
+      notifications.filter(n => n.data?.comment_id).map(n => n.data.comment_id)
+    )];
+    const existingCommentIds = new Set();
+    if (commentIdsToCheck.length > 0) {
+      const existing = await prisma.comment.findMany({
+        where: { id: { in: commentIdsToCheck } },
+        select: { id: true },
+      });
+      existing.forEach(c => existingCommentIds.add(c.id));
+    }
+
     const enriched = notifications
+      // Remove notifications whose comment has been deleted
+      .filter(n => {
+        if (!n.data?.comment_id) return true;
+        return existingCommentIds.has(n.data.comment_id);
+      })
       .map(n => {
         let data = { ...n.data };
 
