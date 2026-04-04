@@ -58,17 +58,29 @@ router.get('/search', async (req, res) => {
 
     const suggestions = response.data.suggestions || [];
 
-    const predictions = suggestions.slice(0, 5).map(s => {
-      const p = s.placePrediction;
-      return {
-        place_id: p.placeId,
-        name: p.structuredFormat?.mainText?.text || p.text?.text || '',
-        address: p.structuredFormat?.secondaryText?.text || '',
-        description: p.text?.text || '',
-        lat: null,
-        lng: null,
-      };
-    });
+    // Fetch geometry for each result so frontend can sort by distance
+    const predictions = await Promise.all(
+      suggestions.slice(0, 8).map(async s => {
+        const p = s.placePrediction;
+        const base = {
+          place_id: p.placeId,
+          name: p.structuredFormat?.mainText?.text || p.text?.text || '',
+          address: p.structuredFormat?.secondaryText?.text || '',
+          description: p.text?.text || '',
+          lat: null,
+          lng: null,
+        };
+        try {
+          const det = await axios.get(`${GOOGLE_PLACES_BASE}/details/json`, {
+            params: { place_id: p.placeId, fields: 'geometry', key: process.env.GOOGLE_MAPS_API_KEY },
+            timeout: 3000,
+          });
+          const loc = det.data?.result?.geometry?.location;
+          if (loc) { base.lat = loc.lat; base.lng = loc.lng; }
+        } catch { /* non-fatal */ }
+        return base;
+      })
+    );
 
     res.json({ predictions });
   } catch (err) {
@@ -202,14 +214,29 @@ router.get('/profile/:placeId', async (req, res) => {
   }
 });
 
-// Get top employers by review count
+// Geocode an address to lat/lng (best-effort, non-fatal)
+async function geocodeAddress(address) {
+  if (!address || !process.env.GOOGLE_MAPS_API_KEY) return { lat: null, lng: null };
+  try {
+    const res = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+      params: { address, key: process.env.GOOGLE_MAPS_API_KEY },
+      timeout: 4000,
+    });
+    const loc = res.data?.results?.[0]?.geometry?.location;
+    return loc ? { lat: loc.lat, lng: loc.lng } : { lat: null, lng: null };
+  } catch {
+    return { lat: null, lng: null };
+  }
+}
+
+// Get top employers by review count, with lat/lng for distance sorting
 router.get('/top', async (req, res) => {
   try {
     const grouped = await prisma.post.groupBy({
       by: ['employer_place_id', 'employer_name', 'employer_address'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
-      take: 20,
+      take: 30,
     });
 
     const ids = grouped.map(g => g.employer_place_id);
@@ -218,14 +245,22 @@ router.get('/top', async (req, res) => {
     });
     const logoByPlace = Object.fromEntries(logos.map(l => [l.place_id, l]));
 
-    res.json(grouped.map(g => ({
-      place_id: g.employer_place_id,
-      employer_name: g.employer_name,
-      employer_address: g.employer_address,
-      review_count: g._count.id,
-      logo_url: logoByPlace[g.employer_place_id]?.logo_url ?? null,
-      domain: logoByPlace[g.employer_place_id]?.domain ?? null,
-    })));
+    // Geocode addresses in parallel to get lat/lng for distance sorting
+    const withCoords = await Promise.all(grouped.map(async g => {
+      const coords = await geocodeAddress(g.employer_address);
+      return {
+        place_id: g.employer_place_id,
+        employer_name: g.employer_name,
+        employer_address: g.employer_address,
+        review_count: g._count.id,
+        logo_url: logoByPlace[g.employer_place_id]?.logo_url ?? null,
+        domain: logoByPlace[g.employer_place_id]?.domain ?? null,
+        lat: coords.lat,
+        lng: coords.lng,
+      };
+    }));
+
+    res.json(withCoords);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch top employers' });

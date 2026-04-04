@@ -88,6 +88,26 @@ export default function LocationModal({ onClose }) {
     }, 300);
   }
 
+  async function handleManualGeocode() {
+    // Called when user presses Enter without selecting a suggestion
+    const val = cityInput.trim();
+    if (!val) return;
+    setLoading(true);
+    try {
+      const res = await api.get('/locations/geocode', { params: { input: val } });
+      if (res.data.lat && res.data.lng) {
+        localStorage.setItem('userLatLng', `${res.data.lat},${res.data.lng}`);
+        localStorage.setItem('userLocation', res.data.label);
+        dispatchLocationChange(res.data.label);
+        onClose(res.data.label);
+      }
+    } catch {
+      setError('Could not find that location. Try a city name or ZIP code.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleUseLocation() {
     if (!navigator.geolocation) { setError('Geolocation not supported.'); return; }
     setGeoLoading(true);
@@ -118,7 +138,16 @@ export default function LocationModal({ onClose }) {
   }
 
   function handleSelect(prediction) {
-    const city = `${prediction.city}${prediction.region ? ', ' + prediction.region.split(',')[0].trim() : ''}`;
+    // Store lat/lng if available (ZIP code results include them)
+    if (prediction.lat && prediction.lng) {
+      localStorage.setItem('userLatLng', `${prediction.lat},${prediction.lng}`);
+    } else {
+      // Clear stale lat/lng so it gets re-geocoded from city name
+      localStorage.removeItem('userLatLng');
+    }
+    const city = prediction.isZip
+      ? prediction.zipLabel
+      : `${prediction.city}${prediction.region ? ', ' + prediction.region.split(',')[0].trim() : ''}`;
     localStorage.setItem('userLocation', city);
     dispatchLocationChange(city);
     onClose(city);
@@ -160,9 +189,10 @@ export default function LocationModal({ onClose }) {
         <div style={{ position: 'relative', marginBottom: 16 }}>
           <input
             className="form-input"
-            placeholder="Search city…"
+            placeholder="City name or ZIP code…"
             value={cityInput}
             onChange={handleInput}
+            onKeyDown={e => { if (e.key === 'Enter' && suggestions.length === 0) handleManualGeocode(); }}
             autoComplete="off"
           />
           {(suggestions.length > 0 || loading) && (

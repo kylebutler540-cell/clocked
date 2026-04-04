@@ -40,20 +40,23 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
     if (q.length < 2) { setResults([]); return; }
     setLoading(true);
     try {
+      const userCoords = await getUserLatLng();
       const userLocation = localStorage.getItem('userLocation') || 'Grand Rapids, MI';
-      const [res, userCoords] = await Promise.all([
-        api.get('/employers/search', { params: { query: q, location: userLocation } }),
-        getUserLatLng(),
-      ]);
+
+      // Pass lat/lng to backend for better location bias
+      const params = { query: q, location: userLocation };
+      if (userCoords) { params.lat = userCoords[0]; params.lng = userCoords[1]; }
+
+      const res = await api.get('/employers/search', { params });
       let predictions = res.data.predictions || [];
 
-      // Add distance + sort by closest if we have user coords
+      // Sort strictly by distance if we have user coords and place coords
       if (userCoords) {
         const [uLat, uLng] = userCoords;
         predictions = predictions.map(p => {
           if (p.lat && p.lng) {
             const miles = getDistanceMiles(uLat, uLng, p.lat, p.lng);
-            return { ...p, distanceNum: miles, distance: miles < 1 ? '< 1 mi' : `${miles.toFixed(1)} mi` };
+            return { ...p, distanceNum: miles, distance: miles < 0.1 ? '< 0.1 mi' : miles < 1 ? `${(miles * 5280).toFixed(0)} ft` : `${miles.toFixed(1)} mi` };
           }
           return { ...p, distanceNum: 9999 };
         });
