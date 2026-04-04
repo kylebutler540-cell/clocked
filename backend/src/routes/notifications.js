@@ -35,37 +35,39 @@ router.get('/', requireAuth, async (req, res) => {
       });
     }
 
-    // 2. For old comment/reply notifications with comment_id but no actor_id,
-    //    look up the comment author directly
-    const missingCommentIds = [
+    // 2. For ALL comment/reply notifications with comment_id,
+    //    look up comment body + author to ensure body is always present
+    const allCommentIds = [
       ...new Set(
         notifications
-          .filter(n =>
-            (n.type === 'comment' || n.type === 'reply') &&
-            n.data?.comment_id &&
-            !n.data?.actor_id &&
-            !n.data?.actor_name
-          )
+          .filter(n => (n.type === 'comment' || n.type === 'reply') && n.data?.comment_id)
           .map(n => n.data.comment_id)
       ),
     ];
-    let commentActorMap = {}; // comment_id -> { id, display_name, avatar_url }
-    if (missingCommentIds.length > 0) {
+    let commentDataMap = {}; // comment_id -> { body, actor: { id, _resolved_name, avatar_url } }
+    if (allCommentIds.length > 0) {
       const comments = await prisma.comment.findMany({
-        where: { id: { in: missingCommentIds } },
+        where: { id: { in: allCommentIds } },
         select: {
           id: true,
+          body: true,
           anonymous_user_id: true,
           user: { select: { id: true, display_name: true, username: true, anon_number: true, avatar_url: true } },
         },
       });
       comments.forEach(c => {
-        if (c.user) {
-          const name = c.user.display_name || c.user.username || (c.user.anon_number ? `User #${c.user.anon_number}` : null) || 'A Clocked User';
-          commentActorMap[c.id] = { ...c.user, _resolved_name: name };
-        }
+        const actor = c.user ? {
+          id: c.user.id,
+          avatar_url: c.user.avatar_url || null,
+          _resolved_name: c.user.display_name || c.user.username || (c.user.anon_number ? `User #${c.user.anon_number}` : null) || null,
+        } : null;
+        commentDataMap[c.id] = { body: c.body || null, actor };
       });
     }
+    // Keep backward-compat alias
+    const commentActorMap = Object.fromEntries(
+      Object.entries(commentDataMap).filter(([, v]) => v.actor).map(([k, v]) => [k, v.actor])
+    );
 
     const enriched = notifications
       .map(n => {
@@ -84,6 +86,12 @@ router.get('/', requireAuth, async (req, res) => {
           data.actor_id = a.id;
           data.actor_name = a._resolved_name;
           data.actor_avatar = a.avatar_url || null;
+        }
+
+        // Always backfill comment_body from live DB (fixes missing body in old notifications)
+        if ((n.type === 'comment' || n.type === 'reply') && data.comment_id && !data.comment_body) {
+          const cd = commentDataMap[data.comment_id];
+          if (cd?.body) data.comment_body = cd.body;
         }
 
         return { ...n, data };
