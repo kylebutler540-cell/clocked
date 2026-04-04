@@ -21,31 +21,12 @@ function Avatar({ url, name, size = 40 }) {
   );
 }
 
-function ActionIcon({ type }) {
-  const icons = {
-    like: { bg: '#FEF3C7', color: '#D97706', emoji: '👍' },
-    dislike: { bg: '#FEE2E2', color: '#DC2626', emoji: '👎' },
-    comment: { bg: '#EDE9FE', color: '#7C3AED', emoji: '💬' },
-    reply: { bg: '#EDE9FE', color: '#7C3AED', emoji: '↩️' },
-    follow: { bg: '#DCFCE7', color: '#16A34A', emoji: '➕' },
-  };
-  const icon = icons[type] || { bg: 'var(--bg-elevated)', color: 'var(--text-muted)', emoji: '🔔' };
-  return (
-    <div style={{
-      width: 20, height: 20, borderRadius: '50%', background: icon.bg,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 11, position: 'absolute', bottom: -2, right: -2,
-      border: '1.5px solid var(--bg-card)',
-    }}>
-      {icon.emoji}
-    </div>
-  );
-}
+// ActionIcon removed — alerts rely on text + avatar only
 
 function NotificationItem({ n, onCommentLike, onCommentReply }) {
   const navigate = useNavigate();
   const data = n.data || {};
-  const actorName = data.actor_name || 'Someone';
+  const actorName = data.actor_name || 'A Clocked User';
   const actorAvatar = data.actor_avatar || null;
   const actorId = data.actor_id || null;
   const isComment = n.type === 'comment' || n.type === 'reply';
@@ -87,7 +68,7 @@ function NotificationItem({ n, onCommentLike, onCommentReply }) {
         />
       )}
 
-      {/* Avatar + action badge — above the tap target */}
+      {/* Avatar — tapping opens actor's profile */}
       <div style={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
         <div
           style={{ cursor: actorId ? 'pointer' : 'default' }}
@@ -95,7 +76,6 @@ function NotificationItem({ n, onCommentLike, onCommentReply }) {
         >
           <Avatar url={actorAvatar} name={actorName} size={44} />
         </div>
-        <ActionIcon type={n.type} />
       </div>
 
       {/* Content — above the tap target */}
@@ -154,13 +134,17 @@ function NotificationItem({ n, onCommentLike, onCommentReply }) {
               onClick={handleLikeComment}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
-                background: n._commentLiked ? 'var(--purple-glow)' : 'var(--bg-elevated)',
-                border: `1px solid ${n._commentLiked ? 'var(--purple)' : 'var(--border)'}`,
-                color: n._commentLiked ? 'var(--purple)' : 'var(--text-muted)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
                 borderRadius: 20, padding: '4px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill={n._commentLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24"
+                fill={n._commentLiked ? '#ef4444' : 'none'}
+                stroke={n._commentLiked ? '#ef4444' : 'currentColor'}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
               Like

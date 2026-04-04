@@ -14,20 +14,25 @@ router.get('/', requireAuth, async (req, res) => {
     });
 
     // 1. Batch-fetch by actor_id (new-style notifications)
-    const missingActorIds = [
+    // Fetch ALL actor IDs (even ones with actor_name stored) to ensure fresh data
+    const allActorIds = [
       ...new Set(
         notifications
-          .filter(n => n.data?.actor_id && !n.data?.actor_name)
+          .filter(n => n.data?.actor_id)
           .map(n => n.data.actor_id)
       ),
     ];
     let actorMap = {};
-    if (missingActorIds.length > 0) {
+    if (allActorIds.length > 0) {
       const actors = await prisma.user.findMany({
-        where: { id: { in: missingActorIds } },
-        select: { id: true, display_name: true, avatar_url: true },
+        where: { id: { in: allActorIds } },
+        select: { id: true, display_name: true, username: true, anon_number: true, avatar_url: true },
       });
-      actors.forEach(a => { actorMap[a.id] = a; });
+      actors.forEach(a => {
+        // Best display name: display_name > username > "User #anon_number" > "A Clocked User"
+        const name = a.display_name || a.username || (a.anon_number ? `User #${a.anon_number}` : null) || 'A Clocked User';
+        actorMap[a.id] = { ...a, _resolved_name: name };
+      });
     }
 
     // 2. For old comment/reply notifications with comment_id but no actor_id,
@@ -51,29 +56,32 @@ router.get('/', requireAuth, async (req, res) => {
         select: {
           id: true,
           anonymous_user_id: true,
-          user: { select: { id: true, display_name: true, avatar_url: true } },
+          user: { select: { id: true, display_name: true, username: true, anon_number: true, avatar_url: true } },
         },
       });
       comments.forEach(c => {
-        if (c.user) commentActorMap[c.id] = c.user;
+        if (c.user) {
+          const name = c.user.display_name || c.user.username || (c.user.anon_number ? `User #${c.user.anon_number}` : null) || 'A Clocked User';
+          commentActorMap[c.id] = { ...c.user, _resolved_name: name };
+        }
       });
     }
 
     const enriched = notifications.map(n => {
       let data = { ...n.data };
 
-      // Enrich via actor_id
-      if (data.actor_id && !data.actor_name && actorMap[data.actor_id]) {
+      // Always re-enrich via actor_id (picks up name changes + fixes null display_name)
+      if (data.actor_id && actorMap[data.actor_id]) {
         const a = actorMap[data.actor_id];
-        data.actor_name = a.display_name || null;
+        data.actor_name = a._resolved_name;
         data.actor_avatar = a.avatar_url || null;
       }
 
       // Enrich old comment/reply notifications via comment lookup
-      if (!data.actor_id && !data.actor_name && data.comment_id && commentActorMap[data.comment_id]) {
+      if (!data.actor_id && data.comment_id && commentActorMap[data.comment_id]) {
         const a = commentActorMap[data.comment_id];
         data.actor_id = a.id;
-        data.actor_name = a.display_name || null;
+        data.actor_name = a._resolved_name;
         data.actor_avatar = a.avatar_url || null;
       }
 
