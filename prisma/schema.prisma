@@ -195,6 +195,17 @@ model Notification {
   @@map("notifications")
 }
 
+/// Cached employer branding: Clearbit / og:image / negative cache (logo_url null), refreshed every ~30 days.
+model EmployerLogo {
+  place_id            String   @id
+  domain              String?
+  logo_url            String?
+  logo_last_updated   DateTime @default(now())
+  source              String?
+
+  @@map("employer_logos")
+}
+
 enum RatingEmoji {
   BAD
   NEUTRAL

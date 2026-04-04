@@ -1,49 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import api from '../lib/api';
-
-const _logoDomainCache = {};
-
-// Company logo — fetches real domain from backend via Google Places, then uses Clearbit
-function CompanyLogo({ placeId, name }) {
-  const [domain, setDomain] = useState(_logoDomainCache[placeId] ?? undefined);
-  const [imgErr, setImgErr] = useState(false);
-
-  useEffect(() => {
-    if (!placeId) return;
-    if (_logoDomainCache[placeId] !== undefined) {
-      setDomain(_logoDomainCache[placeId]);
-      return;
-    }
-    api.get(`/employers/logo/${placeId}`)
-      .then(res => {
-        const d = res.data.domain || null;
-        _logoDomainCache[placeId] = d;
-        setDomain(d);
-      })
-      .catch(() => {
-        _logoDomainCache[placeId] = null;
-        setDomain(null);
-      });
-  }, [placeId]);
-
-  if (!domain || imgErr) {
-    return (
-      <div style={{
-        width: 36, height: 36, borderRadius: 8, background: 'var(--bg-elevated)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 18, flexShrink: 0, border: '1px solid var(--border)',
-      }}>🏢</div>
-    );
-  }
-  return (
-    <img
-      src={`https://logo.clearbit.com/${domain}`}
-      alt={name}
-      onError={() => setImgErr(true)}
-      style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 3, border: '1px solid var(--border)' }}
-    />
-  );
-}
+import BusinessLogo from './BusinessLogo';
 
 function getDistanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
@@ -58,6 +15,7 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [logoBatch, setLogoBatch] = useState(null);
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
 
@@ -117,6 +75,19 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
   }, [query, search]);
 
   useEffect(() => {
+    if (!results.length) {
+      setLogoBatch(null);
+      return;
+    }
+    setLogoBatch(null);
+    const ids = results.map(r => r.place_id).filter(Boolean).slice(0, 25);
+    api
+      .post('/employers/logos/batch', { placeIds: ids })
+      .then(res => setLogoBatch(res.data.logos || {}))
+      .catch(() => setLogoBatch({}));
+  }, [results]);
+
+  useEffect(() => {
     function handleClick(e) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false);
     }
@@ -170,7 +141,7 @@ export default function EmployerSearch({ onSelect, placeholder = 'Search employe
               className="search-result-item"
               onMouseDown={() => handleSelect(place)}
             >
-              <CompanyLogo name={place.name} placeId={place.place_id} />
+              <BusinessLogo variant="batched" batch={logoBatch} placeId={place.place_id} name={place.name} size={36} borderRadius={8} />
               <div className="search-result-info" style={{ flex: 1, minWidth: 0 }}>
                 <div className="search-result-name">{place.name}</div>
                 <div className="search-result-address">{place.address}</div>

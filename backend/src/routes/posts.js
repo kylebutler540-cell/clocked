@@ -257,7 +257,18 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
       });
     }
 
-    res.json(employers.slice(0, 50));
+    const top = employers.slice(0, 50);
+    const placeIds = top.map(e => e.employer_place_id);
+    const logoRows = placeIds.length
+      ? await prisma.employerLogo.findMany({ where: { place_id: { in: placeIds } } })
+      : [];
+    const logoByPlace = Object.fromEntries(logoRows.map(r => [r.place_id, r]));
+
+    res.json(top.map(e => ({
+      ...e,
+      logo_url: logoByPlace[e.employer_place_id]?.logo_url ?? null,
+      domain: logoByPlace[e.employer_place_id]?.domain ?? null,
+    })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch top employers" });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { cacheGet, cacheSet } from '../lib/cache';
@@ -26,53 +26,7 @@ function StarDisplay({ rating }) {
   );
 }
 import Feed from '../components/Feed';
-
-// Logo domain cache (survives re-renders, resets on page refresh — fine)
-const _logoDomainCache = {};
-
-function CompanyLogo({ placeId, name, size = 52 }) {
-  const [domain, setDomain] = useState(_logoDomainCache[placeId] ?? undefined); // undefined = not yet fetched
-  const [imgErr, setImgErr] = useState(false);
-  const base = { width: size, height: size, borderRadius: 12, flexShrink: 0 };
-
-  useEffect(() => {
-    if (!placeId) return;
-    if (_logoDomainCache[placeId] !== undefined) {
-      setDomain(_logoDomainCache[placeId]);
-      return;
-    }
-    api.get(`/employers/logo/${placeId}`)
-      .then(res => {
-        const d = res.data.domain || null;
-        _logoDomainCache[placeId] = d;
-        setDomain(d);
-      })
-      .catch(() => {
-        _logoDomainCache[placeId] = null;
-        setDomain(null);
-      });
-  }, [placeId]);
-
-  const Fallback = () => (
-    <div style={{ ...base, background: 'linear-gradient(135deg, #A855F7, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.46 }}>
-      🏢
-    </div>
-  );
-
-  // Still loading
-  if (domain === undefined) return <Fallback />;
-  // No domain found or image failed
-  if (!domain || imgErr) return <Fallback />;
-
-  return (
-    <img
-      src={`https://logo.clearbit.com/${domain}`}
-      alt={name}
-      onError={() => setImgErr(true)}
-      style={{ ...base, objectFit: 'contain', background: '#fff', padding: 6, border: '1px solid var(--border)' }}
-    />
-  );
-}
+import BusinessLogo from '../components/BusinessLogo';
 import StarRating from '../components/StarRating';
 
 const GREEN_EMOJI_FILTER = 'hue-rotate(85deg) saturate(1.4) brightness(1.1)';
@@ -145,7 +99,7 @@ export default function CompanyProfile() {
       {/* Company header */}
       <div className="company-header">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
-          <CompanyLogo placeId={placeId} name={profile?.employer_name || stateInfo.name} size={52} />
+          <BusinessLogo placeId={placeId} name={profile?.employer_name || stateInfo.name} size={52} borderRadius={12} />
           <div style={{ flex: 1 }}>
             <h1 className="company-name" style={{ margin: '0 0 4px' }}>
               {profile?.employer_name || stateInfo.name || 'Company'}

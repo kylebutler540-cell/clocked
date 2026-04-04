@@ -1,6 +1,11 @@
 const express = require('express');
 const axios = require('axios');
 const prisma = require('../lib/prisma');
+const {
+  getOrResolveLogo,
+  getOrResolveLogosBatch,
+  invalidateLogo,
+} = require('../lib/employerLogo');
 
 const router = express.Router();
 
@@ -94,42 +99,50 @@ router.get('/details/:placeId', async (req, res) => {
   }
 });
 
-// Get logo domain for a company via Google Places website field
-// Returns { domain } — frontend uses this with clearbit
-const logoCache = new Map(); // placeId -> domain string or null, in-memory cache
-
+// Resolved logo URL (DB cache + Clearbit / og:image). Same shape as TypeScript Business type subset.
 router.get('/logo/:placeId', async (req, res) => {
-  const { placeId } = req.params;
-
-  // Serve from cache if available
-  if (logoCache.has(placeId)) {
-    return res.json({ domain: logoCache.get(placeId) });
-  }
-
   try {
-    const response = await axios.get(`${GOOGLE_PLACES_BASE}/details/json`, {
-      params: {
-        place_id: placeId,
-        fields: 'website',
-        key: process.env.GOOGLE_MAPS_API_KEY,
-      },
+    const payload = await getOrResolveLogo(req.params.placeId);
+    res.json({
+      placeId: payload.placeId,
+      domain: payload.domain,
+      logoUrl: payload.logoUrl,
+      logoLastUpdated: payload.logoLastUpdated,
+      source: payload.source,
     });
-
-    let domain = null;
-    const website = response.data?.result?.website;
-    if (website) {
-      try {
-        const url = new URL(website);
-        // Strip www. prefix
-        domain = url.hostname.replace(/^www\./, '');
-      } catch { /* bad URL, skip */ }
-    }
-
-    logoCache.set(placeId, domain);
-    res.json({ domain });
   } catch (err) {
-    console.error('Logo lookup error:', err.message);
-    res.json({ domain: null });
+    console.error('Logo endpoint error:', err.message);
+    res.json({
+      placeId: req.params.placeId,
+      domain: null,
+      logoUrl: null,
+      logoLastUpdated: null,
+      source: null,
+    });
+  }
+});
+
+// Batch logos for search UIs (deduped, limited concurrency server-side)
+router.post('/logos/batch', async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.placeIds) ? req.body.placeIds : [];
+    const capped = ids.filter(Boolean).slice(0, 25);
+    const logos = await getOrResolveLogosBatch(capped, 4);
+    res.json({ logos });
+  } catch (err) {
+    console.error('Batch logos error:', err.message);
+    res.status(500).json({ error: 'Batch logo fetch failed' });
+  }
+});
+
+// Client reports broken image — force refresh on next fetch
+router.post('/logo/:placeId/invalidate', async (req, res) => {
+  try {
+    await invalidateLogo(req.params.placeId);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Logo invalidate error:', err.message);
+    res.json({ ok: false });
   }
 });
 
@@ -138,7 +151,7 @@ router.get('/profile/:placeId', async (req, res) => {
   try {
     const { placeId } = req.params;
 
-    const [posts, ratings, starAgg] = await Promise.all([
+    const [posts, ratings, starAgg, logoRow] = await Promise.all([
       prisma.post.findMany({
         where: { employer_place_id: placeId },
         orderBy: { created_at: 'desc' },
@@ -155,6 +168,7 @@ router.get('/profile/:placeId', async (req, res) => {
         _avg: { rating: true },
         _count: { rating: true },
       }),
+      prisma.employerLogo.findUnique({ where: { place_id: placeId } }),
     ]);
 
     const totalReviews = ratings.reduce((acc, r) => acc + r._count.rating_emoji, 0);
@@ -175,6 +189,9 @@ router.get('/profile/:placeId', async (req, res) => {
       rating_counts: ratingCounts,
       avg_rating,
       star_rating_count,
+      domain: logoRow?.domain ?? null,
+      logo_url: logoRow?.logo_url ?? null,
+      logo_last_updated: logoRow?.logo_last_updated ?? null,
     });
   } catch (err) {
     console.error(err);
@@ -192,11 +209,19 @@ router.get('/top', async (req, res) => {
       take: 20,
     });
 
+    const ids = grouped.map(g => g.employer_place_id);
+    const logos = await prisma.employerLogo.findMany({
+      where: { place_id: { in: ids } },
+    });
+    const logoByPlace = Object.fromEntries(logos.map(l => [l.place_id, l]));
+
     res.json(grouped.map(g => ({
       place_id: g.employer_place_id,
       employer_name: g.employer_name,
       employer_address: g.employer_address,
       review_count: g._count.id,
+      logo_url: logoByPlace[g.employer_place_id]?.logo_url ?? null,
+      domain: logoByPlace[g.employer_place_id]?.domain ?? null,
     })));
   } catch (err) {
     console.error(err);

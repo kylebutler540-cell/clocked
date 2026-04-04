@@ -1,27 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-
-// Strip generic suffixes to get the brand name for logo lookup
-function getBrandSlug(name) {
-  if (!name) return '';
-  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
-  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
-  return brand.toLowerCase();
-}
-
-function CompanyLogo({ name, size = 32 }) {
-  const [err, setErr] = useState(false);
-  const slug = getBrandSlug(name);
-  const src = `https://logo.clearbit.com/${slug}.com`;
-  const style = { width: size, height: size, borderRadius: 8, objectFit: 'contain', flexShrink: 0, background: '#fff', padding: 3, border: '1px solid var(--border)' };
-  if (err || !slug) {
-    return (
-      <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.55, padding: 0, background: 'var(--bg-elevated)' }}>🏢</div>
-    );
-  }
-  return <img src={src} alt={name} onError={() => setErr(true)} style={style} />;
-}
+import BusinessLogo from './BusinessLogo';
 
 function UserAvatar({ avatarUrl, displayName, size = 32 }) {
   const initial = displayName ? displayName[0].toUpperCase() : 'A';
@@ -48,6 +28,7 @@ export default function GlobalSearch({ placeholder = 'Search companies, reviews,
   const [results, setResults] = useState(null); // null = no search yet
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [logoBatch, setLogoBatch] = useState(null);
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
@@ -70,6 +51,26 @@ export default function GlobalSearch({ placeholder = 'Search companies, reviews,
     debounceRef.current = setTimeout(() => search(query), 280);
     return () => clearTimeout(debounceRef.current);
   }, [query, search]);
+
+  useEffect(() => {
+    if (!results) {
+      setLogoBatch(null);
+      return;
+    }
+    const ids = new Set();
+    (results.companies || []).forEach(c => { if (c.place_id) ids.add(c.place_id); });
+    (results.posts || []).forEach(p => { if (p.employer_place_id) ids.add(p.employer_place_id); });
+    const placeIds = [...ids].slice(0, 25);
+    if (!placeIds.length) {
+      setLogoBatch({});
+      return;
+    }
+    setLogoBatch(null);
+    api
+      .post('/employers/logos/batch', { placeIds })
+      .then(res => setLogoBatch(res.data.logos || {}))
+      .catch(() => setLogoBatch({}));
+  }, [results]);
 
   useEffect(() => {
     function handleClick(e) {
@@ -128,7 +129,7 @@ export default function GlobalSearch({ placeholder = 'Search companies, reviews,
                   navigate(`/company/${c.place_id}`, { state: { name: c.name, address: c.address } });
                   close();
                 }}>
-                  <CompanyLogo name={c.name} size={36} />
+                  <BusinessLogo variant="batched" batch={logoBatch} placeId={c.place_id} name={c.name} size={36} borderRadius={8} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="search-result-name">{c.name}</div>
                     {c.address && <div className="search-result-address">{c.address.replace(/,?\s*USA\s*$/, '').trim()}</div>}
@@ -168,7 +169,7 @@ export default function GlobalSearch({ placeholder = 'Search companies, reviews,
                   close();
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                    <CompanyLogo name={p.employer_name} size={24} />
+                    <BusinessLogo variant="batched" batch={logoBatch} placeId={p.employer_place_id} name={p.employer_name} size={24} borderRadius={6} />
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.employer_name}
                     </span>

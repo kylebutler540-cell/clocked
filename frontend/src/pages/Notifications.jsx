@@ -195,13 +195,7 @@ export default function Notifications() {
   useEffect(() => {
     if (!user?.email) { setLoading(false); return; }
 
-    const cached = cacheGet('notifications');
-    if (cached && isFresh('notifications')) {
-      setNotifications(cached);
-      setLoading(false);
-    }
-
-    // Always revalidate
+    // Always fetch fresh — never serve stale actor names from cache
     api.get('/notifications')
       .then(res => {
         cacheSet('notifications', res.data);

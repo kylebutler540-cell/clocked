@@ -4,14 +4,6 @@ const { optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Strip brand suffixes to get a clean domain slug for logo lookup
-function getBrandDomain(name) {
-  if (!name) return null;
-  const stopWords = /\b(supercenter|superstore|super|store|market|supermarket|center|centre|depot|warehouse|express|neighborhood|garden|pharmacy|optical|gas|station|bakery|deli|cafe|restaurant|grill|bar|pub|inn|hotel|motel|suites|lodge|clinic|hospital|medical|dental|office|headquarters|corporate|co\.|inc\.|llc|ltd|group|holdings|corp|services|solutions)\b/gi;
-  const brand = name.replace(stopWords, '').replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/)[0];
-  return brand ? `${brand.toLowerCase()}.com` : null;
-}
-
 // Global search: companies (from our DB) + posts + users
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -81,12 +73,25 @@ router.get('/', optionalAuth, async (req, res) => {
       }),
     ]);
 
+    const allPlaceIds = [
+      ...new Set([
+        ...companies.map(c => c.employer_place_id),
+        ...posts.map(p => p.employer_place_id),
+      ].filter(Boolean)),
+    ];
+    const logoRows = allPlaceIds.length
+      ? await prisma.employerLogo.findMany({ where: { place_id: { in: allPlaceIds } } })
+      : [];
+    const logoByPlace = Object.fromEntries(logoRows.map(r => [r.place_id, r]));
+
     res.json({
       companies: companies.map(c => ({
         place_id: c.employer_place_id,
         name: c.employer_name,
         address: c.employer_address,
-        logo_domain: getBrandDomain(c.employer_name),
+        logo_url: logoByPlace[c.employer_place_id]?.logo_url ?? null,
+        domain: logoByPlace[c.employer_place_id]?.domain ?? null,
+        logo_last_updated: logoByPlace[c.employer_place_id]?.logo_last_updated ?? null,
       })),
       posts: posts.map(p => ({
         id: p.id,
@@ -95,6 +100,8 @@ router.get('/', optionalAuth, async (req, res) => {
         rating_emoji: p.rating_emoji,
         employer_name: p.employer_name,
         employer_place_id: p.employer_place_id,
+        logo_url: logoByPlace[p.employer_place_id]?.logo_url ?? null,
+        domain: logoByPlace[p.employer_place_id]?.domain ?? null,
         created_at: p.created_at,
         likes: p.likes,
         anonymous_user_id: p.anonymous_user_id,

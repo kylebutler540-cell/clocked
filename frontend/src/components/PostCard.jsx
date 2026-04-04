@@ -9,6 +9,7 @@ import { useToast } from '../context/ToastContext';
 import FlagModal from './FlagModal';
 import CommentSheet from './CommentSheet';
 import { clearFeedCache } from './Feed';
+import BusinessLogo from './BusinessLogo';
 
 // Module-level reaction cache: survives navigation within the same browser session
 // Falls back to localStorage for cross-session persistence
@@ -325,18 +326,30 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         </div>
 
         {/* Employer name + location — now below the author row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, marginBottom: 2 }}>
-          <button className="post-employer-name" onClick={handleEmployerClick} style={{ fontSize: 13 }}>
-            {post.employer_name}
-          </button>
-          {post.employer_address && (
-            <>
-              <span className="post-employer-sep">·</span>
-              <span className="post-meta-time">
-                {post.employer_address.replace(/,?\s*USA\s*$/, '').trim()}
-              </span>
-            </>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, marginBottom: 2 }}>
+          {!isMock && post.employer_place_id && (
+            <button
+              type="button"
+              onClick={handleEmployerClick}
+              style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', flexShrink: 0, display: 'flex' }}
+              aria-label={`${post.employer_name} profile`}
+            >
+              <BusinessLogo placeId={post.employer_place_id} name={post.employer_name} size={26} borderRadius={6} />
+            </button>
           )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
+            <button className="post-employer-name" onClick={handleEmployerClick} style={{ fontSize: 13 }}>
+              {post.employer_name}
+            </button>
+            {post.employer_address && (
+              <>
+                <span className="post-employer-sep">·</span>
+                <span className="post-meta-time">
+                  {post.employer_address.replace(/,?\s*USA\s*$/, '').trim()}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Title */}

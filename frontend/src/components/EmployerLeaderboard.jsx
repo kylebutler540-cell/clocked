@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { cacheGet, cacheSet, isFresh } from '../lib/cache';
+import BusinessLogo from './BusinessLogo';
 
 // Read-only star display with half-star support
 function StarDisplay({ rating }) {
@@ -48,6 +49,7 @@ export default function EmployerLeaderboard({ location }) {
   const [employers, setEmployers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [logoBatch, setLogoBatch] = useState(null);
 
   useEffect(() => {
     const cacheKey = 'employer-leaderboard/' + (location || '');
@@ -84,6 +86,19 @@ export default function EmployerLeaderboard({ location }) {
 
     fetchEmployers();
   }, [location]);
+
+  useEffect(() => {
+    if (!employers.length) {
+      setLogoBatch(null);
+      return;
+    }
+    setLogoBatch(null);
+    const ids = employers.map(e => e.employer_place_id).filter(Boolean).slice(0, 25);
+    api
+      .post('/employers/logos/batch', { placeIds: ids })
+      .then(res => setLogoBatch(res.data.logos || {}))
+      .catch(() => setLogoBatch({}));
+  }, [employers]);
 
   if (loading) {
     return (
@@ -152,6 +167,10 @@ export default function EmployerLeaderboard({ location }) {
             onClick={() => navigate(`/company/${employer.employer_place_id}`)}
           >
             <div className="employer-rank">#{index + 1}</div>
+
+            <div style={{ flexShrink: 0 }}>
+              <BusinessLogo variant="batched" batch={logoBatch} placeId={employer.employer_place_id} name={employer.employer_name} size={40} borderRadius={10} />
+            </div>
 
             <div className="employer-info-col">
               <div className="employer-name">{employer.employer_name}</div>
