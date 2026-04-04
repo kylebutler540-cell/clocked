@@ -202,7 +202,7 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                 </svg>
-                <h3>{isCompanyFeed ? 'Be the first to review this workplace' : 'Be the first to review a workplace near you'}</h3>
+                <h3>{(isCompanyFeed && filters.rating) ? 'Write a review' : isCompanyFeed ? 'Be the first to review this workplace' : 'Be the first to review a workplace near you'}</h3>
                 <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
                 <button
                   className="btn btn-primary"
