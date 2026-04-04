@@ -38,10 +38,7 @@ function RightSidebar() {
 
 
       <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '0 2px' }}>
-        <a href="#" style={{ marginRight: 8 }}>Terms</a>
-        <a href="#" style={{ marginRight: 8 }}>Privacy</a>
-        <a href="#">Contact</a>
-        <div style={{ marginTop: 4 }}>© 2026 Clocked</div>
+        <div>© 2026 Clocked</div>
       </div>
     </>
   );
