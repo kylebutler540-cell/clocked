@@ -13,8 +13,10 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(true);
 
-  // From alert navigation — highlight a specific comment
+  // From alert navigation — highlight a specific comment + pre-seed liked state
   const highlightCommentId = location.state?.highlightComment || location.state?.openReplyTo || null;
+  // Map of commentId → liked boolean passed from Alerts tab so the sheet shows correct state immediately
+  const preloadedLikes = location.state?.commentLikes || null;
 
   useEffect(() => {
     api.get(`/posts/${id}`)
@@ -30,13 +32,14 @@ export default function PostDetail() {
   if (!post) return null;
 
   return (
-    <div className="post-detail-page">
+    <div className="post-detail-page" style={{ position: 'relative', minHeight: '100dvh', background: '#000' }}>
       <PostCard post={post} onDelete={() => navigate('/')} />
       <CommentSheet
         postId={id}
         post={post}
         isOpen={sheetOpen}
         highlightCommentId={highlightCommentId}
+        preloadedLikes={preloadedLikes}
         onClose={() => { setSheetOpen(false); navigate(-1); }}
       />
     </div>

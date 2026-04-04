@@ -34,10 +34,16 @@ function NotificationItem({ n, onCommentLike }) {
   const hasPost = !!data.post_id;
 
   // Tapping the card navigates to the post, with comment highlighted if applicable
+  // Also passes the current liked state so CommentSheet renders it immediately (no flicker)
   function handleCardClick() {
     if (!hasPost) return;
     if (data.comment_id) {
-      navigate(`/post/${data.post_id}`, { state: { highlightComment: data.comment_id } });
+      navigate(`/post/${data.post_id}`, {
+        state: {
+          highlightComment: data.comment_id,
+          commentLikes: { [data.comment_id]: n._commentLiked ?? false },
+        },
+      });
     } else {
       navigate(`/post/${data.post_id}`);
     }
@@ -57,7 +63,13 @@ function NotificationItem({ n, onCommentLike }) {
   function handleReply(e) {
     e.stopPropagation();
     if (!hasPost) return;
-    navigate(`/post/${data.post_id}`, { state: { openReplyTo: data.comment_id } });
+    navigate(`/post/${data.post_id}`, {
+      state: {
+        openReplyTo: data.comment_id,
+        highlightComment: data.comment_id,
+        commentLikes: { [data.comment_id]: n._commentLiked ?? false },
+      },
+    });
   }
 
   const commentPreview = isComment && data.comment_body

@@ -137,7 +137,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null, preloadedLikes = null }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -187,16 +187,41 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
     // Load from cache first — show immediately, skip loading spinner
     const cached = cacheGet(cacheKey);
     if (cached) {
-      setComments(cached);
+      // Apply preloaded likes immediately so liked state is correct from first render
+      setComments(preloadedLikes
+        ? cached.map(c => ({
+            ...c,
+            liked: preloadedLikes[c.id] !== undefined ? preloadedLikes[c.id] : c.liked,
+            replies: c.replies ? c.replies.map(r => ({
+              ...r,
+              liked: preloadedLikes[r.id] !== undefined ? preloadedLikes[r.id] : r.liked,
+            })) : c.replies,
+          }))
+        : cached
+      );
       setLoading(false);
+    }
+
+    // Helper: apply preloaded liked states so they show instantly before server responds
+    function applyPreloadedLikes(list) {
+      if (!preloadedLikes) return list;
+      return list.map(c => ({
+        ...c,
+        liked: preloadedLikes[c.id] !== undefined ? preloadedLikes[c.id] : c.liked,
+        replies: c.replies ? c.replies.map(r => ({
+          ...r,
+          liked: preloadedLikes[r.id] !== undefined ? preloadedLikes[r.id] : r.liked,
+        })) : c.replies,
+      }));
     }
 
     // Always revalidate silently
     api.get(`/posts/${postId}/comments`)
       .then(res => {
-        const changed = JSON.stringify(res.data) !== JSON.stringify(cached);
-        cacheSet(cacheKey, res.data);
-        if (changed) setComments(res.data);
+        const withLikes = applyPreloadedLikes(res.data);
+        const changed = JSON.stringify(withLikes) !== JSON.stringify(cached);
+        cacheSet(cacheKey, withLikes);
+        if (changed) setComments(withLikes);
       })
       .catch(() => {})
       .finally(() => { if (!cached) setLoading(false); });
