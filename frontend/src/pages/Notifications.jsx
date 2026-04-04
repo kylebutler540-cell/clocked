@@ -95,7 +95,7 @@ function NotificationItem({ n, onCommentLike }) {
         gap: 12,
         padding: '14px 16px',
         background: n.read ? 'transparent' : 'var(--purple-glow)',
-        borderBottom: '1px solid var(--border)',
+
         cursor: hasPost ? 'pointer' : 'default',
       }}
     >
@@ -111,7 +111,7 @@ function NotificationItem({ n, onCommentLike }) {
       <div style={{ flex: 1, minWidth: 0 }}>
 
         {/* Top row: text + timestamp */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <p style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.4 }}>
             {actorName && (
               <strong
@@ -135,7 +135,7 @@ function NotificationItem({ n, onCommentLike }) {
               </span>
             )}
           </p>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0, marginTop: 1 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
             {timeAgo(n.created_at)}
           </span>
         </div>
