@@ -33,6 +33,31 @@
 Fee drag was killing the account. Most old trades were +0.2–0.9% gains = net loss after 1.2% fees.
 The only profitable playbook is fewer, bigger swings (+3%+). v3 is built around this.
 
+## Clocked — App Store Strategy
+
+### Architecture = instant updates
+- Entire app is React (frontend) + Node/Express (backend), both on Railway
+- Zero native iOS/Android code has ever been written
+- All changes deploy instantly via `railway up` — no Apple review ever needed for any feature
+- When ready for App Store: wrap in **Capacitor** (not a rewrite — just a shell around the existing web app)
+
+### What requires App Store submission (rare):
+- First-ever submission (v1.0) — one-time, 1-3 day Apple review
+- App icon / name / splash screen changes
+- Adding new device permissions (camera already works via web, but push notifications need native setup first time)
+- Deep links (`clocked://` URL scheme)
+- Major Capacitor version upgrades
+- Apple-forced SDK compatibility updates (~once/year)
+
+### What NEVER requires App Store:
+- Every UI change, new feature, bug fix, redesign
+- Auth, onboarding, profiles, feed, backend changes
+- Basically everything we've ever built
+
+### Strategy: get web perfect → wrap in Capacitor → submit once → all future updates instant
+- Users with the app installed auto-get updates within ~2 min of Railway deploy
+- No update prompt, no user action required — like Netflix/Twitter pushing updates silently
+
 ## Clocked App
 - Anonymous workplace review app — 50/50 Lukas + buddy
 - **LIVE at:** https://frontend-production-d4bd.up.railway.app
