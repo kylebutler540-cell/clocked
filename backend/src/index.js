@@ -22,6 +22,9 @@ const messageRoutes = require('./routes/messages');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust Railway's proxy so rate limiter can read real IPs
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
