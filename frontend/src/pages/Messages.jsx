@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { io as socketIO } from 'socket.io-client';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useMessaging } from '../context/MessagingContext';
@@ -104,6 +105,7 @@ function ConversationView({ userId, onBack, onMessageSent }) {
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const lastCountRef = useRef(0);
+  const socketRef = useRef(null);
 
   const scrollToBottom = useCallback((behavior = 'smooth') => {
     requestAnimationFrame(() => {
@@ -152,9 +154,47 @@ function ConversationView({ userId, onBack, onMessageSent }) {
 
   useEffect(() => {
     fetchMessages();
-    pollRef.current = setInterval(() => fetchMessages({ silent: true }), 6000);
+    pollRef.current = setInterval(() => fetchMessages({ silent: true }), 15000);
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]);
+
+  // Socket.io real-time connection
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const API_BASE = import.meta.env.VITE_API_URL || 'https://backend-production-7798f.up.railway.app';
+    const socket = socketIO(API_BASE, {
+      auth: { userId: currentUser.id },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+    });
+
+    socketRef.current = socket;
+
+    socket.on('new_message', (msg) => {
+      if (msg.sender_id === userId) {
+        setMessages(prev => {
+          if (prev.find(m => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        scrollToBottom('smooth');
+        onMessageSent?.(userId, msg.body, msg.created_at, msg.sender);
+      }
+    });
+
+    socket.on('message_sent', (msg) => {
+      setMessages(prev => prev.map(m =>
+        m._status === 'sending' && m.body === msg.body
+          ? { ...msg, _status: 'sent' }
+          : m
+      ));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [currentUser?.id, userId]); // eslint-disable-line
 
   // Fix: handle iOS keyboard pushing layout
   useEffect(() => {

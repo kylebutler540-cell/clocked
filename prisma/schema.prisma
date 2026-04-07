@@ -208,19 +208,38 @@ model EmployerLogo {
   @@map("employer_logos")
 }
 
-model Message {
-  id           String   @id @default(cuid())
-  sender_id    String
-  recipient_id String
-  body         String
-  read         Boolean  @default(false)
-  created_at   DateTime @default(now())
+model Conversation {
+  id                  String    @id @default(cuid())
+  participant_ids     String[]
+  last_message        String?
+  last_message_at     DateTime?
+  last_message_sender String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
 
+  messages Message[]
+
+  @@index([participant_ids])
+  @@map("conversations")
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  conversation_id String?
+  sender_id       String
+  recipient_id    String
+  body            String
+  read            Boolean  @default(false)
+  status          String   @default("sent")
+  created_at      DateTime @default(now())
+
+  conversation Conversation? @relation(fields: [conversation_id], references: [id])
   sender    User @relation("sent_messages", fields: [sender_id], references: [id])
   recipient User @relation("received_messages", fields: [recipient_id], references: [id])
 
   @@index([recipient_id])
   @@index([sender_id])
+  @@index([conversation_id])
   @@map("messages")
 }
 

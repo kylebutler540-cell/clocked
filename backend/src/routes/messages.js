@@ -4,230 +4,158 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-const USER_PROFILE_SELECT = {
-  id: true,
-  display_name: true,
-  username: true,
-  avatar_url: true,
-};
+const USER_SELECT = { id: true, display_name: true, username: true, avatar_url: true };
 
-// POST /api/messages/:recipientId — send a message
+// Helper: get or create conversation between two users
+async function getOrCreateConversation(userA, userB) {
+  const existing = await prisma.conversation.findFirst({
+    where: {
+      AND: [
+        { participant_ids: { has: userA } },
+        { participant_ids: { has: userB } },
+      ],
+    },
+  });
+  if (existing) return existing;
+  return prisma.conversation.create({
+    data: { participant_ids: [userA, userB] },
+  });
+}
+
+// POST /api/messages/:recipientId
 router.post('/:recipientId', requireAuth, async (req, res) => {
   try {
     const { body } = req.body;
     const recipientId = req.params.recipientId;
     const senderId = req.user.id;
 
-    if (!body || !body.trim()) {
-      return res.status(400).json({ error: 'Message body cannot be empty' });
-    }
+    if (!body?.trim()) return res.status(400).json({ error: 'Empty message' });
+    if (senderId === recipientId) return res.status(400).json({ error: 'Cannot message yourself' });
 
-    if (senderId === recipientId) {
-      return res.status(400).json({ error: 'Cannot send message to yourself' });
-    }
-
-    // Check recipient exists
     const recipient = await prisma.user.findUnique({ where: { id: recipientId } });
-    if (!recipient) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    if (!recipient) return res.status(404).json({ error: 'User not found' });
 
-    // Create message
+    const conversation = await getOrCreateConversation(senderId, recipientId);
+
     const message = await prisma.message.create({
       data: {
+        conversation_id: conversation.id,
         sender_id: senderId,
         recipient_id: recipientId,
         body: body.trim(),
+        status: 'sent',
       },
-      include: {
-        sender: { select: USER_PROFILE_SELECT },
-        recipient: { select: USER_PROFILE_SELECT },
+      include: { sender: { select: USER_SELECT }, recipient: { select: USER_SELECT } },
+    });
+
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        last_message: body.trim(),
+        last_message_at: message.created_at,
+        last_message_sender: senderId,
       },
     });
 
-    res.status(201).json(message);
+    const io = req.app.get('io');
+    if (io) {
+      const payload = { ...message, conversation_id: conversation.id };
+      io.to(`user:${recipientId}`).emit('new_message', payload);
+      io.to(`user:${senderId}`).emit('message_sent', payload);
+    }
+
+    res.status(201).json({ ...message, conversation_id: conversation.id });
   } catch (err) {
-    console.error(err);
+    console.error('send message error:', err);
     res.status(500).json({ error: 'Failed to send message' });
   }
 });
 
-// GET /api/messages/inbox — get inbox grouped by conversation partner
+// GET /api/messages/inbox
 router.get('/inbox', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all distinct conversation partners (both sent and received)
-    const sentMessages = await prisma.message.findMany({
-      where: { sender_id: userId },
-      distinct: ['recipient_id'],
-      select: { recipient_id: true },
-      orderBy: { created_at: 'desc' },
+    const conversations = await prisma.conversation.findMany({
+      where: { participant_ids: { has: userId } },
+      orderBy: { last_message_at: 'desc' },
     });
 
-    const receivedMessages = await prisma.message.findMany({
-      where: { recipient_id: userId },
-      distinct: ['sender_id'],
-      select: { sender_id: true },
-      orderBy: { created_at: 'desc' },
-    });
+    const result = await Promise.all(conversations.map(async (conv) => {
+      const partnerId = conv.participant_ids.find(id => id !== userId);
+      if (!partnerId) return null;
 
-    const partnerIds = new Set([
-      ...sentMessages.map(m => m.recipient_id),
-      ...receivedMessages.map(m => m.sender_id),
-    ]);
+      const [partner, unreadCount, followedByMe, followedByThem] = await Promise.all([
+        prisma.user.findUnique({ where: { id: partnerId }, select: USER_SELECT }),
+        prisma.message.count({ where: { conversation_id: conv.id, recipient_id: userId, read: false } }),
+        prisma.follow.findUnique({ where: { follower_id_following_id: { follower_id: userId, following_id: partnerId } } }),
+        prisma.follow.findUnique({ where: { follower_id_following_id: { follower_id: partnerId, following_id: userId } } }),
+      ]);
 
-    // For each partner, get last message and unread count
-    const conversations = await Promise.all(
-      Array.from(partnerIds).map(async (partnerId) => {
-        // Get last message
-        const lastMessage = await prisma.message.findFirst({
-          where: {
-            OR: [
-              { sender_id: userId, recipient_id: partnerId },
-              { sender_id: partnerId, recipient_id: userId },
-            ],
-          },
-          orderBy: { created_at: 'desc' },
-          include: {
-            sender: { select: USER_PROFILE_SELECT },
-            recipient: { select: USER_PROFILE_SELECT },
-          },
-        });
+      return {
+        conversation_id: conv.id,
+        user: partner,
+        lastMessage: conv.last_message ? {
+          body: conv.last_message,
+          created_at: conv.last_message_at,
+          sender_id: conv.last_message_sender,
+        } : null,
+        unread: unreadCount,
+        isFriend: !!followedByMe && !!followedByThem,
+      };
+    }));
 
-        // Get unread count
-        const unreadCount = await prisma.message.count({
-          where: {
-            recipient_id: userId,
-            sender_id: partnerId,
-            read: false,
-          },
-        });
-
-        // Check if mutual follows
-        const [isMutualFollow] = await Promise.all([
-          prisma.follow.findUnique({
-            where: {
-              follower_id_following_id: {
-                follower_id: userId,
-                following_id: partnerId,
-              },
-            },
-          }),
-          prisma.follow.findUnique({
-            where: {
-              follower_id_following_id: {
-                follower_id: partnerId,
-                following_id: userId,
-              },
-            },
-          }),
-        ]);
-
-        const followerCheck = isMutualFollow;
-        const followingCheck = await prisma.follow.findUnique({
-          where: {
-            follower_id_following_id: {
-              follower_id: partnerId,
-              following_id: userId,
-            },
-          },
-        });
-
-        const isFriend = !!followerCheck && !!followingCheck;
-
-        // Get partner user data
-        const partner = await prisma.user.findUnique({
-          where: { id: partnerId },
-          select: USER_PROFILE_SELECT,
-        });
-
-        return {
-          user: partner,
-          lastMessage,
-          unread: unreadCount,
-          isFriend,
-        };
-      })
-    );
-
-    // Sort: friends first, then requests, newest first
-    conversations.sort((a, b) => {
-      if (a.isFriend !== b.isFriend) {
-        return a.isFriend ? -1 : 1;
-      }
-      return (b.lastMessage?.created_at || 0) - (a.lastMessage?.created_at || 0);
-    });
-
-    res.json(conversations);
+    res.json(result.filter(Boolean));
   } catch (err) {
-    console.error(err);
+    console.error('inbox error:', err);
     res.status(500).json({ error: 'Failed to fetch inbox' });
   }
 });
 
-// GET /api/messages/conversation/:userId — get full conversation and mark as read
+// GET /api/messages/conversation/:userId
 router.get('/conversation/:userId', requireAuth, async (req, res) => {
   try {
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
 
-    if (currentUserId === otherUserId) {
-      return res.status(400).json({ error: 'Cannot view conversation with yourself' });
-    }
-
-    // Get all messages in conversation
-    const messages = await prisma.message.findMany({
+    const conversation = await prisma.conversation.findFirst({
       where: {
-        OR: [
-          { sender_id: currentUserId, recipient_id: otherUserId },
-          { sender_id: otherUserId, recipient_id: currentUserId },
+        AND: [
+          { participant_ids: { has: currentUserId } },
+          { participant_ids: { has: otherUserId } },
         ],
       },
-      include: {
-        sender: { select: USER_PROFILE_SELECT },
-        recipient: { select: USER_PROFILE_SELECT },
-      },
+    });
+
+    if (!conversation) return res.json([]);
+
+    const messages = await prisma.message.findMany({
+      where: { conversation_id: conversation.id },
+      include: { sender: { select: USER_SELECT }, recipient: { select: USER_SELECT } },
       orderBy: { created_at: 'asc' },
     });
 
-    // Mark all received messages as read
     await prisma.message.updateMany({
-      where: {
-        recipient_id: currentUserId,
-        sender_id: otherUserId,
-        read: false,
-      },
+      where: { conversation_id: conversation.id, recipient_id: currentUserId, read: false },
       data: { read: true },
     });
 
     res.json(messages);
   } catch (err) {
-    console.error(err);
+    console.error('conversation error:', err);
     res.status(500).json({ error: 'Failed to fetch conversation' });
   }
 });
 
-// DELETE /api/messages/:messageId — delete own message
+// DELETE /api/messages/:messageId
 router.delete('/:messageId', requireAuth, async (req, res) => {
   try {
-    const messageId = req.params.messageId;
-    const userId = req.user.id;
-
-    // Check message exists and belongs to user
-    const message = await prisma.message.findUnique({ where: { id: messageId } });
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
-
-    if (message.sender_id !== userId) {
-      return res.status(403).json({ error: 'Cannot delete message you did not send' });
-    }
-
-    await prisma.message.delete({ where: { id: messageId } });
+    const message = await prisma.message.findUnique({ where: { id: req.params.messageId } });
+    if (!message) return res.status(404).json({ error: 'Not found' });
+    if (message.sender_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    await prisma.message.delete({ where: { id: req.params.messageId } });
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Failed to delete message' });
   }
 });
