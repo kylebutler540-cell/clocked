@@ -209,7 +209,7 @@ function ConversationView({ userId, onBack, onMessageSent }) {
   const otherName = otherUser?.display_name || 'Loading…';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-primary)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: 'var(--bg-primary)' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
@@ -229,7 +229,7 @@ function ConversationView({ userId, onBack, onMessageSent }) {
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="spinner" />
@@ -388,12 +388,16 @@ export default function Messages() {
 
   if (selectedUserId) {
     return (
-      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        display: 'flex', flexDirection: 'column',
+        background: 'var(--bg-primary)', zIndex: 100,
+      }}>
         <ConversationView
           userId={selectedUserId}
           onBack={() => {
             setSelectedUserId(null);
-            fetchInbox(); // refresh inbox on back
+            fetchInbox();
           }}
           onMessageSent={handleMessageSent}
         />
@@ -425,7 +429,7 @@ export default function Messages() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
       {/* Page header */}
       <div style={{
         padding: '14px 16px 12px',
