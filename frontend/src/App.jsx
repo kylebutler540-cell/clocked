@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { NotifProvider } from './context/NotifContext';
+import { MessagingProvider, useMessaging } from './context/MessagingContext';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 
@@ -299,6 +300,7 @@ function AppMainWrapper({ children }) {
 }
 
 function AppInner() {
+  const { fullscreen } = useMessaging();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Lock body scroll when sidebar is open
@@ -325,17 +327,17 @@ function AppInner() {
 
   return (
     <BrowserRouter>
-      <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />
-      <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
-        <LeftSidebar collapsed={sidebarCollapsed} />
+      {!fullscreen && <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />}
+      <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}${fullscreen ? ' messaging-fullscreen' : ''}`}>
+        {!fullscreen && <LeftSidebar collapsed={sidebarCollapsed} />}
         <AppMainWrapper>
           {/* Mobile header only */}
-          <div className="mobile-only-header">
+          {!fullscreen && <div className="mobile-only-header">
             <PageHeader onOpenDrawer={() => setDrawerOpen(true)} />
-          </div>
+          </div>}
           <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
-          <DesktopBackButton />
-          <main className="page-content">
+          {!fullscreen && <DesktopBackButton />}
+          <main className="page-content" style={fullscreen ? { padding: 0, margin: 0, height: '100dvh', overflow: 'hidden' } : {}}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/search" element={<Home />} />
@@ -358,7 +360,7 @@ function AppInner() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
-          <BottomNav />
+          {!fullscreen && <BottomNav />}
         </AppMainWrapper>
       </div>
     </BrowserRouter>
@@ -401,7 +403,9 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <NotifProvider>
-          <AppInner />
+            <MessagingProvider>
+              <AppInner />
+            </MessagingProvider>
           </NotifProvider>
         </ToastProvider>
       </AuthProvider>
