@@ -3,8 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const http = require('http');
-const { Server } = require('socket.io');
+// socket.io temporarily disabled — using polling fallback
+// const http = require('http');
+// const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/auth');
 const googleAuthRoutes = require('./routes/google-auth');
@@ -95,37 +96,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const httpServer = http.createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: (origin, cb) => cb(null, true),
-    credentials: true,
-  },
-  transports: ['websocket', 'polling'],
-});
-
-app.set('io', io);
-
-// Map userId -> Set of socket IDs
-const userSockets = new Map();
-
-io.on('connection', (socket) => {
-  const userId = socket.handshake.auth?.userId;
-  if (userId) {
-    if (!userSockets.has(userId)) userSockets.set(userId, new Set());
-    userSockets.get(userId).add(socket.id);
-    socket.join(`user:${userId}`);
-  }
-
-  socket.on('disconnect', () => {
-    if (userId && userSockets.has(userId)) {
-      userSockets.get(userId).delete(socket.id);
-      if (userSockets.get(userId).size === 0) userSockets.delete(userId);
-    }
-  });
-});
-
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Clocked API running on port ${PORT}`);
 });
 
