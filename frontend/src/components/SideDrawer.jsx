@@ -127,8 +127,8 @@ export default function SideDrawer({ isOpen, onClose }) {
           <div className="drawer-about-title">About</div>
           <a href="#" className="drawer-about-link" onClick={() => { onClose(); navigate('/terms'); }}>Terms of Service</a>
           <a href="#" className="drawer-about-link" onClick={() => { onClose(); navigate('/privacy'); }}>Privacy Policy</a>
-          <a href="#" className="drawer-about-link" onClick={onClose}>Community Guidelines</a>
-          <a href="#" className="drawer-about-link" onClick={onClose}>Contact Us</a>
+          <a href="#" className="drawer-about-link" onClick={() => { onClose(); navigate('/community-guidelines'); }}>Community Guidelines</a>
+          <a href="#" className="drawer-about-link" onClick={() => { onClose(); navigate('/contact'); }}>Contact Us</a>
           <div className="drawer-version">Version 1.0.1</div>
         </div>
       </div>

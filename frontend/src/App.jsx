@@ -20,6 +20,8 @@ import Create from './pages/Create';
 import Notifications from './pages/Notifications';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import CommunityGuidelines from './pages/CommunityGuidelines';
+import Contact from './pages/Contact';
 import Messages from './pages/Messages';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
@@ -351,6 +353,8 @@ function AppInner() {
               <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

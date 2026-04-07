@@ -15,6 +15,7 @@ const notificationRoutes = require('./routes/notifications');
 const ratingRoutes = require('./routes/ratings');
 const followRoutes = require('./routes/follows');
 const searchRoutes = require('./routes/search');
+const messageRoutes = require('./routes/messages');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -74,6 +75,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/messages', messageRoutes);
 
 // 404 handler
 app.use((req, res) => {

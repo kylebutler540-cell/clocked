@@ -457,6 +457,13 @@ export default function Profile() {
             >
               {followLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
             </button>
+            <button
+              className="btn btn-secondary"
+              style={{ marginTop: 12, padding: '7px 20px', fontSize: 13, fontWeight: 600, marginLeft: 8 }}
+              onClick={() => navigate("/messages?user=" + viewingUserId)}
+            >
+              Message
+            </button>
           </div>
         </div>
         <UserPostList url={`/posts/user/${viewingUserId}/posts`} emptyState={<EmptyState text="This user hasn't posted anything yet." />} />
