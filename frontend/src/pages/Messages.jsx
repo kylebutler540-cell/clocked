@@ -216,22 +216,43 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]);
 
-  // Fix #1: keyboard scroll anchoring
-  // Instead of listening to resize (which causes jumpy behavior),
-  // use visualViewport API for smooth keyboard handling
+  // ── Keyboard lift: move the whole convo container to sit above the keyboard ──
+  const outerRef = useRef(null);
+
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
 
-    const handler = () => {
-      if (scrollContainerRef.current) {
-        // Pin scroll to bottom when keyboard opens
-        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    let lastHeight = vv.height;
+
+    const update = () => {
+      const outer = outerRef.current;
+      if (!outer) return;
+
+      const kbHeight = window.innerHeight - vv.height - vv.offsetTop;
+      // Lift the container above the keyboard
+      outer.style.height = `${vv.height}px`;
+      outer.style.top = `${vv.offsetTop}px`;
+
+      const isKeyboardOpen = vv.height < lastHeight - 50;
+      if (isKeyboardOpen || kbHeight > 50) {
+        // Scroll messages to bottom so latest msg stays visible
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          }
+        });
       }
+      lastHeight = vv.height;
     };
 
-    vv.addEventListener('resize', handler);
-    return () => vv.removeEventListener('resize', handler);
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
   }, []);
 
   const handleSend = async (e) => {
@@ -287,11 +308,18 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     && !initialUser?.isFriend;
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'var(--bg-primary)', zIndex: 200,
-    }}>
+    <div
+      ref={outerRef}
+      style={{
+        display: 'flex', flexDirection: 'column',
+        position: 'fixed', top: 0, left: 0, right: 0,
+        height: '100dvh',
+        background: 'var(--bg-primary)', zIndex: 200,
+        // Prevent the page from scrolling behind this overlay
+        overflow: 'hidden',
+        // Ensure it sits in the visual viewport on iOS
+        willChange: 'height, top',
+      }}>
       {/* ── Header ── */}
       {/* Fix #5: show skeleton only if name unknown, never blank */}
       {otherName === null ? (
@@ -419,7 +447,12 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
           // Fix #1: on focus, scroll to bottom smoothly without jarring jump
           onFocus={() => {
             isInputFocusedRef.current = true;
-            setTimeout(() => scrollToBottom('smooth'), 150);
+            // Small delay lets iOS finish keyboard animation before we scroll
+            setTimeout(() => {
+              if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+              }
+            }, 100);
           }}
           onBlur={() => { isInputFocusedRef.current = false; }}
           placeholder="Message…"
