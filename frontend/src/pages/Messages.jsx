@@ -147,6 +147,117 @@ function ConvoHeaderSkeleton({ onBack }) {
   );
 }
 
+// ─── Input Bar with swipe-down-to-dismiss ───────────────────────────────────
+
+function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBlurred }) {
+  const dragHandleRef = useRef(null);
+  const touchStartY = useRef(null);
+  const isDragging = useRef(false);
+
+  // Touch handlers on the drag handle pill
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartY.current === null) return;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (dy > 8) isDragging.current = true;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartY.current === null) return;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    // Swipe down ≥ 30px on the handle → dismiss keyboard
+    if (isDragging.current && dy >= 30) {
+      inputRef.current?.blur();
+    }
+    touchStartY.current = null;
+    isDragging.current = false;
+  };
+
+  return (
+    <div
+      style={{
+        flexShrink: 0,
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-primary)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 10px)',
+        // Transition so the bar slides up/down without jitter
+        transition: 'padding-bottom 0.1s',
+      }}
+    >
+      {/* Drag handle pill — swipe this down to dismiss the keyboard */}
+      <div
+        ref={dragHandleRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '6px 0 2px',
+          cursor: 'grab',
+          touchAction: 'none', // prevent scroll interference
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <div style={{
+          width: 36, height: 4, borderRadius: 2,
+          background: 'var(--border)',
+          opacity: 0.6,
+        }} />
+      </div>
+
+      {/* Input row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 14px 4px' }}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) onSend(e); }}
+          onFocus={onFocused}
+          onBlur={onBlurred}
+          placeholder="Message…"
+          autoComplete="off"
+          style={{
+            flex: 1,
+            border: '1px solid var(--border)',
+            borderRadius: 24,
+            padding: '10px 16px',
+            fontSize: 15,
+            background: 'var(--bg-card)',
+            color: 'var(--text-primary)',
+            outline: 'none',
+            WebkitAppearance: 'none',
+          }}
+        />
+        <button
+          onClick={onSend}
+          disabled={!inputValue.trim()}
+          style={{
+            width: 42, height: 42, borderRadius: '50%',
+            background: inputValue.trim() ? '#A855F7' : 'var(--border)',
+            border: 'none',
+            cursor: inputValue.trim() ? 'pointer' : 'default',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'background 0.15s',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Conversation View ────────────────────────────────────────────────────────
 
 function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
@@ -428,60 +539,22 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         <div ref={messagesEndRef} style={{ height: 1 }} />
       </div>
 
-      {/* ── Input Bar ── */}
-      {/* Fix #1: input bar uses position sticky-to-bottom via flex, not fixed */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '10px 14px',
-        paddingBottom: 'max(env(safe-area-inset-bottom), 10px)',
-        borderTop: '1px solid var(--border)',
-        background: 'var(--bg-primary)',
-        flexShrink: 0,
-      }}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSend(e); }}
-          // Fix #1: on focus, scroll to bottom smoothly without jarring jump
-          onFocus={() => {
-            isInputFocusedRef.current = true;
-            // Small delay lets iOS finish keyboard animation before we scroll
-            setTimeout(() => {
-              if (scrollContainerRef.current) {
-                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-              }
-            }, 100);
-          }}
-          onBlur={() => { isInputFocusedRef.current = false; }}
-          placeholder="Message…"
-          autoComplete="off"
-          style={{
-            flex: 1, border: '1px solid var(--border)',
-            borderRadius: 24, padding: '10px 16px',
-            fontSize: 15, background: 'var(--bg-card)',
-            color: 'var(--text-primary)', outline: 'none',
-            WebkitAppearance: 'none',
-          }}
-        />
-        <button
-          onClick={handleSend}
-          disabled={!inputValue.trim()}
-          style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: inputValue.trim() ? '#A855F7' : 'var(--border)',
-            border: 'none', cursor: inputValue.trim() ? 'pointer' : 'default',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, transition: 'background 0.15s',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" />
-          </svg>
-        </button>
-      </div>
+      {/* ── Input Bar (with swipe-down-to-dismiss) ── */}
+      <InputBar
+        inputRef={inputRef}
+        inputValue={inputValue}
+        setInputValue={setInputValue}
+        onSend={handleSend}
+        onFocused={() => {
+          isInputFocusedRef.current = true;
+          setTimeout(() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            }
+          }, 100);
+        }}
+        onBlurred={() => { isInputFocusedRef.current = false; }}
+      />
     </div>
   );
 }
