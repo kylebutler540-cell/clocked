@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotif } from '../context/NotifContext';
+import { useMessaging } from '../context/MessagingContext';
 
 function HomeIcon() {
   return (
@@ -61,6 +62,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { unreadCount } = useNotif();
+  const { fullscreen, setFullscreen } = useMessaging();
 
   return (
     <nav className="bottom-nav">
@@ -77,6 +79,11 @@ export default function BottomNav() {
             onClick={() => {
               if (item.path === '/create' && !user?.email) {
                 navigate('/signup');
+              } else if (item.path === '/messages' && fullscreen) {
+                // Fix #6: tapping Messages tab while in a convo closes it back to inbox
+                setFullscreen(false);
+                // Trigger inbox view by dispatching a custom event Messages.jsx listens to
+                window.dispatchEvent(new CustomEvent('messages:close-convo'));
               } else {
                 navigate(item.path);
               }
