@@ -45,6 +45,37 @@ async function run() {
       `DO $$ BEGIN ALTER TABLE "comment_likes" ADD CONSTRAINT "comment_likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
       `DO $$ BEGIN ALTER TABLE "comment_likes" ADD CONSTRAINT "comment_likes_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "comments"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
       `DO $$ BEGIN ALTER TABLE "comments" ADD CONSTRAINT "comments_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "comments"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // Messages + Conversations
+      `CREATE TABLE IF NOT EXISTS "conversations" (
+        "id" TEXT NOT NULL,
+        "participant_ids" TEXT[] NOT NULL DEFAULT '{}',
+        "last_message" TEXT,
+        "last_message_at" TIMESTAMP(3),
+        "last_message_sender" TEXT,
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "conversations_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE TABLE IF NOT EXISTS "messages" (
+        "id" TEXT NOT NULL,
+        "conversation_id" TEXT,
+        "sender_id" TEXT NOT NULL,
+        "recipient_id" TEXT NOT NULL,
+        "body" TEXT NOT NULL,
+        "read" BOOLEAN NOT NULL DEFAULT false,
+        "status" TEXT NOT NULL DEFAULT 'sent',
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE INDEX IF NOT EXISTS "messages_recipient_id_idx" ON "messages"("recipient_id")`,
+      `CREATE INDEX IF NOT EXISTS "messages_sender_id_idx" ON "messages"("sender_id")`,
+      `CREATE INDEX IF NOT EXISTS "messages_conversation_id_idx" ON "messages"("conversation_id")`,
+      `DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      `DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      `DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // Add missing columns if upgrading
+      `ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "conversation_id" TEXT`,
+      `ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'sent'`,
     ];
 
     for (const stmt of statements) {
