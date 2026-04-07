@@ -65,7 +65,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.get('/health', (req, res) => {
   const employerRoutes = require('./routes/employers');
   const logoRoute = employerRoutes.stack?.filter(r => r.route).map(r => r.route.path) || [];
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), employerRoutes: logoRoute });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: 'v2-messages', employerRoutes: logoRoute });
 });
 
 // Routes
