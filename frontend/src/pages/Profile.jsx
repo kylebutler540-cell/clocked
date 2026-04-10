@@ -273,7 +273,7 @@ function UserCommentList() {
 export default function Profile() {
   const navigate = useNavigate();
   const { userId: viewingUserId } = useParams();
-  const { user, loading: authInitializing, isSubscribed, login, register, setUser } = useAuth();
+  const { user, loading: authInitializing, isSubscribed, login, register, loginWithGoogle, setUser } = useAuth();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('posts');
   const [showLogin, setShowLogin] = useState(false);
@@ -314,10 +314,17 @@ export default function Profile() {
         client_id: GOOGLE_CLIENT_ID,
         callback: async (response) => {
           try {
-            const res = await api.post('/auth/google', { credential: response.credential });
-            localStorage.setItem('clocked-token', res.data.token);
-            window.location.href = '/';
-          } catch { addToast('Google sign-in failed'); }
+            await loginWithGoogle(response.credential);
+            setShowLogin(false);
+          } catch {
+            // Retry once
+            try {
+              await loginWithGoogle(response.credential);
+              setShowLogin(false);
+            } catch {
+              addToast('Google sign-in failed. Please try again.');
+            }
+          }
         },
       });
       window.google?.accounts.id.renderButton(

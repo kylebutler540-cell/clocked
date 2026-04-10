@@ -39,27 +39,54 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  async function fetchMe() {
-    try {
-      const res = await api.get('/auth/me');
-      setUser(res.data.user);
-    } catch {
-      localStorage.removeItem('clocked-token');
-      setToken(null);
-      initAnonymous();
-    } finally {
-      setLoading(false);
+  async function fetchMe(retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const res = await api.get('/auth/me');
+        setUser(res.data.user);
+        setLoading(false);
+        return;
+      } catch (err) {
+        const status = err.response?.status;
+        // 401 = token genuinely invalid — clear it immediately, no retry
+        if (status === 401) {
+          localStorage.removeItem('clocked-token');
+          setToken(null);
+          initAnonymous();
+          return;
+        }
+        // Network error or 5xx — wait and retry
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+          continue;
+        }
+        // All retries exhausted — keep the token, show as logged out but DON'T wipe
+        // The token is probably fine, backend is just slow
+        // Try to restore user from savedAccounts as fallback
+        const saved = getSavedAccounts().find(a => a.token === localStorage.getItem('clocked-token'));
+        if (saved) {
+          setUser({ id: saved.userId, email: saved.email, display_name: saved.displayName, avatar_url: saved.avatarUrl });
+        }
+        setLoading(false);
+      }
     }
   }
 
-  async function initAnonymous() {
-    try {
-      const res = await api.post('/auth/anonymous');
-      saveSession(res.data.token, res.data.user, false); // don't persist anon accounts
-    } catch (err) {
-      console.error('Failed to init anonymous session', err);
-    } finally {
-      setLoading(false);
+  async function initAnonymous(retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const res = await api.post('/auth/anonymous');
+        saveSession(res.data.token, res.data.user, false);
+        setLoading(false);
+        return;
+      } catch (err) {
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 800 * attempt));
+          continue;
+        }
+        console.error('Failed to init anonymous session after retries', err);
+        setLoading(false);
+      }
     }
   }
 
