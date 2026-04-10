@@ -25,7 +25,7 @@
 
   --nav-height: 64px;
   --header-height: 56px;
-  --max-width: 430px;
+  --max-width: 680px;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -175,7 +175,12 @@ img, video {
   background: var(--bg-primary);
 }
 
-/* Desktop overrides the max-width via grid above */
+/* Desktop: full width layout */
+@media (min-width: 768px) {
+  .app-layout {
+    max-width: 100%;
+  }
+}
 
 /* ========== Desktop Top Bar ========== */
 .desktop-topbar {
@@ -2179,7 +2184,7 @@ textarea.form-input {
   /* Sticky top bar — centered search */
   .app-header {
     width: 100%;
-    max-width: 740px;
+    max-width: 900px;
     background: var(--bg-secondary);
     border-bottom: none;
     justify-content: center;
@@ -2211,7 +2216,7 @@ textarea.form-input {
   /* Scroll happens on body/html so the scrollbar sits at the far viewport edge */
   .page-content {
     width: 100%;
-    max-width: 740px;
+    max-width: 900px;
     background: transparent;
     flex: none;
     height: auto;
