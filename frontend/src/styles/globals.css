@@ -2184,7 +2184,7 @@ textarea.form-input {
   /* Sticky top bar — centered search */
   .app-header {
     width: 100%;
-    max-width: 900px;
+    max-width: calc(100vw - 280px);
     background: var(--bg-secondary);
     border-bottom: none;
     justify-content: center;
@@ -2216,7 +2216,7 @@ textarea.form-input {
   /* Scroll happens on body/html so the scrollbar sits at the far viewport edge */
   .page-content {
     width: 100%;
-    max-width: 900px;
+    max-width: calc(100vw - 280px);
     background: transparent;
     flex: none;
     height: auto;
