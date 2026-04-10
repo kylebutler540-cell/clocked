@@ -25,11 +25,11 @@ async function getOrCreateConversation(userA, userB) {
 // POST /api/messages/:recipientId
 router.post('/:recipientId', requireAuth, async (req, res) => {
   try {
-    const { body } = req.body;
+    const { body, image_url } = req.body;
     const recipientId = req.params.recipientId;
     const senderId = req.user.id;
 
-    if (!body?.trim()) return res.status(400).json({ error: 'Empty message' });
+    if (!body?.trim() && !image_url) return res.status(400).json({ error: 'Empty message' });
     if (senderId === recipientId) return res.status(400).json({ error: 'Cannot message yourself' });
 
     const recipient = await prisma.user.findUnique({ where: { id: recipientId } });
@@ -42,7 +42,7 @@ router.post('/:recipientId', requireAuth, async (req, res) => {
         conversation_id: conversation.id,
         sender_id: senderId,
         recipient_id: recipientId,
-        body: body.trim(),
+        body: body?.trim() || (image_url ? '📷 Photo' : ''),
         status: 'sent',
       },
       include: { sender: { select: USER_SELECT }, recipient: { select: USER_SELECT } },

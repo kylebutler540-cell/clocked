@@ -9,41 +9,43 @@ import { useMessaging } from '../context/MessagingContext';
 function formatMsgTime(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
-  const diffMs = now - date;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHours = Math.floor(diffMin / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-
-  // Same day → show time only
   const isToday = date.toDateString() === now.toDateString();
-  if (isToday) {
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  }
+  if (isToday) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const diffDays = Math.floor((now - date) / 86400000);
   if (diffDays < 7) return `${diffDays}d`;
+  const diffWeeks = Math.floor(diffDays / 7);
   if (diffWeeks < 5) return `${diffWeeks}w`;
+  const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) return `${diffMonths}m`;
   return `${Math.floor(diffMonths / 12)}y`;
 }
 
 function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60) return 'now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  const d = Math.floor(diff / 86400);
+  if (d < 7) return `${d}d`;
+  const w = Math.floor(d / 7);
+  if (w < 5) return `${w}w`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo}m`;
+  return `${Math.floor(mo / 12)}y`;
+}
+
+// Format date for day separators: "April 10" or "April 10, 2024"
+function formatDaySeparator(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
-  const diffSec = Math.floor((now - date) / 1000);
-  if (diffSec < 60) return 'now';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d`;
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks < 5) return `${diffWeeks}w`;
-  const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths < 12) return `${diffMonths}m`;
-  return `${Math.floor(diffMonths / 12)}y`;
+  const opts = date.getFullYear() === now.getFullYear()
+    ? { month: 'long', day: 'numeric' }
+    : { month: 'long', day: 'numeric', year: 'numeric' };
+  return date.toLocaleDateString('en-US', opts);
+}
+
+function isSameDay(a, b) {
+  return new Date(a).toDateString() === new Date(b).toDateString();
 }
 
 // ─── Avatar ──────────────────────────────────────────────────────────────────
@@ -58,29 +60,26 @@ function Avatar({ url, name, size = 40 }) {
       overflow: 'hidden', color: '#fff', fontWeight: 700, fontSize: size * 0.38,
       userSelect: 'none',
     }}>
-      {url
-        ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : letter}
+      {url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : letter}
     </div>
   );
 }
 
-// Skeleton avatar for loading state (fix #5)
 function AvatarSkeleton({ size = 40 }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite',
-    }} />
-  );
+  return <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: 'var(--border)' }} />;
 }
 
-// ─── Conversation List Item ───────────────────────────────────────────────────
+function formatCount(n) {
+  if (!n) return '0';
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  return String(n);
+}
+
+// ─── Conversation List Item (no dividers) ────────────────────────────────────
 
 function ConversationListItem({ conversation, onClick, isSentByMe }) {
   const { user, lastMessage, unread } = conversation;
   const name = user?.display_name || 'Unknown';
-
   let preview = 'No messages yet';
   if (lastMessage?.body) {
     const body = lastMessage.body.length > 50 ? lastMessage.body.slice(0, 50) + '…' : lastMessage.body;
@@ -93,126 +92,77 @@ function ConversationListItem({ conversation, onClick, isSentByMe }) {
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: '13px 18px', cursor: 'pointer',
-        borderBottom: '1px solid var(--border)',
+        padding: '12px 20px', cursor: 'pointer',
         background: 'transparent',
         WebkitTapHighlightColor: 'transparent',
       }}
       onTouchStart={e => e.currentTarget.style.background = 'rgba(168,85,247,0.06)'}
       onTouchEnd={e => e.currentTarget.style.background = 'transparent'}
     >
-      <Avatar url={user?.avatar_url} name={name} size={48} />
+      <Avatar url={user?.avatar_url} name={name} size={50} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: unread > 0 ? 700 : 600, fontSize: 15, color: 'var(--text-primary)', marginBottom: 3 }}>
+        <div style={{ fontWeight: unread > 0 ? 700 : 600, fontSize: 15, color: 'var(--text-primary)', marginBottom: 2 }}>
           {name}
         </div>
         <div style={{
-          fontSize: 13,
-          color: unread > 0 ? 'var(--text-primary)' : 'var(--text-muted)',
+          fontSize: 13, color: unread > 0 ? 'var(--text-primary)' : 'var(--text-muted)',
           fontWeight: unread > 0 ? 500 : 400,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {preview}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{time}</div>
-        {unread > 0 && (
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#A855F7' }} />
-        )}
+        {unread > 0 && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#A855F7' }} />}
       </div>
     </div>
   );
 }
 
-// ─── Conversation Header Skeleton (fix #5 — no blank flash) ──────────────────
+// ─── Input Bar ───────────────────────────────────────────────────────────────
 
-function ConvoHeaderSkeleton({ onBack }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '12px 16px',
-      paddingTop: 'max(env(safe-area-inset-top), 12px)',
-      borderBottom: '1px solid var(--border)',
-      background: 'var(--bg-primary)', flexShrink: 0,
-    }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', padding: '4px 8px 4px 0', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', WebkitTapHighlightColor: 'transparent' }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-      <AvatarSkeleton size={36} />
-      <div style={{ width: 100, height: 16, borderRadius: 8, background: 'var(--border)' }} />
-    </div>
-  );
-}
-
-// ─── Input Bar with swipe-down-to-dismiss ───────────────────────────────────
-
-function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBlurred }) {
+function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBlurred, onImageSend }) {
+  const fileRef = useRef(null);
   const dragHandleRef = useRef(null);
   const touchStartY = useRef(null);
   const isDragging = useRef(false);
 
-  // Touch handlers on the drag handle pill
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-    isDragging.current = false;
+  const handleTouchStart = e => { touchStartY.current = e.touches[0].clientY; isDragging.current = false; };
+  const handleTouchMove = e => { if (touchStartY.current === null) return; if (e.touches[0].clientY - touchStartY.current > 8) isDragging.current = true; };
+  const handleTouchEnd = e => {
+    if (touchStartY.current === null) return;
+    if (isDragging.current && e.changedTouches[0].clientY - touchStartY.current >= 30) inputRef.current?.blur();
+    touchStartY.current = null; isDragging.current = false;
   };
 
-  const handleTouchMove = (e) => {
-    if (touchStartY.current === null) return;
-    const dy = e.touches[0].clientY - touchStartY.current;
-    if (dy > 8) isDragging.current = true;
-  };
-
-  const handleTouchEnd = (e) => {
-    if (touchStartY.current === null) return;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    // Swipe down ≥ 30px on the handle → dismiss keyboard
-    if (isDragging.current && dy >= 30) {
-      inputRef.current?.blur();
-    }
-    touchStartY.current = null;
-    isDragging.current = false;
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onImageSend?.(file);
+    e.target.value = '';
   };
 
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        borderTop: '1px solid var(--border)',
-        background: 'var(--bg-primary)',
-        paddingBottom: 'max(env(safe-area-inset-bottom), 10px)',
-        // Transition so the bar slides up/down without jitter
-        transition: 'padding-bottom 0.1s',
-      }}
-    >
-      {/* Drag handle pill — swipe this down to dismiss the keyboard */}
-      <div
-        ref={dragHandleRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '6px 0 2px',
-          cursor: 'grab',
-          touchAction: 'none', // prevent scroll interference
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <div style={{
-          width: 36, height: 4, borderRadius: 2,
-          background: 'var(--border)',
-          opacity: 0.6,
-        }} />
+    <div style={{ flexShrink: 0, background: 'var(--bg-primary)', paddingBottom: 'max(env(safe-area-inset-bottom), 10px)', transition: 'padding-bottom 0.1s' }}>
+      {/* Drag handle */}
+      <div ref={dragHandleRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '6px 0 2px', cursor: 'grab', touchAction: 'none', WebkitTapHighlightColor: 'transparent' }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', opacity: 0.5 }} />
       </div>
 
-      {/* Input row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 14px 4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px 4px' }}>
+        {/* Image picker button */}
+        <button onClick={() => fileRef.current?.click()}
+          style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', WebkitTapHighlightColor: 'transparent', flexShrink: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} style={{ display: 'none' }} />
+
         <input
           ref={inputRef}
           type="text"
@@ -223,32 +173,10 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
           onBlur={onBlurred}
           placeholder="Message…"
           autoComplete="off"
-          style={{
-            flex: 1,
-            border: '1px solid var(--border)',
-            borderRadius: 24,
-            padding: '10px 16px',
-            fontSize: 15,
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)',
-            outline: 'none',
-            WebkitAppearance: 'none',
-          }}
+          style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 24, padding: '10px 16px', fontSize: 15, background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', WebkitAppearance: 'none' }}
         />
-        <button
-          onClick={onSend}
-          disabled={!inputValue.trim()}
-          style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: inputValue.trim() ? '#A855F7' : 'var(--border)',
-            border: 'none',
-            cursor: inputValue.trim() ? 'pointer' : 'default',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-            transition: 'background 0.15s',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
+        <button onClick={onSend} disabled={!inputValue.trim()}
+          style={{ width: 42, height: 42, borderRadius: '50%', background: inputValue.trim() ? '#A855F7' : 'var(--border)', border: 'none', cursor: inputValue.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s', WebkitTapHighlightColor: 'transparent' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" />
           </svg>
@@ -265,21 +193,30 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
-  // Fix #5: seed with initialUser so header is never blank
   const [otherUser, setOtherUser] = useState(initialUser || null);
-  const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const pollRef = useRef(null);
   const inputRef = useRef(null);
   const lastCountRef = useRef(0);
   const isInputFocusedRef = useRef(false);
+  const outerRef = useRef(null);
+  const hasLoadedRef = useRef(false);
 
-  const scrollToBottom = useCallback((behavior = 'smooth') => {
+  const scrollToBottom = useCallback((behavior = 'auto') => {
     requestAnimationFrame(() => {
       const el = scrollContainerRef.current;
       if (el) el.scrollTop = el.scrollHeight;
     });
   }, []);
+
+  // Prefetch otherUser immediately if not seeded — so header is instant
+  useEffect(() => {
+    if (!otherUser) {
+      api.get(`/auth/user/${userId}`)
+        .then(res => setOtherUser(prev => prev || res.data))
+        .catch(() => {});
+    }
+  }, [userId]); // eslint-disable-line
 
   const fetchMessages = useCallback(async (opts = {}) => {
     try {
@@ -289,37 +226,26 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       setMessages(prev => {
         if (!opts.silent) return data;
         const serverIds = new Set(data.map(m => m.id));
-        const stillInFlight = prev.filter(m => m._status === 'sending' && !serverIds.has(m.id));
-        return [...data, ...stillInFlight];
+        const inFlight = prev.filter(m => m._status === 'sending' && !serverIds.has(m.id));
+        return [...data, ...inFlight];
       });
 
       if (data.length > 0 && !otherUser) {
-        const other = data[0].sender_id === userId ? data[0].sender : data[0].recipient;
-        setOtherUser(other);
+        setOtherUser(prev => prev || (data[0].sender_id === userId ? data[0].sender : data[0].recipient));
       }
 
-      const isNewMessages = data.length > lastCountRef.current;
-      if (!opts.silent) {
-        scrollToBottom('auto');
-      } else if (isNewMessages && !isInputFocusedRef.current) {
-        scrollToBottom('smooth');
-      }
+      const isNew = data.length > lastCountRef.current;
+      if (!opts.silent || (isNew && !isInputFocusedRef.current)) scrollToBottom();
       lastCountRef.current = data.length;
     } catch (err) {
       console.error('fetchMessages', err);
     } finally {
-      setLoading(false);
+      if (!hasLoadedRef.current) {
+        hasLoadedRef.current = true;
+        setLoading(false);
+      }
     }
   }, [userId, otherUser, scrollToBottom]);
-
-  // Fetch otherUser if not seeded
-  useEffect(() => {
-    if (!otherUser) {
-      api.get(`/auth/user/${userId}`)
-        .then(res => setOtherUser(prev => prev || res.data))
-        .catch(() => {});
-    }
-  }, [userId, otherUser]);
 
   useEffect(() => {
     fetchMessages();
@@ -327,76 +253,69 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]);
 
-  // ── Keyboard lift: move the whole convo container to sit above the keyboard ──
-  const outerRef = useRef(null);
-
+  // Keyboard lift via visualViewport
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-
-    let lastHeight = vv.height;
-
+    let lastH = vv.height;
     const update = () => {
       const outer = outerRef.current;
       if (!outer) return;
-
-      const kbHeight = window.innerHeight - vv.height - vv.offsetTop;
-      // Lift the container above the keyboard
       outer.style.height = `${vv.height}px`;
       outer.style.top = `${vv.offsetTop}px`;
-
-      const isKeyboardOpen = vv.height < lastHeight - 50;
-      if (isKeyboardOpen || kbHeight > 50) {
-        // Scroll messages to bottom so latest msg stays visible
-        requestAnimationFrame(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-          }
-        });
-      }
-      lastHeight = vv.height;
+      if (vv.height < lastH - 50) scrollToBottom();
+      lastH = vv.height;
     };
-
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
     update();
-    return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-    };
-  }, []);
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+  }, []); // eslint-disable-line
 
   const handleSend = async (e) => {
     e?.preventDefault();
     const body = inputValue.trim();
     if (!body || !currentUser?.id) return;
-
     const tmpId = `opt-${Date.now()}`;
     const now = new Date().toISOString();
-
-    const optimisticMsg = {
-      id: tmpId,
-      sender_id: currentUser.id,
-      recipient_id: userId,
-      body,
-      created_at: now,
-      _status: 'sending',
-    };
-
-    setMessages(prev => [...prev, optimisticMsg]);
+    setMessages(prev => [...prev, { id: tmpId, sender_id: currentUser.id, recipient_id: userId, body, created_at: now, _status: 'sending' }]);
     setInputValue('');
-    scrollToBottom('smooth');
+    scrollToBottom();
     onMessageSent?.(userId, body, now, otherUser);
-
     try {
       const res = await api.post(`/messages/${userId}`, { body });
       setMessages(prev => prev.map(m => m.id === tmpId ? { ...res.data, _status: 'sent' } : m));
     } catch (err) {
-      console.error('send error', err?.response?.data);
       setMessages(prev => prev.map(m => m.id === tmpId ? { ...m, _status: 'failed' } : m));
     }
-
     inputRef.current?.focus();
+  };
+
+  const handleImageSend = async (file) => {
+    if (!currentUser?.id) return;
+    const tmpId = `opt-img-${Date.now()}`;
+    const now = new Date().toISOString();
+    const localUrl = URL.createObjectURL(file);
+    setMessages(prev => [...prev, { id: tmpId, sender_id: currentUser.id, recipient_id: userId, body: '', image_url: localUrl, created_at: now, _status: 'sending' }]);
+    scrollToBottom();
+
+    try {
+      // Convert to base64 and send as body
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const res = await api.post(`/messages/${userId}`, { body: '', image_url: reader.result });
+          URL.revokeObjectURL(localUrl);
+          setMessages(prev => prev.map(m => m.id === tmpId ? { ...res.data, _status: 'sent' } : m));
+          onMessageSent?.(userId, '📷 Photo', now, otherUser);
+        } catch {
+          setMessages(prev => prev.map(m => m.id === tmpId ? { ...m, _status: 'failed' } : m));
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setMessages(prev => prev.map(m => m.id === tmpId ? { ...m, _status: 'failed' } : m));
+    }
   };
 
   const handleRetry = async (msg) => {
@@ -404,116 +323,119 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     try {
       const res = await api.post(`/messages/${userId}`, { body: msg.body });
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...res.data, _status: 'sent' } : m));
-      onMessageSent?.(userId, msg.body, new Date().toISOString(), otherUser);
     } catch {
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: 'failed' } : m));
     }
   };
 
   const otherName = otherUser?.display_name || null;
+  const isPendingRequest = messages.length > 0 && messages.every(m => m.sender_id === currentUser?.id) && !initialUser?.isFriend;
 
-  // Fix #3/#4: show "pending" notice if this is a non-mutual sent message
-  // We determine this from the inbox isFriend state passed via initialUser
-  const isPendingRequest = messages.length > 0
-    && messages.every(m => m.sender_id === currentUser?.id)
-    && !initialUser?.isFriend;
+  // Build message list with day separators
+  const messagesWithSeparators = [];
+  messages.forEach((msg, i) => {
+    const prev = messages[i - 1];
+    if (!prev || !isSameDay(prev.created_at, msg.created_at)) {
+      messagesWithSeparators.push({ type: 'separator', date: msg.created_at, key: `sep-${msg.id}` });
+    }
+    messagesWithSeparators.push({ type: 'message', msg, key: msg.id });
+  });
 
   return (
-    <div
-      ref={outerRef}
-      style={{
-        display: 'flex', flexDirection: 'column',
-        position: 'fixed', top: 0, left: 0, right: 0,
-        height: '100dvh',
-        background: 'var(--bg-primary)', zIndex: 200,
-        // Prevent the page from scrolling behind this overlay
-        overflow: 'hidden',
-        // Ensure it sits in the visual viewport on iOS
-        willChange: 'height, top',
-      }}>
-      {/* ── Header ── */}
-      {/* Fix #5: show skeleton only if name unknown, never blank */}
-      {otherName === null ? (
-        <ConvoHeaderSkeleton onBack={onBack} />
-      ) : (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 16px',
-          paddingTop: 'max(env(safe-area-inset-top), 12px)',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-primary)',
-          flexShrink: 0, zIndex: 1,
-        }}>
-          <button
-            onClick={onBack}
-            style={{ background: 'none', border: 'none', padding: '4px 8px 4px 0', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', WebkitTapHighlightColor: 'transparent' }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <Avatar url={otherUser?.avatar_url} name={otherName} size={36} />
-          <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', flex: 1 }}>{otherName}</div>
-        </div>
-      )}
+    <div ref={outerRef} style={{ display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: 'var(--bg-primary)', zIndex: 200, overflow: 'hidden', willChange: 'height, top' }}>
 
-      {/* ── Messages ── */}
-      <div
-        ref={scrollContainerRef}
-        style={{
-          flex: 1, minHeight: 0,
-          overflowY: 'auto', overflowX: 'hidden',
-          padding: '12px 14px 8px',
-          display: 'flex', flexDirection: 'column', gap: 4,
-          WebkitOverflowScrolling: 'touch',
-          // Fix #1: do NOT use scroll-behavior:smooth on container — let JS control it
-        }}
-      >
+      {/* Header — no bottom border */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', paddingTop: 'max(env(safe-area-inset-top), 12px)', background: 'var(--bg-primary)', flexShrink: 0, zIndex: 1 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', padding: '4px 8px 4px 0', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', WebkitTapHighlightColor: 'transparent' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        {otherName === null ? <AvatarSkeleton size={36} /> : <Avatar url={otherUser?.avatar_url} name={otherName} size={36} />}
+        <div style={{ fontWeight: 700, fontSize: 16, color: otherName ? 'var(--text-primary)' : 'var(--border)', flex: 1 }}>
+          {otherName || <div style={{ width: 100, height: 16, borderRadius: 8, background: 'var(--border)' }} />}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div ref={scrollContainerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2, WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
-          // Fix #5: message skeleton instead of spinner
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
-            {[60, 40, 80, 50, 70].map((w, i) => (
-              <div key={i} style={{
-                alignSelf: i % 2 === 0 ? 'flex-end' : 'flex-start',
-                width: `${w}%`, height: 40, borderRadius: 20,
-                background: 'var(--border)', opacity: 0.5,
-              }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 0' }}>
+            {[55, 38, 75, 45, 65].map((w, i) => (
+              <div key={i} style={{ alignSelf: i % 2 === 0 ? 'flex-end' : 'flex-start', width: `${w}%`, height: 42, borderRadius: 20, background: 'var(--border)', opacity: 0.45 }} />
             ))}
           </div>
         ) : messages.length === 0 ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: 10, padding: '40px 0' }}>
-            {otherUser ? <Avatar url={otherUser.avatar_url} name={otherName} size={64} /> : <AvatarSkeleton size={64} />}
-            {otherName && <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 16, marginTop: 4 }}>{otherName}</div>}
-            <div style={{ fontSize: 14 }}>Send a message to start the conversation</div>
+          /* Empty state — Instagram-style profile preview */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: 0 }}>
+            {otherUser
+              ? <Avatar url={otherUser.avatar_url} name={otherName} size={80} />
+              : <AvatarSkeleton size={80} />}
+            {otherName && <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary)', marginTop: 14 }}>{otherName}</div>}
+            {otherUser?.username && <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2 }}>@{otherUser.username}</div>}
+            {(otherUser?.follower_count != null || otherUser?.following_count != null) && (
+              <div style={{ display: 'flex', gap: 24, marginTop: 14 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{formatCount(otherUser.follower_count)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>Followers</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{formatCount(otherUser.following_count)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>Following</div>
+                </div>
+              </div>
+            )}
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 20 }}>Say hi 👋</div>
           </div>
         ) : (
           <>
-            {messages.map(msg => {
+            {messagesWithSeparators.map(item => {
+              if (item.type === 'separator') {
+                return (
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '12px 0 8px', gap: 10 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{formatDaySeparator(item.date)}</span>
+                  </div>
+                );
+              }
+              const { msg } = item;
               const isOwn = msg.sender_id === currentUser?.id;
               const isFailed = msg._status === 'failed';
               const isSending = msg._status === 'sending';
 
               return (
-                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: 2 }}>
-                  <div
-                    onClick={isFailed ? () => handleRetry(msg) : undefined}
-                    style={{
-                      maxWidth: '75%',
-                      padding: '10px 14px',
-                      borderRadius: isOwn ? '20px 20px 5px 20px' : '20px 20px 20px 5px',
-                      background: isFailed ? '#ef4444' : isOwn ? '#A855F7' : 'var(--bg-card)',
-                      border: isOwn ? 'none' : '1px solid var(--border)',
-                      color: isOwn ? '#fff' : 'var(--text-primary)',
-                      fontSize: 15, lineHeight: 1.4,
-                      wordBreak: 'break-word', whiteSpace: 'pre-wrap',
-                      opacity: isSending ? 0.55 : 1,
-                      transition: 'opacity 0.2s',
-                      cursor: isFailed ? 'pointer' : 'default',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    {msg.body}
-                  </div>
+                <div key={item.key} style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: 1 }}>
+                  {/* Image message */}
+                  {msg.image_url && (
+                    <img
+                      src={msg.image_url}
+                      alt="sent image"
+                      onClick={isFailed ? () => handleRetry(msg) : undefined}
+                      style={{
+                        maxWidth: '65%', maxHeight: 280, borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        objectFit: 'cover', opacity: isSending ? 0.6 : 1, cursor: isFailed ? 'pointer' : 'default',
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                  {/* Text message */}
+                  {msg.body ? (
+                    <div
+                      onClick={isFailed ? () => handleRetry(msg) : undefined}
+                      style={{
+                        maxWidth: '75%', padding: '10px 14px',
+                        borderRadius: isOwn ? '20px 20px 5px 20px' : '20px 20px 20px 5px',
+                        background: isFailed ? '#ef4444' : isOwn ? '#A855F7' : 'var(--bg-card)',
+                        border: isOwn ? 'none' : '1px solid var(--border)',
+                        color: isOwn ? '#fff' : 'var(--text-primary)',
+                        fontSize: 15, lineHeight: 1.4, wordBreak: 'break-word', whiteSpace: 'pre-wrap',
+                        opacity: isSending ? 0.55 : 1, transition: 'opacity 0.2s',
+                        cursor: isFailed ? 'pointer' : 'default',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      {msg.body}
+                    </div>
+                  ) : null}
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, paddingLeft: isOwn ? 0 : 4, paddingRight: isOwn ? 4 : 0 }}>
                     {isSending && 'Sending…'}
                     {isFailed && <span style={{ color: '#ef4444' }}>Not sent · Tap to retry</span>}
@@ -522,36 +444,26 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
                 </div>
               );
             })}
-
-            {/* Fix #3: pending request notice for sender */}
             {isPendingRequest && (
-              <div style={{
-                textAlign: 'center', fontSize: 12,
-                color: 'var(--text-muted)', padding: '12px 20px',
-                background: 'var(--bg-elevated, rgba(168,85,247,0.06))',
-                borderRadius: 12, margin: '8px 0',
-              }}>
+              <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', padding: '12px 20px', background: 'rgba(168,85,247,0.06)', borderRadius: 12, margin: '8px 0' }}>
                 Message request sent · Waiting for them to accept
               </div>
             )}
           </>
         )}
-        <div ref={messagesEndRef} style={{ height: 1 }} />
+        <div style={{ height: 1 }} />
       </div>
 
-      {/* ── Input Bar (with swipe-down-to-dismiss) ── */}
+      {/* Input */}
       <InputBar
         inputRef={inputRef}
         inputValue={inputValue}
         setInputValue={setInputValue}
         onSend={handleSend}
+        onImageSend={handleImageSend}
         onFocused={() => {
           isInputFocusedRef.current = true;
-          setTimeout(() => {
-            if (scrollContainerRef.current) {
-              scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-            }
-          }, 100);
+          setTimeout(() => { if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight; }, 100);
         }}
         onBlurred={() => { isInputFocusedRef.current = false; }}
       />
@@ -569,10 +481,9 @@ export default function Messages() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null); // Fix #5: pass user object to convo
+  const [selectedUser, setSelectedUser] = useState(null);
   const inboxPollRef = useRef(null);
 
-  // Handle ?user= param on mount only
   useEffect(() => {
     const uid = searchParams.get('user');
     if (uid) openConversation(uid, null);
@@ -601,43 +512,21 @@ export default function Messages() {
     return () => setFullscreen(false);
   }, [selectedUserId, setFullscreen]);
 
-  useEffect(() => {
-    return () => setFullscreen(false);
-  }, [setFullscreen]);
+  useEffect(() => { return () => setFullscreen(false); }, [setFullscreen]);
 
-  // Fix #6: listen for BottomNav tap while in convo
   useEffect(() => {
     const handler = () => closeConversation();
     window.addEventListener('messages:close-convo', handler);
     return () => window.removeEventListener('messages:close-convo', handler);
   }, []); // eslint-disable-line
 
-  // Fix #6: expose a way for BottomNav to close the convo
-  // We do this by watching for navigation to /messages while in a convo
-  // — handled in BottomNav below by resetting selectedUserId via MessagingContext
+  const openConversation = (uid, convUser) => { setSelectedUserId(uid); setSelectedUser(convUser || null); };
+  const closeConversation = () => { setSelectedUserId(null); setSelectedUser(null); fetchInbox(); };
 
-  const openConversation = (uid, convUser) => {
-    setSelectedUserId(uid);
-    setSelectedUser(convUser || null);
-  };
-
-  const closeConversation = () => {
-    setSelectedUserId(null);
-    setSelectedUser(null);
-    fetchInbox();
-  };
-
-  // Fix #3/#4: sender's own sent conversations never go to requests
-  // The backend already returns isFriend=false for non-mutual, but we override:
-  // if the last message was sent BY us, it always shows in main messages for us
-  const processedConversations = conversations.map(conv => {
-    const sentByMe = conv.lastMessage?.sender_id === user?.id;
-    return {
-      ...conv,
-      // Sender never sees their outgoing thread as a request
-      _showAsRequest: !conv.isFriend && !sentByMe,
-    };
-  });
+  const processedConversations = conversations.map(conv => ({
+    ...conv,
+    _showAsRequest: !conv.isFriend && conv.lastMessage?.sender_id !== user?.id,
+  }));
 
   const handleMessageSent = useCallback((toUserId, body, sentAt, toUser) => {
     setConversations(prev => {
@@ -645,16 +534,9 @@ export default function Messages() {
       const updatedConv = existing
         ? { ...existing, lastMessage: { body, created_at: sentAt, sender_id: user?.id }, unread: 0 }
         : { user: toUser || { id: toUserId }, lastMessage: { body, created_at: sentAt, sender_id: user?.id }, unread: 0, isFriend: false };
-
       const others = prev.filter(c => c.user?.id !== toUserId);
-      if (updatedConv.isFriend) {
-        return [updatedConv, ...others];
-      }
-      return [
-        ...others.filter(c => c.isFriend),
-        updatedConv,
-        ...others.filter(c => !c.isFriend && c.user?.id !== toUserId),
-      ];
+      if (updatedConv.isFriend) return [updatedConv, ...others];
+      return [...others.filter(c => c.isFriend), updatedConv, ...others.filter(c => !c.isFriend && c.user?.id !== toUserId)];
     });
   }, [user]);
 
@@ -666,19 +548,16 @@ export default function Messages() {
         </svg>
         <h3>Sign in to message</h3>
         <p>Create an account to start messaging.</p>
-        <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/profile')}>
-          Sign In
-        </button>
+        <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/profile')}>Sign In</button>
       </div>
     );
   }
 
-  const friends = processedConversations.filter(c => c.isFriend || (!c._showAsRequest));
+  const friends = processedConversations.filter(c => !c._showAsRequest);
   const requests = processedConversations.filter(c => c._showAsRequest);
 
   return (
     <>
-      {/* Fullscreen conversation */}
       {selectedUserId && (
         <ConversationView
           userId={selectedUserId}
@@ -688,23 +567,27 @@ export default function Messages() {
         />
       )}
 
-      {/* Inbox */}
+      {/* Inbox — no gray header background, larger title, no dividers */}
       <div style={{ display: selectedUserId ? 'none' : 'flex', flexDirection: 'column', minHeight: '60vh' }}>
+        {/* Title — matches Home/Alerts style */}
+        <div style={{ padding: '20px 20px 12px', background: 'transparent' }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Messages</h1>
+        </div>
+
         {loading ? (
-          // Fix #5: skeleton list instead of spinner
-          <div style={{ padding: '8px 0' }}>
+          <div style={{ padding: '4px 0' }}>
             {[1, 2, 3].map(i => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px', borderBottom: '1px solid var(--border)' }}>
-                <AvatarSkeleton size={48} />
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px' }}>
+                <AvatarSkeleton size={50} />
                 <div style={{ flex: 1 }}>
                   <div style={{ width: '40%', height: 14, borderRadius: 7, background: 'var(--border)', marginBottom: 8 }} />
-                  <div style={{ width: '70%', height: 12, borderRadius: 6, background: 'var(--border)', opacity: 0.6 }} />
+                  <div style={{ width: '65%', height: 12, borderRadius: 6, background: 'var(--border)', opacity: 0.6 }} />
                 </div>
               </div>
             ))}
           </div>
         ) : conversations.length === 0 ? (
-          <div className="empty-state" style={{ paddingTop: 80 }}>
+          <div className="empty-state" style={{ paddingTop: 60 }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
             </svg>
@@ -715,36 +598,23 @@ export default function Messages() {
           <>
             {friends.length > 0 && (
               <>
-                <div style={{ padding: '10px 18px 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', background: 'var(--bg-elevated, var(--bg-primary))' }}>
-                  Messages
-                </div>
+                {friends.length > 0 && requests.length > 0 && (
+                  <div style={{ padding: '4px 20px 2px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Messages
+                  </div>
+                )}
                 {friends.map(conv => (
-                  <ConversationListItem
-                    key={conv.user?.id}
-                    conversation={conv}
-                    isSentByMe={conv.lastMessage?.sender_id === user?.id}
-                    onClick={() => openConversation(conv.user?.id, conv.user)}
-                  />
+                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={conv.lastMessage?.sender_id === user?.id} onClick={() => openConversation(conv.user?.id, conv.user)} />
                 ))}
               </>
             )}
             {requests.length > 0 && (
               <>
-                <div style={{
-                  padding: '10px 18px 6px', fontSize: 11, fontWeight: 700,
-                  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em',
-                  background: 'var(--bg-elevated, var(--bg-primary))',
-                  borderTop: friends.length > 0 ? '6px solid var(--border)' : 'none',
-                }}>
+                <div style={{ padding: '16px 20px 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Message Requests
                 </div>
                 {requests.map(conv => (
-                  <ConversationListItem
-                    key={conv.user?.id}
-                    conversation={conv}
-                    isSentByMe={false}
-                    onClick={() => openConversation(conv.user?.id, conv.user)}
-                  />
+                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={false} onClick={() => openConversation(conv.user?.id, conv.user)} />
                 ))}
               </>
             )}
