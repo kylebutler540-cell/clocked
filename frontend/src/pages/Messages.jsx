@@ -122,11 +122,13 @@ function ConversationListItem({ conversation, onClick, isSentByMe }) {
 
 // ─── Input Bar ───────────────────────────────────────────────────────────────
 
-function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBlurred, onImageSend }) {
-  const fileRef = useRef(null);
+function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBlurred, pendingImage, onPickImage, onClearImage }) {
+  const cameraRef = useRef(null);   // capture=camera
+  const libraryRef = useRef(null);  // no capture (library + files)
   const dragHandleRef = useRef(null);
   const touchStartY = useRef(null);
   const isDragging = useRef(false);
+  const [showPicker, setShowPicker] = useState(false);
 
   const handleTouchStart = e => { touchStartY.current = e.touches[0].clientY; isDragging.current = false; };
   const handleTouchMove = e => { if (touchStartY.current === null) return; if (e.touches[0].clientY - touchStartY.current > 8) isDragging.current = true; };
@@ -136,12 +138,15 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
     touchStartY.current = null; isDragging.current = false;
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    onImageSend?.(file);
+    onPickImage?.(file);
     e.target.value = '';
+    setShowPicker(false);
   };
+
+  const canSend = inputValue.trim() || pendingImage;
 
   return (
     <div style={{ flexShrink: 0, background: 'var(--bg-primary)', paddingBottom: 'max(env(safe-area-inset-bottom), 10px)', transition: 'padding-bottom 0.1s' }}>
@@ -151,17 +156,36 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
         <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', opacity: 0.5 }} />
       </div>
 
+      {/* Image preview strip — shows above input when image selected */}
+      {pendingImage && (
+        <div style={{ padding: '4px 14px 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <img src={pendingImage.preview} alt="preview" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', border: '2px solid #A855F7' }} />
+            <button
+              onClick={onClearImage}
+              style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: 'var(--text-primary)', border: '2px solid var(--bg-primary)', color: 'var(--bg-primary)', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+            >×</button>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Add a caption (optional)</div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px 4px' }}>
-        {/* Image picker button */}
-        <button onClick={() => fileRef.current?.click()}
-          style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', WebkitTapHighlightColor: 'transparent', flexShrink: 0 }}>
+        {/* Photo button */}
+        <button
+          onClick={() => setShowPicker(true)}
+          style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', WebkitTapHighlightColor: 'transparent', flexShrink: 0 }}
+        >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="3" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
           </svg>
         </button>
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} style={{ display: 'none' }} />
+
+        {/* Hidden file inputs */}
+        <input ref={cameraRef} type="file" accept="image/*" capture="camera" onChange={handleFileChange} style={{ display: 'none' }} />
+        <input ref={libraryRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
 
         <input
           ref={inputRef}
@@ -171,17 +195,46 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) onSend(e); }}
           onFocus={onFocused}
           onBlur={onBlurred}
-          placeholder="Message…"
+          placeholder={pendingImage ? 'Add a caption…' : 'Message…'}
           autoComplete="off"
           style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 24, padding: '10px 16px', fontSize: 15, background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', WebkitAppearance: 'none' }}
         />
-        <button onClick={onSend} disabled={!inputValue.trim()}
-          style={{ width: 42, height: 42, borderRadius: '50%', background: inputValue.trim() ? '#A855F7' : 'var(--border)', border: 'none', cursor: inputValue.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s', WebkitTapHighlightColor: 'transparent' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" />
-          </svg>
+        <button
+          onClick={onSend}
+          disabled={!canSend}
+          style={{ width: 42, height: 42, borderRadius: '50%', background: canSend ? '#A855F7' : 'var(--border)', border: 'none', cursor: canSend ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s', WebkitTapHighlightColor: 'transparent' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" /></svg>
         </button>
       </div>
+
+      {/* Native-style action sheet for photo source */}
+      {showPicker && (
+        <div
+          onClick={() => setShowPicker(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--bg-card)', borderRadius: '20px 20px 0 0', padding: '8px 0 max(env(safe-area-inset-bottom),16px)' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', margin: '8px auto 16px', opacity: 0.5 }} />
+            {[
+              { label: '📷 Take Photo', action: () => { setShowPicker(false); setTimeout(() => cameraRef.current?.click(), 50); } },
+              { label: '🖼️ Choose from Library', action: () => { setShowPicker(false); setTimeout(() => libraryRef.current?.click(), 50); } },
+            ].map(item => (
+              <button key={item.label} onClick={item.action}
+                style={{ width: '100%', background: 'none', border: 'none', padding: '16px 24px', fontSize: 17, color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer', display: 'block', WebkitTapHighlightColor: 'transparent' }}
+              >
+                {item.label}
+              </button>
+            ))}
+            <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
+            <button onClick={() => setShowPicker(false)}
+              style={{ width: '100%', background: 'none', border: 'none', padding: '16px 24px', fontSize: 17, color: 'var(--text-muted)', textAlign: 'left', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -193,6 +246,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
+  const [pendingImage, setPendingImage] = useState(null); // { file, preview }
   const [otherUser, setOtherUser] = useState(initialUser || null);
   const scrollContainerRef = useRef(null);
   const pollRef = useRef(null);
@@ -272,56 +326,76 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
   }, []); // eslint-disable-line
 
+  const handlePickImage = (file) => {
+    const preview = URL.createObjectURL(file);
+    setPendingImage({ file, preview });
+    // Focus input so user can optionally type a caption
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const handleClearImage = () => {
+    if (pendingImage?.preview) URL.revokeObjectURL(pendingImage.preview);
+    setPendingImage(null);
+  };
+
   const handleSend = async (e) => {
     e?.preventDefault();
     const body = inputValue.trim();
-    if (!body || !currentUser?.id) return;
+    if (!body && !pendingImage) return;
+    if (!currentUser?.id) return;
+
     const tmpId = `opt-${Date.now()}`;
     const now = new Date().toISOString();
-    setMessages(prev => [...prev, { id: tmpId, sender_id: currentUser.id, recipient_id: userId, body, created_at: now, _status: 'sending' }]);
+    const localImageUrl = pendingImage?.preview || null;
+
+    // Optimistic message
+    setMessages(prev => [...prev, {
+      id: tmpId,
+      sender_id: currentUser.id,
+      recipient_id: userId,
+      body: body || '',
+      image_url: localImageUrl,
+      created_at: now,
+      _status: 'sending',
+    }]);
     setInputValue('');
+    const capturedPending = pendingImage;
+    setPendingImage(null);
     scrollToBottom();
-    onMessageSent?.(userId, body, now, otherUser);
+    onMessageSent?.(userId, body || '📷 Photo', now, otherUser);
+
     try {
-      const res = await api.post(`/messages/${userId}`, { body });
+      let imageBase64 = null;
+      if (capturedPending) {
+        // Convert file to base64 data URL
+        imageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(capturedPending.file);
+        });
+        URL.revokeObjectURL(capturedPending.preview);
+      }
+
+      const res = await api.post(`/messages/${userId}`, {
+        body: body || '',
+        ...(imageBase64 ? { image_url: imageBase64 } : {}),
+      });
       setMessages(prev => prev.map(m => m.id === tmpId ? { ...res.data, _status: 'sent' } : m));
     } catch (err) {
+      console.error('send error', err?.response?.data);
       setMessages(prev => prev.map(m => m.id === tmpId ? { ...m, _status: 'failed' } : m));
     }
     inputRef.current?.focus();
   };
 
-  const handleImageSend = async (file) => {
-    if (!currentUser?.id) return;
-    const tmpId = `opt-img-${Date.now()}`;
-    const now = new Date().toISOString();
-    const localUrl = URL.createObjectURL(file);
-    setMessages(prev => [...prev, { id: tmpId, sender_id: currentUser.id, recipient_id: userId, body: '', image_url: localUrl, created_at: now, _status: 'sending' }]);
-    scrollToBottom();
-
-    try {
-      // Convert to base64 and send as body
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const res = await api.post(`/messages/${userId}`, { body: '', image_url: reader.result });
-          URL.revokeObjectURL(localUrl);
-          setMessages(prev => prev.map(m => m.id === tmpId ? { ...res.data, _status: 'sent' } : m));
-          onMessageSent?.(userId, '📷 Photo', now, otherUser);
-        } catch {
-          setMessages(prev => prev.map(m => m.id === tmpId ? { ...m, _status: 'failed' } : m));
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      setMessages(prev => prev.map(m => m.id === tmpId ? { ...m, _status: 'failed' } : m));
-    }
-  };
-
   const handleRetry = async (msg) => {
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: 'sending' } : m));
     try {
-      const res = await api.post(`/messages/${userId}`, { body: msg.body });
+      const res = await api.post(`/messages/${userId}`, {
+        body: msg.body || '',
+        ...(msg.image_url ? { image_url: msg.image_url } : {}),
+      });
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...res.data, _status: 'sent' } : m));
     } catch {
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, _status: 'failed' } : m));
@@ -460,7 +534,9 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         inputValue={inputValue}
         setInputValue={setInputValue}
         onSend={handleSend}
-        onImageSend={handleImageSend}
+        pendingImage={pendingImage}
+        onPickImage={handlePickImage}
+        onClearImage={handleClearImage}
         onFocused={() => {
           isInputFocusedRef.current = true;
           setTimeout(() => { if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight; }, 100);

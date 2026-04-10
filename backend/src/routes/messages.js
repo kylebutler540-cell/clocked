@@ -42,7 +42,8 @@ router.post('/:recipientId', requireAuth, async (req, res) => {
         conversation_id: conversation.id,
         sender_id: senderId,
         recipient_id: recipientId,
-        body: body?.trim() || (image_url ? '📷 Photo' : ''),
+        body: body?.trim() || '',
+        image_url: image_url || null,
         status: 'sent',
       },
       include: { sender: { select: USER_SELECT }, recipient: { select: USER_SELECT } },
@@ -51,7 +52,7 @@ router.post('/:recipientId', requireAuth, async (req, res) => {
     await prisma.conversation.update({
       where: { id: conversation.id },
       data: {
-        last_message: body.trim(),
+        last_message: body?.trim() || (image_url ? '📷 Photo' : ''),
         last_message_at: message.created_at,
         last_message_sender: senderId,
       },
