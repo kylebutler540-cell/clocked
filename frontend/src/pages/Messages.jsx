@@ -289,6 +289,38 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
   );
 }
 
+// ─── Fullscreen Image Viewer ─────────────────────────────────────────────────
+
+function ImageViewer({ src, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 999,
+        background: 'rgba(0,0,0,0.95)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute', top: 'max(env(safe-area-inset-top),16px)', right: 16,
+          background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+          width: 36, height: 36, color: '#fff', fontSize: 20, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >×</button>
+      <img
+        src={src}
+        alt="fullscreen"
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 4 }}
+      />
+    </div>
+  );
+}
+
 // ─── Conversation View ────────────────────────────────────────────────────────
 
 function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
@@ -297,6 +329,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
   const [pendingImage, setPendingImage] = useState(null); // { file, preview }
+  const [viewingImage, setViewingImage] = useState(null); // fullscreen src
   const [otherUser, setOtherUser] = useState(initialUser || null);
   const scrollContainerRef = useRef(null);
   const pollRef = useRef(null);
@@ -533,11 +566,12 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
                     <img
                       src={msg.image_url}
                       alt="sent image"
-                      onClick={isFailed ? () => handleRetry(msg) : undefined}
+                      onClick={isFailed ? () => handleRetry(msg) : () => setViewingImage(msg.image_url)}
                       style={{
-                        maxWidth: '65%', maxHeight: 280, borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                        objectFit: 'cover', opacity: isSending ? 0.6 : 1, cursor: isFailed ? 'pointer' : 'default',
-                        display: 'block',
+                        maxWidth: '65%', maxHeight: 280,
+                        borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        objectFit: 'cover', opacity: isSending ? 0.6 : 1,
+                        cursor: 'pointer', display: 'block',
                       }}
                     />
                   )}
@@ -577,6 +611,9 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         )}
         <div style={{ height: 1 }} />
       </div>
+
+      {/* Fullscreen image viewer */}
+      {viewingImage && <ImageViewer src={viewingImage} onClose={() => setViewingImage(null)} />}
 
       {/* Input */}
       <InputBar
