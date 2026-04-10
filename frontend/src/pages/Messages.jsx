@@ -166,7 +166,6 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
               style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: 'var(--text-primary)', border: '2px solid var(--bg-primary)', color: 'var(--bg-primary)', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
             >×</button>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Add a caption (optional)</div>
         </div>
       )}
 
@@ -195,7 +194,7 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) onSend(e); }}
           onFocus={onFocused}
           onBlur={onBlurred}
-          placeholder={pendingImage ? 'Add a caption…' : 'Message…'}
+          placeholder="Message…"
           autoComplete="off"
           style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 24, padding: '10px 16px', fontSize: 15, background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', WebkitAppearance: 'none' }}
         />
