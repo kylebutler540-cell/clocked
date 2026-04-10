@@ -191,7 +191,14 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
           type="text"
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) onSend(e); }}
+          onKeyDown={e => {
+            // Mobile: Enter sends. Desktop: Enter = new line, Shift+Enter sends
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+            if (e.key === 'Enter') {
+              if (isMobile && !e.shiftKey) { onSend(e); }
+              else if (!isMobile && e.shiftKey) { onSend(e); }
+            }
+          }}
           onFocus={onFocused}
           onBlur={onBlurred}
           placeholder="Message…"
