@@ -3,8 +3,6 @@ import api from '../lib/api';
 
 const AuthContext = createContext();
 
-// ── Saved accounts helpers (persisted in localStorage) ────────────────────────
-// Structure: [{ token, userId, email, displayName, avatarUrl }]
 const ACCOUNTS_KEY = 'clocked-accounts';
 
 function getSavedAccounts() {
@@ -14,21 +12,33 @@ function getSavedAccounts() {
 function upsertSavedAccount(entry) {
   const accounts = getSavedAccounts();
   const idx = accounts.findIndex(a => a.userId === entry.userId);
-  if (idx >= 0) accounts[idx] = entry;
+  if (idx >= 0) accounts[idx] = { ...accounts[idx], ...entry };
   else accounts.push(entry);
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
 function removeSavedAccount(userId) {
-  const accounts = getSavedAccounts().filter(a => a.userId !== userId);
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(getSavedAccounts().filter(a => a.userId !== userId)));
 }
 
-// Try to restore user from saved accounts cache instantly
+// Decode JWT payload without verifying — just to read userId
+function decodeJwtPayload(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  } catch { return null; }
+}
+
+// Instantly restore user from cache using userId from JWT — works even if token changed
 function getInitialUser(token) {
   if (!token) return null;
-  const saved = getSavedAccounts().find(a => a.token === token);
+  const payload = decodeJwtPayload(token);
+  if (!payload?.userId) return null;
+  const saved = getSavedAccounts().find(a => a.userId === payload.userId);
   if (!saved) return null;
+  // Update stored token to current one
+  saved.token = token;
+  upsertSavedAccount(saved);
   return {
     id: saved.userId,
     email: saved.email,
@@ -40,10 +50,10 @@ function getInitialUser(token) {
 
 export function AuthProvider({ children }) {
   const storedToken = localStorage.getItem('clocked-token');
-  const [user, setUser] = useState(() => getInitialUser(storedToken));
+  const cachedUser = getInitialUser(storedToken);
+  const [user, setUser] = useState(() => cachedUser);
   const [token, setToken] = useState(() => storedToken);
-  // If we have a cached user, skip the loading flash entirely
-  const [loading, setLoading] = useState(!getInitialUser(storedToken));
+  const [loading, setLoading] = useState(!cachedUser);
   const [savedAccounts, setSavedAccounts] = useState(() => getSavedAccounts());
 
   useEffect(() => {
@@ -59,10 +69,8 @@ export function AuthProvider({ children }) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const res = await api.get('/auth/me');
-        // Replace cached user with fresh server data
         const freshUser = res.data.user;
         setUser(freshUser);
-        // Update the cache with fresh data
         if (freshUser?.email) {
           const currentToken = localStorage.getItem('clocked-token');
           upsertSavedAccount({
@@ -78,38 +86,57 @@ export function AuthProvider({ children }) {
         return;
       } catch (err) {
         const status = err.response?.status;
-        // 401 = token genuinely invalid — clear it, don't retry
         if (status === 401) {
-          localStorage.removeItem('clocked-token');
-          setToken(null);
-          setUser(null);
-          initAnonymous();
+          // Token truly invalid — but check if we have a saved account first
+          const payload = decodeJwtPayload(localStorage.getItem('clocked-token'));
+          const saved = payload?.userId ? getSavedAccounts().find(a => a.userId === payload.userId) : null;
+          if (!saved) {
+            localStorage.removeItem('clocked-token');
+            setToken(null);
+            setUser(null);
+            initAnonymous();
+          } else {
+            // Keep showing cached user, just stop loading
+            setLoading(false);
+          }
           return;
         }
-        // Network/5xx — wait and retry
         if (attempt < retries) {
           await new Promise(r => setTimeout(r, 1000 * attempt));
           continue;
         }
-        // All retries exhausted — keep cached user, just stop loading
+        // All retries failed — keep cached user visible
         setLoading(false);
       }
     }
   }
 
   async function initAnonymous(retries = 3) {
+    // Never overwrite a real logged-in user's token
+    const existing = localStorage.getItem('clocked-token');
+    if (existing) {
+      const payload = decodeJwtPayload(existing);
+      if (payload?.userId) {
+        const saved = getSavedAccounts().find(a => a.userId === payload.userId);
+        if (saved?.email) {
+          // Real user token — don't replace with anonymous
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const res = await api.post('/auth/anonymous');
         saveSession(res.data.token, res.data.user, false);
         setLoading(false);
         return;
-      } catch (err) {
+      } catch {
         if (attempt < retries) {
           await new Promise(r => setTimeout(r, 800 * attempt));
           continue;
         }
-        console.error('Failed to init anonymous session after retries', err);
         setLoading(false);
       }
     }
@@ -120,16 +147,14 @@ export function AuthProvider({ children }) {
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     setToken(newToken);
     setUser(newUser);
-    // Only persist real accounts (have an email)
     if (persist && newUser?.email) {
-      const entry = {
+      upsertSavedAccount({
         token: newToken,
         userId: newUser.id,
         email: newUser.email,
         displayName: newUser.display_name || newUser.username || newUser.email.split('@')[0],
         avatarUrl: newUser.avatar_url || null,
-      };
-      upsertSavedAccount(entry);
+      });
       setSavedAccounts(getSavedAccounts());
     }
   }
@@ -152,7 +177,6 @@ export function AuthProvider({ children }) {
     return res.data;
   }
 
-  // Switch to a saved account by its stored token
   async function switchToAccount(account) {
     localStorage.setItem('clocked-token', account.token);
     api.defaults.headers.common['Authorization'] = `Bearer ${account.token}`;
@@ -162,21 +186,17 @@ export function AuthProvider({ children }) {
       const res = await api.get('/auth/me');
       const freshUser = res.data.user;
       setUser(freshUser);
-      // Update the saved account with fresh data
-      const entry = {
+      upsertSavedAccount({
         token: account.token,
         userId: freshUser.id,
         email: freshUser.email,
         displayName: freshUser.display_name || freshUser.username || freshUser.email?.split('@')[0] || 'Account',
         avatarUrl: freshUser.avatar_url || null,
-      };
-      upsertSavedAccount(entry);
+      });
       setSavedAccounts(getSavedAccounts());
     } catch {
-      // Token expired — remove from saved accounts
       removeSavedAccount(account.userId);
       setSavedAccounts(getSavedAccounts());
-      // Fall through to re-auth
       localStorage.removeItem('clocked-token');
       setToken(null);
       initAnonymous();
@@ -193,18 +213,16 @@ export function AuthProvider({ children }) {
     initAnonymous();
   }
 
-  // Update savedAccounts whenever user profile changes (e.g. after profile setup)
   function setUserAndSync(newUser) {
     setUser(newUser);
     if (newUser?.email && token) {
-      const entry = {
+      upsertSavedAccount({
         token,
         userId: newUser.id,
         email: newUser.email,
         displayName: newUser.display_name || newUser.username || newUser.email.split('@')[0],
         avatarUrl: newUser.avatar_url || null,
-      };
-      upsertSavedAccount(entry);
+      });
       setSavedAccounts(getSavedAccounts());
     }
   }
