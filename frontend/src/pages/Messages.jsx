@@ -208,30 +208,81 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
         </button>
       </div>
 
-      {/* Native-style action sheet for photo source */}
+      {/* Floating dark popup menu — matches reference design */}
       {showPicker && (
         <div
           onClick={() => setShowPicker(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 999 }}
         >
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--bg-card)', borderRadius: '20px 20px 0 0', padding: '8px 0 max(env(safe-area-inset-bottom),16px)' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', margin: '8px auto 16px', opacity: 0.5 }} />
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'absolute',
+              bottom: 90,
+              left: 16,
+              background: '#1e1e1e',
+              borderRadius: 16,
+              overflow: 'hidden',
+              minWidth: 220,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+            }}
+          >
             {[
-              { label: '📷 Take Photo', action: () => { setShowPicker(false); setTimeout(() => cameraRef.current?.click(), 50); } },
-              { label: '🖼️ Choose from Library', action: () => { setShowPicker(false); setTimeout(() => libraryRef.current?.click(), 50); } },
-            ].map(item => (
-              <button key={item.label} onClick={item.action}
-                style={{ width: '100%', background: 'none', border: 'none', padding: '16px 24px', fontSize: 17, color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer', display: 'block', WebkitTapHighlightColor: 'transparent' }}
+              {
+                label: 'Photo Library',
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                ),
+                action: () => { setShowPicker(false); setTimeout(() => libraryRef.current?.click(), 50); },
+              },
+              {
+                label: 'Take Photo or Video',
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                ),
+                action: () => { setShowPicker(false); setTimeout(() => cameraRef.current?.click(), 50); },
+              },
+              {
+                label: 'Choose Files',
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                  </svg>
+                ),
+                action: () => { setShowPicker(false); setTimeout(() => libraryRef.current?.click(), 50); },
+              },
+            ].map((item, i, arr) => (
+              <button
+                key={item.label}
+                onClick={item.action}
+                style={{
+                  width: '100%',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                  padding: '14px 18px',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: '#fff',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
               >
+                <span style={{ opacity: 0.85 }}>{item.icon}</span>
                 {item.label}
               </button>
             ))}
-            <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
-            <button onClick={() => setShowPicker(false)}
-              style={{ width: '100%', background: 'none', border: 'none', padding: '16px 24px', fontSize: 17, color: 'var(--text-muted)', textAlign: 'left', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
