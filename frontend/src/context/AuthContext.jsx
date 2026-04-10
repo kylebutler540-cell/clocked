@@ -24,10 +24,26 @@ function removeSavedAccount(userId) {
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
+// Try to restore user from saved accounts cache instantly
+function getInitialUser(token) {
+  if (!token) return null;
+  const saved = getSavedAccounts().find(a => a.token === token);
+  if (!saved) return null;
+  return {
+    id: saved.userId,
+    email: saved.email,
+    display_name: saved.displayName,
+    avatar_url: saved.avatarUrl,
+    _fromCache: true,
+  };
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('clocked-token'));
-  const [loading, setLoading] = useState(true);
+  const storedToken = localStorage.getItem('clocked-token');
+  const [user, setUser] = useState(() => getInitialUser(storedToken));
+  const [token, setToken] = useState(() => storedToken);
+  // If we have a cached user, skip the loading flash entirely
+  const [loading, setLoading] = useState(!getInitialUser(storedToken));
   const [savedAccounts, setSavedAccounts] = useState(() => getSavedAccounts());
 
   useEffect(() => {
@@ -43,30 +59,39 @@ export function AuthProvider({ children }) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const res = await api.get('/auth/me');
-        setUser(res.data.user);
+        // Replace cached user with fresh server data
+        const freshUser = res.data.user;
+        setUser(freshUser);
+        // Update the cache with fresh data
+        if (freshUser?.email) {
+          const currentToken = localStorage.getItem('clocked-token');
+          upsertSavedAccount({
+            token: currentToken,
+            userId: freshUser.id,
+            email: freshUser.email,
+            displayName: freshUser.display_name || freshUser.username || freshUser.email.split('@')[0],
+            avatarUrl: freshUser.avatar_url || null,
+          });
+          setSavedAccounts(getSavedAccounts());
+        }
         setLoading(false);
         return;
       } catch (err) {
         const status = err.response?.status;
-        // 401 = token genuinely invalid — clear it immediately, no retry
+        // 401 = token genuinely invalid — clear it, don't retry
         if (status === 401) {
           localStorage.removeItem('clocked-token');
           setToken(null);
+          setUser(null);
           initAnonymous();
           return;
         }
-        // Network error or 5xx — wait and retry
+        // Network/5xx — wait and retry
         if (attempt < retries) {
           await new Promise(r => setTimeout(r, 1000 * attempt));
           continue;
         }
-        // All retries exhausted — keep the token, show as logged out but DON'T wipe
-        // The token is probably fine, backend is just slow
-        // Try to restore user from savedAccounts as fallback
-        const saved = getSavedAccounts().find(a => a.token === localStorage.getItem('clocked-token'));
-        if (saved) {
-          setUser({ id: saved.userId, email: saved.email, display_name: saved.displayName, avatar_url: saved.avatarUrl });
-        }
+        // All retries exhausted — keep cached user, just stop loading
         setLoading(false);
       }
     }
