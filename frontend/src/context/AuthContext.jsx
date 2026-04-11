@@ -47,7 +47,26 @@ function getInitialUser(token) {
 }
 
 export function AuthProvider({ children }) {
-  const storedToken = localStorage.getItem('clocked-token');
+  // If stored token is anonymous but we have a real saved account, restore the real one
+  function getBestToken() {
+    const stored = localStorage.getItem('clocked-token');
+    if (!stored) return null;
+    const payload = decodeJwtPayload(stored);
+    if (!payload?.userId) return stored;
+    // Check if this token belongs to a real (email) account
+    const saved = getSavedAccounts();
+    const matchedAccount = saved.find(a => a.userId === payload.userId);
+    if (matchedAccount?.email) return stored; // real account, keep it
+    // Token is anon — check if we have a real saved account to restore
+    const realAccount = saved.find(a => a.email && a.token);
+    if (realAccount) {
+      localStorage.setItem('clocked-token', realAccount.token);
+      return realAccount.token;
+    }
+    return stored; // no real account to restore, use what we have
+  }
+
+  const storedToken = getBestToken();
   const cachedUser = getInitialUser(storedToken);
 
   // Set auth header immediately before any state/effect runs
@@ -97,17 +116,22 @@ export function AuthProvider({ children }) {
       } catch (err) {
         const status = err.response?.status;
         if (status === 401) {
-          // Token truly invalid — but check if we have a saved account first
-          const payload = decodeJwtPayload(localStorage.getItem('clocked-token'));
-          const saved = payload?.userId ? getSavedAccounts().find(a => a.userId === payload.userId) : null;
-          if (!saved) {
+          // Token invalid — try to restore a real saved account before going anon
+          const realAccounts = getSavedAccounts().filter(a => a.email && a.token);
+          const currentUserId = decodeJwtPayload(localStorage.getItem('clocked-token'))?.userId;
+          const otherReal = realAccounts.find(a => a.userId !== currentUserId);
+          if (otherReal) {
+            // Restore another real account's token
+            localStorage.setItem('clocked-token', otherReal.token);
+            api.defaults.headers.common['Authorization'] = `Bearer ${otherReal.token}`;
+            setToken(otherReal.token);
+            setLoading(false);
+            fetchMe();
+          } else {
             localStorage.removeItem('clocked-token');
             setToken(null);
             setUser(null);
             initAnonymous();
-          } else {
-            // Keep showing cached user, just stop loading
-            setLoading(false);
           }
           return;
         }
@@ -123,14 +147,24 @@ export function AuthProvider({ children }) {
   }
 
   async function initAnonymous(retries = 3) {
-    // Never overwrite a real logged-in user's token
+    // NEVER overwrite a real account's token with an anonymous one
+    const realAccounts = getSavedAccounts().filter(a => a.email && a.token);
+    if (realAccounts.length > 0) {
+      // Restore best real account
+      const best = realAccounts[0];
+      localStorage.setItem('clocked-token', best.token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${best.token}`;
+      setToken(best.token);
+      setLoading(false);
+      fetchMe(); // verify token still valid
+      return;
+    }
     const existing = localStorage.getItem('clocked-token');
     if (existing) {
       const payload = decodeJwtPayload(existing);
       if (payload?.userId) {
         const saved = getSavedAccounts().find(a => a.userId === payload.userId);
         if (saved?.email) {
-          // Real user token — don't replace with anonymous
           setLoading(false);
           return;
         }
