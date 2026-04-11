@@ -193,9 +193,7 @@ function MobileHeader({ onOpenDrawer }) {
           <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
-      <div style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => navigate('/')}>
-        <ClockedLogo height={24} />
-      </div>
+      <ClockedLogo height={24} onClick={() => navigate('/')} />
       <div className="header-right">
         <div className="header-search-wrapper">
           <EmployerSearch onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })} placeholder="Search employers..." />
