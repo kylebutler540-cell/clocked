@@ -11,7 +11,10 @@ function formatMsgTime(dateStr) {
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   if (isToday) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  const diffDays = Math.floor((now - date) / 86400000);
+  // Use calendar day diff, not 24h diff, so it never shows 0d
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((todayMidnight - msgMidnight) / 86400000);
   if (diffDays < 7) return `${diffDays}d`;
   const diffWeeks = Math.floor(diffDays / 7);
   if (diffWeeks < 5) return `${diffWeeks}w`;
@@ -34,10 +37,15 @@ function timeAgo(dateStr) {
   return `${Math.floor(mo / 12)}y`;
 }
 
-// Format date for day separators: "April 10" or "April 10, 2024"
+// Format date for day separators: Today / Yesterday / April 10 / April 10, 2024
 function formatDaySeparator(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((todayMidnight - msgMidnight) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
   const opts = date.getFullYear() === now.getFullYear()
     ? { month: 'long', day: 'numeric' }
     : { month: 'long', day: 'numeric', year: 'numeric' };
@@ -738,7 +746,7 @@ export default function Messages() {
       )}
 
       {/* Inbox — no gray header background, larger title, no dividers */}
-      <div style={{ display: selectedUserId ? 'none' : 'flex', flexDirection: 'column', minHeight: '60vh' }}>
+      <div style={{ display: selectedUserId ? 'none' : 'flex', flexDirection: 'column', minHeight: '60vh', maxWidth: 680, width: '100%', margin: '0 auto' }}>
         {/* Title — matches Home/Alerts style */}
         <div style={{ padding: '20px 20px 12px', background: 'transparent' }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Messages</h1>
