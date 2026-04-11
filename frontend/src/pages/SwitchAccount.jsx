@@ -32,23 +32,34 @@ export default function SwitchAccount() {
   // Accounts other than current
   const otherAccounts = savedAccounts.filter(a => a.userId !== user?.id);
 
-  // Handle Google OAuth2 redirect response (credential in URL hash/params)
+  // Mount GSI button with select_account hint
   useEffect(() => {
-    // Listen for the credential from the OAuth2 popup via postMessage
-    const handler = async (event) => {
-      if (event.data?.type === 'google-credential' && event.data?.credential) {
-        try {
-          const data = await loginWithGoogle(event.data.credential);
-          if (!data.user?.username) navigate('/profile-setup');
-          else navigate('/');
-        } catch (err) {
-          addToast(err?.response?.data?.error || 'Google sign-in failed. Please try again.');
-        }
-      }
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, [loginWithGoogle, navigate, addToast]);
+    function init() {
+      window.google?.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          try {
+            const data = await loginWithGoogle(response.credential);
+            if (!data.user?.username) navigate('/profile-setup');
+            else navigate('/');
+          } catch (err) {
+            addToast(err?.response?.data?.error || 'Google sign-in failed.');
+          }
+        },
+      });
+      window.google?.accounts.id.renderButton(
+        document.getElementById('switch-google-btn'),
+        { theme: 'outline', size: 'large', width: '100%', text: 'signin_with', shape: 'pill' }
+      );
+    }
+    if (window.google) { init(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = init;
+    document.body.appendChild(script);
+    return () => { try { document.body.removeChild(script); } catch {} };
+  }, []);
 
   async function handleSwitch(account) {
     setSwitching(account.userId);
@@ -172,44 +183,8 @@ export default function SwitchAccount() {
           {/* Custom Google button — opens Google account picker, no "Continue as" */}
           <button
             onClick={() => {
-              // Use OAuth2 implicit flow with prompt=select_account
-              // This opens the full Google account chooser regardless of current session
-              const params = new URLSearchParams({
-                client_id: GOOGLE_CLIENT_ID,
-                redirect_uri: window.location.origin + '/switch-account',
-                response_type: 'token id_token',
-                scope: 'openid email profile',
-                prompt: 'select_account',
-                nonce: Math.random().toString(36).slice(2),
-              });
-              // Open in a popup centered on screen
-              const w = 500, h = 600;
-              const left = window.screenX + (window.outerWidth - w) / 2;
-              const top = window.screenY + (window.outerHeight - h) / 2;
-              const popup = window.open(
-                `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-                'google-account-picker',
-                `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no`
-              );
-              // Poll for redirect back
-              const poll = setInterval(() => {
-                try {
-                  if (!popup || popup.closed) { clearInterval(poll); return; }
-                  const url = popup.location.href;
-                  if (url.includes(window.location.origin)) {
-                    clearInterval(poll);
-                    // Parse id_token from hash
-                    const hash = new URLSearchParams(popup.location.hash.slice(1));
-                    const idToken = hash.get('id_token');
-                    popup.close();
-                    if (idToken) {
-                      loginWithGoogle(idToken)
-                        .then(data => { if (!data.user?.username) navigate('/profile-setup'); else navigate('/'); })
-                        .catch(err => addToast(err?.response?.data?.error || 'Google sign-in failed. Please try again.'));
-                    }
-                  }
-                } catch {} // cross-origin — ignore until redirect
-              }, 300);
+              // Trigger the GSI button click
+              document.getElementById('switch-google-btn')?.querySelector('[role=button], div[tabindex="0"]')?.click();
             }}
             style={{
               width: '100%', padding: '12px 20px',
@@ -228,6 +203,9 @@ export default function SwitchAccount() {
             </svg>
             Add a Google Account
           </button>
+
+          {/* Hidden GSI button — triggered by custom button above */}
+          <div id="switch-google-btn" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1, overflow: 'hidden' }} />
 
           {/* Email option toggle */}
           {!showAddEmail ? (
