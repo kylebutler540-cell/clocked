@@ -36,8 +36,8 @@ export default function ProfileSetup() {
   const { addToast } = useToast();
 
   const [step, setStep] = useState(1);
-  const [displayName, setDisplayName] = useState(user?.display_name || '');
-  const [username, setUsername] = useState(user?.username || '');
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [location, setLocation] = useState(localStorage.getItem('userLocation') || '');
   const [locationInput, setLocationInput] = useState('');
