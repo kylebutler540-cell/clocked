@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -8,27 +8,26 @@ function AvatarCircle({ avatarUrl, displayName, size = 96 }) {
   const letter = displayName ? displayName[0].toUpperCase() : '?';
   return (
     <div style={{
-      width: size,
-      height: size,
-      borderRadius: '50%',
+      width: size, height: size, borderRadius: '50%',
       background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-      flexShrink: 0,
-      fontSize: size * 0.38,
-      fontWeight: 700,
-      color: 'white',
-      userSelect: 'none',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden', flexShrink: 0,
+      fontSize: size * 0.38, fontWeight: 700, color: 'white', userSelect: 'none',
     }}>
       {avatarUrl
         ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : letter
-      }
+        : letter}
     </div>
   );
 }
+
+const CITIES = [
+  'Grand Rapids, MI', 'Detroit, MI', 'Lansing, MI', 'Ann Arbor, MI',
+  'Chicago, IL', 'New York, NY', 'Los Angeles, CA', 'Houston, TX',
+  'Phoenix, AZ', 'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA',
+  'Dallas, TX', 'Nashville, TN', 'Charlotte, NC', 'Atlanta, GA',
+  'Seattle, WA', 'Denver, CO', 'Boston, MA', 'Portland, OR',
+];
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
@@ -39,14 +38,40 @@ export default function ProfileSetup() {
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [username, setUsername] = useState(user?.username || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
+  const [location, setLocation] = useState(localStorage.getItem('userLocation') || '');
+  const [locationInput, setLocationInput] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef(null);
 
   const USERNAME_REGEX = /^[a-zA-Z0-9_.]{3,20}$/;
 
+  // Block back navigation while on setup — user must complete step 1
+  useEffect(() => {
+    if (step !== 1) return;
+    // Push a history state so back button has something to pop
+    window.history.pushState({ profileSetup: true }, '');
+    const handlePop = () => {
+      // Push it back — they can't leave step 1
+      window.history.pushState({ profileSetup: true }, '');
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, [step]);
+
+  // Block tab close / navigation away on step 1
+  useEffect(() => {
+    if (step !== 1) return;
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [step]);
+
   function validateUsername(val) {
-    if (!val) return '';
+    if (!val) return 'Username is required';
     if (!USERNAME_REGEX.test(val)) return 'Letters, numbers, underscores, periods only (3–20 chars)';
     return '';
   }
@@ -61,13 +86,13 @@ export default function ProfileSetup() {
     e.preventDefault();
     if (!displayName.trim()) return addToast('Display name is required');
     const err = validateUsername(username);
-    if (err) return setUsernameError(err);
+    if (err) { setUsernameError(err); return; }
 
     setSaving(true);
     try {
       const res = await api.patch('/auth/profile', {
         display_name: displayName.trim(),
-        username: username || undefined,
+        username: username,
       });
       setUser(res.data.user);
       setStep(2);
@@ -88,26 +113,33 @@ export default function ProfileSetup() {
     reader.readAsDataURL(file);
   }
 
-  async function handleFinish() {
+  async function handleStep2Next() {
     setSaving(true);
     try {
-      const res = await api.patch('/auth/profile', { avatar_url: avatarUrl || null });
-      setUser(res.data.user);
-    } catch {
-      // Non-critical — still proceed
-    } finally {
+      if (avatarUrl) {
+        const res = await api.patch('/auth/profile', { avatar_url: avatarUrl });
+        setUser(res.data.user);
+      }
+    } catch { /* non-critical */ } finally {
       setSaving(false);
-      navigate('/');
+      setStep(3);
     }
   }
 
-  function handleSkipAvatar() {
+  function handleFinish() {
+    const loc = locationInput.trim() || location;
+    if (loc) {
+      localStorage.setItem('userLocation', loc);
+      window.dispatchEvent(new CustomEvent('locationchange', { detail: { city: loc } }));
+    }
     navigate('/');
   }
 
+  const step1Complete = displayName.trim().length > 0 && username.length >= 3 && !usernameError;
+
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -115,14 +147,25 @@ export default function ProfileSetup() {
       background: 'var(--bg-base)',
     }}>
       <div style={{
-        width: '100%',
-        maxWidth: 440,
+        width: '100%', maxWidth: 440,
         background: 'var(--bg-card)',
         borderRadius: 16,
         border: '1px solid var(--border)',
         padding: '36px 32px',
       }}>
 
+        {/* Step indicator */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
+          {[1, 2, 3].map(s => (
+            <div key={s} style={{
+              flex: 1, height: 3, borderRadius: 2,
+              background: s <= step ? '#A855F7' : 'var(--border)',
+              transition: 'background 0.3s',
+            }} />
+          ))}
+        </div>
+
+        {/* ── Step 1: Identity ── */}
         {step === 1 && (
           <>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
@@ -132,13 +175,15 @@ export default function ProfileSetup() {
               This is how other users will see you on Clocked.
             </p>
             <p style={{ color: '#A855F7', fontSize: 13, fontWeight: 600, margin: '0 0 24px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
               Keep it anonymous — don't use your real name
             </p>
 
             <form onSubmit={handleStep1Next}>
               <div className="form-group">
-                <label className="form-label">Display Name</label>
+                <label className="form-label">Display Name <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   className="form-input"
                   type="text"
@@ -150,12 +195,12 @@ export default function ProfileSetup() {
                   required
                 />
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-                  Pick any name — keep it anonymous. Avoid your real name or anything people could recognize.
+                  Pick any name — keep it anonymous.
                 </p>
               </div>
 
               <div className="form-group" style={{ marginTop: 20 }}>
-                <label className="form-label">@Username</label>
+                <label className="form-label">@Username <span style={{ color: '#ef4444' }}>*</span></label>
                 <div style={{ position: 'relative' }}>
                   <span style={{
                     position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
@@ -169,13 +214,14 @@ export default function ProfileSetup() {
                     placeholder="yourhandle"
                     maxLength={20}
                     style={{ paddingLeft: 28 }}
+                    required
                   />
                 </div>
                 {usernameError ? (
                   <p style={{ fontSize: 12, color: '#EF4444', margin: '6px 0 0' }}>{usernameError}</p>
                 ) : (
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-                    Your unique handle. Letters, numbers, underscores, periods only. Optional.
+                    Your unique handle. Letters, numbers, underscores, periods only.
                   </p>
                 )}
               </div>
@@ -183,29 +229,35 @@ export default function ProfileSetup() {
               <button
                 type="submit"
                 className="btn btn-primary btn-full"
-                disabled={saving}
-                style={{ marginTop: 28 }}
+                disabled={saving || !step1Complete}
+                style={{ marginTop: 28, opacity: step1Complete ? 1 : 0.5 }}
               >
-                {saving ? 'Saving...' : 'Next'}
+                {saving ? 'Saving...' : 'Next →'}
               </button>
+
+              {!step1Complete && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginTop: 10 }}>
+                  Enter a display name and username to continue
+                </p>
+              )}
             </form>
           </>
         )}
 
+        {/* ── Step 2: Profile Picture ── */}
         {step === 2 && (
           <>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
               Add a profile picture
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 28px' }}>
-              Optional — you can skip this.
+              Optional — you can skip this and add one later.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 24 }}>
               <div
                 style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => fileInputRef.current?.click()}
-                title="Click to upload photo"
               >
                 <AvatarCircle avatarUrl={avatarUrl} displayName={displayName} size={110} />
                 <div style={{
@@ -220,41 +272,70 @@ export default function ProfileSetup() {
                   </svg>
                 </div>
               </div>
-              <button
-                className="btn btn-secondary"
-                style={{ fontSize: 13 }}
-                onClick={() => fileInputRef.current?.click()}
-                type="button"
-              >
+              <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => fileInputRef.current?.click()} type="button">
                 Choose Photo
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleAvatarFile}
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarFile} />
             </div>
 
             <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 24px' }}>
-              Avoid real photos of yourself or anything that could identify you. Keep it anonymous.
+              Avoid real photos. Keep it anonymous.
             </p>
 
-            <button
-              className="btn btn-primary btn-full"
-              onClick={handleFinish}
-              disabled={saving || !avatarUrl}
-            >
-              {saving ? 'Saving...' : 'Finish'}
+            <button className="btn btn-primary btn-full" onClick={handleStep2Next} disabled={saving}>
+              {saving ? 'Saving...' : avatarUrl ? 'Next →' : 'Skip →'}
             </button>
-            <button
-              className="btn btn-ghost btn-full"
-              onClick={handleSkipAvatar}
-              style={{ marginTop: 10 }}
-              type="button"
-            >
-              Skip for now
+          </>
+        )}
+
+        {/* ── Step 3: Location ── */}
+        {step === 3 && (
+          <>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
+              Where are you located?
+            </h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 24px' }}>
+              Helps show you relevant reviews in your area. You can change this anytime.
+            </p>
+
+            <div className="form-group">
+              <label className="form-label">Your City</label>
+              <input
+                className="form-input"
+                type="text"
+                value={locationInput}
+                onChange={e => setLocationInput(e.target.value)}
+                placeholder="e.g. Grand Rapids, MI"
+                autoFocus
+              />
+            </div>
+
+            {/* Quick-select common cities */}
+            <div style={{ marginTop: 12, marginBottom: 24 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Or pick one:</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {CITIES.slice(0, 8).map(city => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => setLocationInput(city)}
+                    style={{
+                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      background: locationInput === city ? '#A855F7' : 'var(--bg-elevated)',
+                      color: locationInput === city ? '#fff' : 'var(--text-primary)',
+                      border: `1px solid ${locationInput === city ? '#A855F7' : 'var(--border)'}`,
+                      cursor: 'pointer', transition: 'all 0.15s',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button className="btn btn-primary btn-full" onClick={handleFinish}>
+              {locationInput.trim() ? 'Finish' : 'Skip for now'}
             </button>
           </>
         )}
