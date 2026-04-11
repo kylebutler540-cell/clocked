@@ -110,6 +110,18 @@ export function AuthProvider({ children }) {
             avatarUrl: freshUser.avatar_url || null,
           });
           setSavedAccounts(getSavedAccounts());
+        } else {
+          // Anon user resolved — if there's a real saved account, restore it
+          // This handles the case where an anon token replaced a real one
+          const realAccounts = getSavedAccounts().filter(a => a.email && a.token);
+          if (realAccounts.length > 0) {
+            const best = realAccounts[0];
+            localStorage.setItem('clocked-token', best.token);
+            api.defaults.headers.common['Authorization'] = `Bearer ${best.token}`;
+            setToken(best.token);
+            setTimeout(() => fetchMe(), 50);
+            return;
+          }
         }
         setLoading(false);
         return;
@@ -188,6 +200,17 @@ export function AuthProvider({ children }) {
   }
 
   function saveSession(newToken, newUser, persist = true) {
+    // Never overwrite a real user's token with an anon session
+    if (!persist && !newUser?.email) {
+      const realAccounts = getSavedAccounts().filter(a => a.email);
+      const currentToken = localStorage.getItem('clocked-token');
+      if (currentToken && realAccounts.length > 0) {
+        // We have real accounts — don't overwrite with anon token
+        // Just set the API header, don't touch localStorage
+        api.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+        return;
+      }
+    }
     localStorage.setItem('clocked-token', newToken);
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     setToken(newToken);
