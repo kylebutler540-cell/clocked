@@ -603,24 +603,18 @@ img, video {
   -webkit-text-fill-color: unset;
 }
 
-/* ========== Google Sign-In Button — clip outer container ========== */
-/* Wrap each google button div in overflow:hidden + border-radius to clip the outer box */
-#google-signin-btn,
-#switch-google-btn,
-#profile-google-btn {
-  overflow: hidden;
-  border-radius: 24px;
-}
-
-/* Strip any extra padding/border injected by GSI */
-#google-signin-btn > div,
-#switch-google-btn > div,
-#profile-google-btn > div {
+/* ========== Google Sign-In Button — clean pill look ========== */
+/* Strip outer container injected by Google GSI renderer */
+.google-btn-wrap > div {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
+  width: 100% !important;
+}
+.google-btn-wrap iframe {
+  width: 100% !important;
 }
 
 /* ========== Dropdown menu (shared desktop + mobile) ========== */
