@@ -1,5 +1,7 @@
 /* ========== CSS Variables ========== */
 :root {
+  --logo-dark-opacity: 0;
+  --logo-light-opacity: 1;
   --purple: #A855F7;
   --purple-dark: #7C3AED;
   --purple-light: #C084FC;
@@ -58,6 +60,8 @@
 }
 
 [data-theme="dark"] {
+  --logo-dark-opacity: 1;
+  --logo-light-opacity: 0;
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --bg-card: #1A1A1A;

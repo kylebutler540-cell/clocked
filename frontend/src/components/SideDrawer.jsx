@@ -33,7 +33,7 @@ export default function SideDrawer({ isOpen, onClose }) {
       />
       <div className={`side-drawer${isOpen ? ' open' : ''}`}>
         <div className="drawer-header">
-          <ClockedLogo height={26} />
+          <ClockedLogo height={34} />
           <button className="drawer-close" onClick={onClose} aria-label="Close menu">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
