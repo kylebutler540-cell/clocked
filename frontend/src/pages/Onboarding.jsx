@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ClockedLogo from '../components/ClockedLogo';
 import { useNavigate } from 'react-router-dom';
 import LocationModal from '../components/LocationModal';
 import { useAuth } from '../context/AuthContext';
@@ -103,10 +104,9 @@ function WelcomeScreen({ onNext }) {
   return (
     <div className="onboarding-root">
       <div className="onboarding-screen">
-        <div className="onboarding-logo-wrap">
-          <div className="onboarding-logo-icon">c</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+          <ClockedLogo height={48} />
         </div>
-        <div className="onboarding-wordmark">clocked</div>
         <p className="onboarding-tagline">The app built for workers, by workers.</p>
         <p className="onboarding-body">
           Find out what it's <em>really</em> like to work somewhere before you take the job.

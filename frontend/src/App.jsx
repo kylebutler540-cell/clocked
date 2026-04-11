@@ -10,6 +10,7 @@ import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 
 import BottomNav from './components/BottomNav';
+import ClockedLogo from './components/ClockedLogo';
 import SideDrawer from './components/SideDrawer';
 import LeftSidebar from './components/LeftSidebar';
 import AccountSwitcherMenu from './components/AccountSwitcher';
@@ -120,7 +121,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
             <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <div className="desktop-logo" onClick={() => navigate('/')}>clocked</div>
+        <ClockedLogo height={28} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
         <LocationPill />
       </div>
 
@@ -192,8 +193,8 @@ function MobileHeader({ onOpenDrawer }) {
           <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
-      <div className="app-logo" style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => navigate('/')}>
-        clocked
+      <div style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => navigate('/')}>
+        <ClockedLogo height={24} />
       </div>
       <div className="header-right">
         <div className="header-search-wrapper">
