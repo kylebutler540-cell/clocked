@@ -603,27 +603,35 @@ img, video {
   -webkit-text-fill-color: unset;
 }
 
-/* ========== Google Sign-In Button — clean pill, matches email button ========== */
+/* ========== Google Sign-In Button — clip to pill shape ========== */
 .google-btn-wrap {
   width: 100%;
   border-radius: 24px;
   overflow: hidden;
   min-height: 44px;
+  display: block;
+  /* Force all children to stay within the rounded clip */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  isolation: isolate;
 }
-.google-btn-wrap > div {
+/* Target every child GSI injects */
+.google-btn-wrap > div,
+.google-btn-wrap > div > div,
+.google-btn-wrap div[data-idom-class] {
   width: 100% !important;
+  max-width: 100% !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
-}
-.google-btn-wrap div[data-idom-class],
-.google-btn-wrap > div > div {
-  width: 100% !important;
+  border-radius: 24px !important;
 }
 .google-btn-wrap iframe {
   width: 100% !important;
+  max-width: 100% !important;
   min-height: 44px !important;
+  border-radius: 24px !important;
 }
 
 /* ========== Dropdown menu (shared desktop + mobile) ========== */
