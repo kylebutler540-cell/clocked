@@ -392,7 +392,13 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       }
 
       const isNew = data.length > lastCountRef.current;
-      if (!opts.silent || (isNew && !isInputFocusedRef.current)) scrollToBottom();
+      // Always scroll to bottom on first load; on silent polls only if new messages
+      if (!opts.silent) {
+        // Use setTimeout to ensure DOM has rendered before scrolling
+        setTimeout(() => scrollToBottom(), 0);
+      } else if (isNew && !isInputFocusedRef.current) {
+        scrollToBottom();
+      }
       lastCountRef.current = data.length;
     } catch (err) {
       console.error('fetchMessages', err);
@@ -405,10 +411,12 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   }, [userId, otherUser, scrollToBottom]);
 
   useEffect(() => {
+    // Always start at bottom when entering a thread
+    setTimeout(() => scrollToBottom(), 0);
     fetchMessages();
     pollRef.current = setInterval(() => fetchMessages({ silent: true }), 10000);
     return () => clearInterval(pollRef.current);
-  }, [fetchMessages]);
+  }, [fetchMessages]); // eslint-disable-line
 
   // Back-swipe / browser back → always calls onBack which routes correctly by entry source
   useEffect(() => {
@@ -582,23 +590,23 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
               <div key={i} style={{ alignSelf: i % 2 === 0 ? 'flex-end' : 'flex-start', width: `${w}%`, height: 42, borderRadius: 20, background: 'var(--border)', opacity: 0.45 }} />
             ))}
           </div>
-        ) : messages.length === 0 ? (
-          /* Empty state — profile pinned near top, TikTok-style */
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 32, paddingBottom: 16, gap: 0 }}>
-            {otherUser
-              ? <Avatar url={otherUser.avatar_url} name={otherName} size={72} />
-              : <AvatarSkeleton size={72} />}
-            {otherName && <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginTop: 12 }}>{otherName}</div>}
-            {otherUser?.username && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{otherUser.username}</div>}
-            {(otherUser?.follower_count != null || otherUser?.following_count != null) && (
-              <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
-                <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.follower_count)}</strong> Followers</span>
-                <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.following_count)}</strong> Following</span>
-              </div>
-            )}
-          </div>
         ) : (
           <>
+            {/* Profile header — always shown at top of thread, new or existing */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 28, paddingBottom: 20, gap: 0 }}>
+              {otherUser
+                ? <Avatar url={otherUser.avatar_url} name={otherName} size={72} />
+                : <AvatarSkeleton size={72} />}
+              {otherName && <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginTop: 12 }}>{otherName}</div>}
+              {otherUser?.username && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{otherUser.username}</div>}
+              {(otherUser?.follower_count != null || otherUser?.following_count != null) && (
+                <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+                  <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.follower_count)}</strong> Followers</span>
+                  <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.following_count)}</strong> Following</span>
+                </div>
+              )}
+            </div>
+            {messagesWithSeparators.length === 0 ? null : <>
             {messagesWithSeparators.map(item => {
               if (item.type === 'separator') {
                 return (
@@ -660,6 +668,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
                 Message request sent · Waiting for them to accept
               </div>
             )}
+            </> /* end inner fragment for messages */}
           </>
         )}
         <div style={{ height: 1 }} />
