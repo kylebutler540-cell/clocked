@@ -6,7 +6,7 @@ import React from 'react';
  * Works on any background, light or dark mode.
  */
 export default function ClockedLogo({ height = 40, style = {}, onClick }) {
-  const width = Math.round(height * 4.67); // 420/90 aspect ratio
+  const width = Math.round(height * 5.0); // 500/100 aspect ratio
 
   return (
     <img
