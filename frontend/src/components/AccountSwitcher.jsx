@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 
 function AccountAvatar({ url, name, size = 32 }) {
   const letter = (name || '?')[0].toUpperCase();
@@ -21,7 +20,6 @@ function AccountAvatar({ url, name, size = 32 }) {
 
 export default function AccountSwitcherMenu({ onClose }) {
   const navigate = useNavigate();
-  const { theme: themeVal, toggle: toggleTheme } = useTheme();
   const { user, logout, savedAccounts, switchToAccount } = useAuth();
 
   const otherAccounts = savedAccounts.filter(a => a.userId !== user?.id);
@@ -34,8 +32,8 @@ export default function AccountSwitcherMenu({ onClose }) {
 
   function handleAddAccount() {
     onClose();
-    logout();
-    navigate('/signup?mode=login');
+    // Navigate to the dedicated switch-account page — does NOT sign out
+    navigate('/switch-account');
   }
 
   function handleSignOut() {
@@ -121,13 +119,6 @@ export default function AccountSwitcherMenu({ onClose }) {
           Log In / Sign Up
         </button>
       )}
-
-      <button className="topbar-dropdown-item" onClick={() => { toggleTheme(); onClose(); }}>
-        {themeVal === 'dark'
-          ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Light Mode</>
-          : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>Dark Mode</>
-        }
-      </button>
 
       <button className="topbar-dropdown-item" onClick={handleAddAccount}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

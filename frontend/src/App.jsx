@@ -30,6 +30,7 @@ import CompanyProfile from './pages/CompanyProfile';
 import Saved from './pages/Saved';
 import Onboarding from './pages/Onboarding';
 import Signup from './pages/Signup';
+import SwitchAccount from './pages/SwitchAccount';
 import ProfileSetup from './pages/ProfileSetup';
 
 const PAGE_TITLES = {
@@ -360,6 +361,7 @@ function AppInner() {
               <Route path="/company/:placeId" element={<CompanyProfile />} />
               <Route path="/saved" element={<Saved />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/switch-account" element={<SwitchAccount />} />
               <Route path="/profile-setup" element={<ProfileSetup />} />
               <Route path="/subscription/success" element={<SubscriptionSuccess />} />
               <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
