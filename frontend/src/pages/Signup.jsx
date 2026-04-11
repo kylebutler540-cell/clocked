@@ -96,8 +96,10 @@ export default function Signup() {
         {mode === 'signup' ? 'Join Clocked — it\'s free.' : 'Sign in to your Clocked account.'}
       </p>
 
-      {/* Google Sign In */}
-      <div id="google-signin-btn" style={{ marginBottom: 20, width: '100%' }} />
+      {/* Google Sign In — overflow:hidden clips the outer container box */}
+      <div style={{ marginBottom: 20, width: '100%', overflow: 'hidden', borderRadius: 24 }}>
+        <div id="google-signin-btn" style={{ width: '100%' }} />
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

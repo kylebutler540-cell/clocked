@@ -593,7 +593,9 @@ export default function Profile() {
                 : 'Welcome back.'}
             </p>
 
-            <div id="profile-google-btn" style={{ marginBottom: 16, width: '100%' }} />
+            <div style={{ marginBottom: 16, width: '100%', overflow: 'hidden', borderRadius: 24 }}>
+              <div id="profile-google-btn" style={{ width: '100%' }} />
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>or</span>
