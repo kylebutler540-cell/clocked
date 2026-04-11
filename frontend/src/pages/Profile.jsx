@@ -316,14 +316,9 @@ export default function Profile() {
           try {
             await loginWithGoogle(response.credential);
             setShowLogin(false);
-          } catch {
-            // Retry once
-            try {
-              await loginWithGoogle(response.credential);
-              setShowLogin(false);
-            } catch {
-              addToast('Google sign-in failed. Please try again.');
-            }
+          } catch (err) {
+            const msg = err?.response?.data?.error || 'Google sign-in failed. Please try again.';
+            addToast(msg);
           }
         },
       });

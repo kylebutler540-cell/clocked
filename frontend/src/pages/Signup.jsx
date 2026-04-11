@@ -51,7 +51,7 @@ export default function Signup() {
         navigate('/');
       }
     } catch (err) {
-      addToast('Google sign-in failed');
+      addToast(err?.response?.data?.error || 'Google sign-in failed. Please try again.');
     }
   }
 

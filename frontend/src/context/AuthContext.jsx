@@ -201,13 +201,14 @@ export function AuthProvider({ children }) {
 
   function saveSession(newToken, newUser, persist = true) {
     // Never overwrite a real user's token with an anon session
+    // But ONLY block if we're not explicitly logging out (persist=false, no email)
     if (!persist && !newUser?.email) {
       const realAccounts = getSavedAccounts().filter(a => a.email);
       const currentToken = localStorage.getItem('clocked-token');
       if (currentToken && realAccounts.length > 0) {
-        // We have real accounts — don't overwrite with anon token
-        // Just set the API header, don't touch localStorage
+        // Still update API header to keep requests working
         api.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+        // Don't write anon token or update user state
         return;
       }
     }
@@ -274,10 +275,16 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    // Clear ALL saved accounts too so anon can start fresh
     localStorage.removeItem('clocked-token');
+    localStorage.removeItem(ACCOUNTS_KEY);
+    localStorage.removeItem('clocked_notifications');
+    localStorage.removeItem('clocked_unread_count');
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
+    setSavedAccounts([]);
+    // Now initAnonymous will work because no real accounts block it
     initAnonymous();
   }
 
