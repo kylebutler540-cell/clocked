@@ -15,11 +15,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Let Vite use pure content hashes — no manual version suffix
+    // so every changed file gets a unique hash automatically
     rollupOptions: {
       output: {
-        entryFileNames: `assets/[name]-[hash]-v54.js`,
-        chunkFileNames: `assets/[name]-[hash]-v54.js`,
-        assetFileNames: `assets/[name]-[hash]-v29.[ext]`,
+        entryFileNames: `assets/[name]-[hash].js`,
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`,
       },
     },
   },
