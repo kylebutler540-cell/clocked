@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -46,29 +47,28 @@ export default function ProfileSetup() {
 
   const USERNAME_REGEX = /^[a-zA-Z0-9_.]{3,20}$/;
 
-  // Block back navigation while on setup — user must complete step 1
+  // Lock EVERYTHING — block all interaction with the rest of the app until setup is done
   useEffect(() => {
-    if (step !== 1) return;
-    // Push a history state so back button has something to pop
-    window.history.pushState({ profileSetup: true }, '');
-    const handlePop = () => {
-      // Push it back — they can't leave step 1
-      window.history.pushState({ profileSetup: true }, '');
-    };
-    window.addEventListener('popstate', handlePop);
-    return () => window.removeEventListener('popstate', handlePop);
-  }, [step]);
+    // Freeze body scroll
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
-  // Block tab close / navigation away on step 1
-  useEffect(() => {
-    if (step !== 1) return;
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
+    // Block back/forward navigation
+    window.history.pushState({ profileSetup: true }, '');
+    const handlePop = () => window.history.pushState({ profileSetup: true }, '');
+    window.addEventListener('popstate', handlePop);
+
+    // Block tab close
+    const handleBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [step]);
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      window.removeEventListener('popstate', handlePop);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   function validateUsername(val) {
     if (!val) return 'Username is required';
@@ -137,14 +137,17 @@ export default function ProfileSetup() {
 
   const step1Complete = displayName.trim().length > 0 && username.length >= 3 && !usernameError;
 
-  return (
+  const content = (
     <div style={{
-      minHeight: '100dvh',
+      position: 'fixed', inset: 0, zIndex: 9999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px 16px',
-      background: 'var(--bg-base)',
+      background: 'var(--bg-primary)',
+      // Intercept ALL pointer events — nothing behind can be clicked
+      pointerEvents: 'all',
+      overflow: 'auto',
     }}>
       <div style={{
         width: '100%', maxWidth: 440,
@@ -342,4 +345,6 @@ export default function ProfileSetup() {
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
