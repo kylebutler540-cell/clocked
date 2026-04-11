@@ -32,12 +32,16 @@ function NotificationItem({ n, onCommentLike }) {
   const actorId = data.actor_id || null;
   const isComment = n.type === 'comment' || n.type === 'reply';
   const isSimple = n.type === 'like' || n.type === 'dislike' || n.type === 'follow';
+  const isMessageRequest = n.type === 'message_request';
   const hasPost = !!data.post_id;
   const postImage = data.post_image || null;
 
-  // Tapping the card navigates to the post, with comment highlighted if applicable
-  // Also passes the current liked state so CommentSheet renders it immediately (no flicker)
   function handleCardClick() {
+    // Message request — navigate to messages
+    if (isMessageRequest && actorId) {
+      navigate(`/messages?user=${actorId}`);
+      return;
+    }
     if (!hasPost) return;
     if (data.comment_id) {
       navigate(`/post/${data.post_id}`, {
@@ -90,15 +94,14 @@ function NotificationItem({ n, onCommentLike }) {
 
   return (
     <div
-      onClick={hasPost ? handleCardClick : undefined}
+      onClick={(hasPost || isMessageRequest) ? handleCardClick : undefined}
       style={{
         display: 'flex',
-        alignItems: isSimple ? 'center' : 'flex-start',
+        alignItems: (isSimple || isMessageRequest) ? 'center' : 'flex-start',
         gap: 12,
         padding: '14px 16px',
         background: n.read ? 'transparent' : 'var(--purple-glow)',
-
-        cursor: hasPost ? 'pointer' : 'default',
+        cursor: (hasPost || isMessageRequest) ? 'pointer' : 'default',
       }}
     >
       {/* Avatar — separate tap target for profile */}
@@ -130,6 +133,10 @@ function NotificationItem({ n, onCommentLike }) {
               {n.type === 'comment' && (commentPreview ? `commented: "${commentPreview}"` : 'commented on your post')}
               {n.type === 'reply' && (commentPreview ? `replied: "${commentPreview}"` : 'replied to your comment')}
               {n.type === 'follow' && 'started following you'}
+              {n.type === 'message_request' && (
+                <span>wants to message you{data.preview ? <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{' — "'}{data.preview}{'"'}</span> : ''}</span>
+              )}
+              {n.type === 'message_accepted' && 'accepted your message request'}
             </span>
             {isSimple && data.post_header && (
               <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>

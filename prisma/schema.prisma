@@ -22,6 +22,7 @@ model User {
   avatar_url        String?
   follower_count    Int            @default(0)
   following_count   Int            @default(0)
+  blocked_user_ids  String[]       @default([])
 
   posts         Post[]
   comments      Comment[]
@@ -212,6 +213,7 @@ model EmployerLogo {
 model Conversation {
   id                  String    @id @default(cuid())
   participant_ids     String[]
+  status              String    @default("accepted") // pending | accepted | rejected
   last_message        String?
   last_message_at     DateTime?
   last_message_sender String?

@@ -343,8 +343,9 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
-  const [pendingImage, setPendingImage] = useState(null); // { file, preview }
-  const [viewingImage, setViewingImage] = useState(null); // fullscreen src
+  const [pendingImage, setPendingImage] = useState(null);
+  const [viewingImage, setViewingImage] = useState(null);
+  const [convStatus, setConvStatus] = useState(initialUser?._convStatus || null); // 'pending' | 'accepted' | null
   const [otherUser, setOtherUser] = useState(initialUser || null);
   const scrollContainerRef = useRef(null);
   const pollRef = useRef(null);
@@ -373,7 +374,11 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const fetchMessages = useCallback(async (opts = {}) => {
     try {
       const res = await api.get(`/messages/conversation/${userId}`);
-      const data = Array.isArray(res.data) ? res.data : [];
+      // Backend now returns { messages, conversation_status }
+      const data = Array.isArray(res.data) ? res.data : (res.data?.messages || []);
+      const status = res.data?.conversation_status || null;
+
+      setConvStatus(status);
 
       setMessages(prev => {
         if (!opts.silent) return data;
@@ -500,8 +505,26 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     }
   };
 
+  const handleAccept = async () => {
+    try {
+      await api.post(`/messages/${userId}/accept`);
+      setConvStatus('accepted');
+      onMessageSent?.(userId, null, new Date().toISOString(), otherUser);
+    } catch (err) { console.error('accept', err); }
+  };
+
+  const handleReject = async () => {
+    try {
+      await api.post(`/messages/${userId}/reject`);
+      onBack();
+    } catch (err) { console.error('reject', err); }
+  };
+
   const otherName = otherUser?.display_name || null;
-  const isPendingRequest = messages.length > 0 && messages.every(m => m.sender_id === currentUser?.id) && !initialUser?.isFriend;
+  // Receiver sees pending when they have not yet accepted
+  const isIncomingRequest = convStatus === 'pending' && messages.length > 0 && messages[0]?.sender_id === userId;
+  // Sender sees pending when waiting for receiver
+  const isPendingRequest = convStatus === 'pending' && messages.length > 0 && messages[0]?.sender_id === currentUser?.id;
 
   // Build message list with day separators
   const messagesWithSeparators = [];
@@ -630,21 +653,49 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       {/* Fullscreen image viewer */}
       {viewingImage && <ImageViewer src={viewingImage} onClose={() => setViewingImage(null)} />}
 
-      {/* Input */}
-      <InputBar
-        inputRef={inputRef}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        onSend={handleSend}
-        pendingImage={pendingImage}
-        onPickImage={handlePickImage}
-        onClearImage={handleClearImage}
-        onFocused={() => {
-          isInputFocusedRef.current = true;
-          setTimeout(() => { if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight; }, 100);
-        }}
-        onBlurred={() => { isInputFocusedRef.current = false; }}
-      />
+      {/* Incoming request — Accept / Reject bar */}
+      {isIncomingRequest && (
+        <div style={{ flexShrink: 0, padding: '12px 16px', background: 'var(--bg-card)', borderTop: 'none' }}>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>
+            {otherName || 'Someone'} wants to message you
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={handleReject}
+              style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, fontSize: 15, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+            >Decline</button>
+            <button
+              onClick={handleAccept}
+              style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: 'none', background: '#A855F7', color: '#fff', fontWeight: 600, fontSize: 15, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+            >Accept</button>
+          </div>
+        </div>
+      )}
+
+      {/* Sender pending state */}
+      {isPendingRequest && (
+        <div style={{ flexShrink: 0, padding: '10px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', background: 'var(--bg-primary)', borderTop: 'none' }}>
+          Message request sent · Waiting for them to accept
+        </div>
+      )}
+
+      {/* Input — only show if accepted or sender of pending */}
+      {(convStatus === 'accepted' || isPendingRequest || convStatus === null) && (
+        <InputBar
+          inputRef={inputRef}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          onSend={handleSend}
+          pendingImage={pendingImage}
+          onPickImage={handlePickImage}
+          onClearImage={handleClearImage}
+          onFocused={() => {
+            isInputFocusedRef.current = true;
+            setTimeout(() => { if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight; }, 100);
+          }}
+          onBlurred={() => { isInputFocusedRef.current = false; }}
+        />
+      )}
     </div>
   );
 }
@@ -698,12 +749,16 @@ export default function Messages() {
     return () => window.removeEventListener('messages:close-convo', handler);
   }, []); // eslint-disable-line
 
-  const openConversation = (uid, convUser) => { setSelectedUserId(uid); setSelectedUser(convUser || null); };
+  const openConversation = (uid, convUser, convStatus) => {
+    setSelectedUserId(uid);
+    setSelectedUser(convUser ? { ...convUser, _convStatus: convStatus } : null);
+  };
   const closeConversation = () => { setSelectedUserId(null); setSelectedUser(null); fetchInbox(); };
 
   const processedConversations = conversations.map(conv => ({
     ...conv,
-    _showAsRequest: !conv.isFriend && conv.lastMessage?.sender_id !== user?.id,
+    // Show as request if backend says pending AND the other person sent it (receiver side)
+    _showAsRequest: conv.conversation_status === 'pending' && conv.lastMessage?.sender_id !== user?.id,
   }));
 
   const handleMessageSent = useCallback((toUserId, body, sentAt, toUser) => {
@@ -782,7 +837,7 @@ export default function Messages() {
                   </div>
                 )}
                 {friends.map(conv => (
-                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={conv.lastMessage?.sender_id === user?.id} onClick={() => openConversation(conv.user?.id, conv.user)} />
+                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={conv.lastMessage?.sender_id === user?.id} onClick={() => openConversation(conv.user?.id, conv.user, conv.conversation_status)} />
                 ))}
               </>
             )}
@@ -792,7 +847,7 @@ export default function Messages() {
                   Message Requests
                 </div>
                 {requests.map(conv => (
-                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={false} onClick={() => openConversation(conv.user?.id, conv.user)} />
+                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={false} onClick={() => openConversation(conv.user?.id, conv.user, conv.conversation_status)} />
                 ))}
               </>
             )}
