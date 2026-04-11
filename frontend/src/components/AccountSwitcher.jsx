@@ -33,7 +33,32 @@ export default function AccountSwitcherMenu({ onClose }) {
 
   return (
     <>
-      {/* Saved accounts — show when there are other accounts */}
+      {/* Current account — always shown at top */}
+      {user?.email && (
+        <div style={{ padding: '12px 14px 10px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border)' }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+            background: user.avatar_url ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
+            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 700, color: '#fff',
+          }}>
+            {user.avatar_url
+              ? <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : (user.display_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?')}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.display_name || user.username || 'My Account'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </div>
+          </div>
+          <div style={{ fontSize: 10, color: '#A855F7', fontWeight: 700, background: 'rgba(168,85,247,0.1)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>Active</div>
+        </div>
+      )}
+
+      {/* Other saved accounts — tap to switch instantly */}
       {otherAccounts.length > 0 && (
         <>
           <div style={{ padding: '6px 16px 4px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -75,15 +100,12 @@ export default function AccountSwitcherMenu({ onClose }) {
         </>
       )}
 
-      {/* Current account section */}
+      {/* Profile link */}
       {user?.email && (
-        <>
-          <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/profile'); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Profile
-          </button>
-          <div className="topbar-dropdown-divider" />
-        </>
+        <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/profile'); }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Profile
+        </button>
       )}
       {!user?.email && (
         <>
@@ -115,11 +137,8 @@ export default function AccountSwitcherMenu({ onClose }) {
       {user?.email && (
         <>
           <div className="topbar-dropdown-divider" />
-          <div style={{ padding: '6px 16px 2px', fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.email}
-          </div>
           <button className="topbar-dropdown-item" style={{ color: '#EF4444' }} onClick={handleSignOut}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
           </button>
         </>
