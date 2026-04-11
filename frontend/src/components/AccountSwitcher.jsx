@@ -3,14 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
-// Renders the full contents of the three-dots dropdown menu.
-// Used by both desktop topbar and mobile profile header.
+function AccountAvatar({ url, name, size = 32 }) {
+  const letter = (name || '?')[0].toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: url ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
+      overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.38, fontWeight: 700, color: '#fff',
+    }}>
+      {url
+        ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : letter}
+    </div>
+  );
+}
+
 export default function AccountSwitcherMenu({ onClose }) {
   const navigate = useNavigate();
-  const { theme, toggle } = useTheme();
+  const { theme: themeVal, toggle: toggleTheme } = useTheme();
   const { user, logout, savedAccounts, switchToAccount } = useAuth();
 
-  // Other saved accounts (not the current one)
   const otherAccounts = savedAccounts.filter(a => a.userId !== user?.id);
 
   async function handleSwitch(account) {
@@ -32,117 +45,108 @@ export default function AccountSwitcherMenu({ onClose }) {
   }
 
   return (
-    <>
-      {/* Current account — always shown at top */}
+    <div style={{ minWidth: 240 }}>
+      {/* Active account row */}
       {user?.email && (
-        <div style={{ padding: '12px 14px 10px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border)' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-            background: user.avatar_url ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
-            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, fontWeight: 700, color: '#fff',
-          }}>
-            {user.avatar_url
-              ? <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : (user.display_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?')}
-          </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '12px 14px',
+          borderBottom: otherAccounts.length > 0 ? 'none' : '1px solid var(--border)',
+        }}>
+          <AccountAvatar url={user.avatar_url} name={user.display_name || user.email} size={36} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user.display_name || user.username || 'My Account'}
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.display_name || user.username || user.email?.split('@')[0]}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.email}
             </div>
           </div>
-          <div style={{ fontSize: 10, color: '#A855F7', fontWeight: 700, background: 'rgba(168,85,247,0.1)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>Active</div>
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: '#A855F7',
+            background: 'rgba(168,85,247,0.13)', borderRadius: 4,
+            padding: '2px 7px', flexShrink: 0, letterSpacing: '0.3px',
+          }}>Active</span>
         </div>
       )}
 
-      {/* Other saved accounts — tap to switch instantly */}
+      {/* Saved accounts section */}
       {otherAccounts.length > 0 && (
         <>
-          <div style={{ padding: '6px 16px 4px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div style={{
+            padding: '8px 14px 4px',
+            fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.6px',
+          }}>
             Saved Accounts
           </div>
           {otherAccounts.map(account => (
             <button
               key={account.userId}
               className="topbar-dropdown-item"
-              style={{ gap: 10, alignItems: 'center' }}
               onClick={() => handleSwitch(account)}
             >
-              {/* Avatar */}
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                background: account.avatarUrl ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
-                overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 700, color: '#fff',
-              }}>
-                {account.avatarUrl
-                  ? <img src={account.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : (account.displayName?.[0]?.toUpperCase() || '?')
-                }
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {account.displayName}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <AccountAvatar url={account.avatarUrl} name={account.displayName || account.email} size={30} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                  {account.displayName || account.email?.split('@')[0]}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {account.email}
-                </span>
+                </div>
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
             </button>
           ))}
           <div className="topbar-dropdown-divider" />
         </>
       )}
 
-      {/* Profile link */}
-      {user?.email && (
-        <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/profile'); }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Profile
-        </button>
-      )}
-      {!user?.email && (
-        <>
-          <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/signup'); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Log In / Sign Up
-          </button>
-          <div className="topbar-dropdown-divider" />
-        </>
+      {!otherAccounts.length && user?.email && (
+        <div className="topbar-dropdown-divider" />
       )}
 
-      {/* Dark/light toggle */}
-      <button className="topbar-dropdown-item" onClick={() => { toggle(); onClose(); }}>
-        {theme === 'dark'
+      {/* Menu items */}
+      {user?.email ? (
+        <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/profile'); }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          Profile
+        </button>
+      ) : (
+        <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/signup'); }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          Log In / Sign Up
+        </button>
+      )}
+
+      <button className="topbar-dropdown-item" onClick={() => { toggleTheme(); onClose(); }}>
+        {themeVal === 'dark'
           ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Light Mode</>
           : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>Dark Mode</>
         }
       </button>
 
-      {/* Add / switch account */}
       <button className="topbar-dropdown-item" onClick={handleAddAccount}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h7"/>
         </svg>
-        {otherAccounts.length > 0 ? 'Add Another Account' : 'Switch Account'}
+        Add Another Account
       </button>
 
-      {/* Sign out */}
       {user?.email && (
         <>
           <div className="topbar-dropdown-divider" />
           <button className="topbar-dropdown-item" style={{ color: '#EF4444' }} onClick={handleSignOut}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
             Sign Out
           </button>
         </>
       )}
-    </>
+    </div>
   );
 }
