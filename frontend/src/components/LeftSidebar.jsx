@@ -51,7 +51,7 @@ export default function LeftSidebar({ collapsed = false }) {
 
       {/* Logo — only when expanded */}
       {!collapsed && (
-        <ClockedLogo height={34} onClick={() => navigate('/')} style={{ padding: '4px 0' }} />
+        <ClockedLogo height={40} onClick={() => navigate('/')} style={{ padding: '4px 0' }} />
       )}
 
       <div className="sidebar-divider" />

@@ -121,7 +121,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
             <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <ClockedLogo height={36} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
+        <ClockedLogo height={42} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
         <LocationPill />
       </div>
 
@@ -193,7 +193,7 @@ function MobileHeader({ onOpenDrawer }) {
           <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
-      <ClockedLogo height={32} onClick={() => navigate('/')} />
+      <ClockedLogo height={38} onClick={() => navigate('/')} />
       <div className="header-right">
         <div className="header-search-wrapper">
           <EmployerSearch onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })} placeholder="Search employers..." />
