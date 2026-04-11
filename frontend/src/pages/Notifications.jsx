@@ -224,7 +224,11 @@ export default function Notifications() {
     if (persisted.length) return persisted;
     return cacheGet('notifications') || [];
   });
-  const [fetchLoading, setFetchLoading] = useState(true); // true until first fetch completes
+  // Only show skeleton if we have no persisted data to show yet
+  const [fetchLoading, setFetchLoading] = useState(() => {
+    const persisted = getPersistedNotifications();
+    return persisted.length === 0 && !cacheGet('notifications');
+  });
   const { user } = useAuth();
   const navigate = useNavigate();
   const { clearUnread } = useNotif();

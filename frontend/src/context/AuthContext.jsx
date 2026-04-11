@@ -30,15 +30,13 @@ function decodeJwtPayload(token) {
 }
 
 // Instantly restore user from cache using userId from JWT — works even if token changed
+// NOTE: no side effects here — called inside useState initializer which runs twice in StrictMode
 function getInitialUser(token) {
   if (!token) return null;
   const payload = decodeJwtPayload(token);
   if (!payload?.userId) return null;
   const saved = getSavedAccounts().find(a => a.userId === payload.userId);
   if (!saved) return null;
-  // Update stored token to current one
-  saved.token = token;
-  upsertSavedAccount(saved);
   return {
     id: saved.userId,
     email: saved.email,
@@ -51,19 +49,31 @@ function getInitialUser(token) {
 export function AuthProvider({ children }) {
   const storedToken = localStorage.getItem('clocked-token');
   const cachedUser = getInitialUser(storedToken);
+
+  // Set auth header immediately before any state/effect runs
+  if (storedToken) api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+
   const [user, setUser] = useState(() => cachedUser);
   const [token, setToken] = useState(() => storedToken);
-  const [loading, setLoading] = useState(!cachedUser);
+  // If we have a cached user, loading is immediately false — no downstream waiting
+  const [loading, setLoading] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState(() => getSavedAccounts());
 
   useEffect(() => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (storedToken) {
+      // Sync saved account token if needed (was split out of getInitialUser to avoid StrictMode issues)
+      const payload = decodeJwtPayload(storedToken);
+      if (payload?.userId) {
+        const saved = getSavedAccounts().find(a => a.userId === payload.userId);
+        if (saved && saved.token !== storedToken) {
+          upsertSavedAccount({ ...saved, token: storedToken });
+        }
+      }
       fetchMe();
     } else {
       initAnonymous();
     }
-  }, []);
+  }, []); // eslint-disable-line
 
   async function fetchMe(retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -105,7 +115,8 @@ export function AuthProvider({ children }) {
           await new Promise(r => setTimeout(r, 1000 * attempt));
           continue;
         }
-        // All retries failed — keep cached user visible
+        // All retries failed — keep whatever user we have, never wipe to null
+        // The backend might be temporarily slow; don't log the user out
         setLoading(false);
       }
     }

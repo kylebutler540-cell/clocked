@@ -65,67 +65,64 @@ const MOCK_POST_2 = {
   disliked: false,
 };
 
-const CACHE_TTL = 30 * 1000; // 30 seconds — serve instantly but always revalidate
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes — reasonable freshness without constant refetching
 
 export default function Feed({ filters = {}, employerInfo = null, emptyState = null }) {
   const navigate = useNavigate();
   const isCompanyFeed = !!filters.employer_place_id;
   const isTopRated = filters.sort === 'top';
-  const cacheKey = JSON.stringify(filters);
+  // Stable cache key — use useMemo so it doesn't change identity every render
+  const cacheKey = React.useMemo(() => JSON.stringify(filters), [JSON.stringify(filters)]); // eslint-disable-line
 
-  const cached = _feedCache.get(cacheKey);
-  const isFresh = cached && (Date.now() - cached.ts < CACHE_TTL);
-
-  // Only skip skeleton if cache is fresh — stale or missing = show skeleton until real data lands
-  const [posts, setPosts] = useState(isFresh ? cached.posts : []);
-  const [nextCursor, setNextCursor] = useState(isFresh ? cached.nextCursor : null);
-  const [loading, setLoading] = useState(!isFresh);
+  // Seed state from cache immediately — no loading flash if we have data
+  const [posts, setPosts] = useState(() => _feedCache.get(cacheKey)?.posts || []);
+  const [nextCursor, setNextCursor] = useState(() => _feedCache.get(cacheKey)?.nextCursor || null);
+  // Only show skeleton if we have zero cached posts
+  const [loading, setLoading] = useState(() => !_feedCache.get(cacheKey)?.posts?.length);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const observerRef = useRef(null);
   const sentinelRef = useRef(null);
+  const isFetchingRef = useRef(false); // prevent duplicate concurrent fetches
 
   const fetchPosts = useCallback(async (cursor = null) => {
-    try {
-      const params = { ...filters };
-      if (cursor) params.cursor = cursor;
-
-      const res = await api.get('/posts', { params });
-      return { posts: res.data.posts, nextCursor: res.data.nextCursor };
-    } catch (err) {
-      throw err;
-    }
-  }, [cacheKey]);
+    const params = { ...filters };
+    if (cursor) params.cursor = cursor;
+    const res = await api.get('/posts', { params });
+    return { posts: res.data.posts || [], nextCursor: res.data.nextCursor || null };
+  }, [cacheKey]); // eslint-disable-line
 
   useEffect(() => {
     const cached = _feedCache.get(cacheKey);
-    const isFresh = cached && (Date.now() - cached.ts < CACHE_TTL);
+    const fresh = cached && (Date.now() - cached.ts < CACHE_TTL);
 
-    if (isFresh) {
-      // Serve cached data immediately
+    if (fresh) {
+      // Data is fresh — show it, no fetch needed
       setPosts(cached.posts);
       setNextCursor(cached.nextCursor);
       setLoading(false);
-      // Still background-refresh so data is never more than 30s stale
-      fetchPosts().then(({ posts, nextCursor }) => {
-        _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
-        setPosts(posts);
-        setNextCursor(nextCursor);
-      }).catch(() => {});
       return;
     }
 
-    // No cache — show skeleton, fetch, reveal
-    setLoading(true);
+    // Stale or empty cache — fetch
+    // If we already have posts (stale cache), keep showing them during refetch (no skeleton flash)
+    if (!cached?.posts?.length) setLoading(true);
+
+    if (isFetchingRef.current) return; // don't double-fetch
+    isFetchingRef.current = true;
+
     fetchPosts()
-      .then(({ posts, nextCursor }) => {
-        _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
-        setPosts(posts);
-        setNextCursor(nextCursor);
+      .then(({ posts: newPosts, nextCursor: newCursor }) => {
+        _feedCache.set(cacheKey, { posts: newPosts, nextCursor: newCursor, ts: Date.now() });
+        setPosts(newPosts);
+        setNextCursor(newCursor);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [fetchPosts]);
+      .finally(() => {
+        setLoading(false);
+        isFetchingRef.current = false;
+      });
+  }, [fetchPosts, cacheKey]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

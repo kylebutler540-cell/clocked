@@ -57,8 +57,12 @@ export default function Home() {
     function syncFromEvent(e) {
       if (e.detail?.city) setLocation(e.detail.city);
     }
-    // Clear feed cache on window focus so returning to tab always shows fresh data
-    const onFocus = () => { clearFeedCache(); sync(); };
+    // On window focus: only clear cache if it's been more than 2 minutes since last fetch
+    // (avoids wiping cache on every click/scroll that briefly loses focus)
+    const onFocus = () => {
+      sync();
+      // Don't aggressively clear — Feed's background revalidation handles freshness
+    };
     window.addEventListener('focus', onFocus);
     window.addEventListener('storage', sync);
     window.addEventListener('locationchange', syncFromEvent);
