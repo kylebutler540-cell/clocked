@@ -58,6 +58,13 @@ The only profitable playbook is fewer, bigger swings (+3%+). v3 is built around 
 - Users with the app installed auto-get updates within ~2 min of Railway deploy
 - No update prompt, no user action required — like Netflix/Twitter pushing updates silently
 
+## ⚠️ PERMANENT RULE — Clocked Backend (DO NOT TOUCH)
+- Rate limit: **1000 req/15min**, auth endpoints excluded — this is what fixed everything on April 11
+- **NEVER change** the rate limiter, auth routes, JWT logic, or session/token flow
+- If a task involves frontend only (Saved, Create, Feed, Messaging UI, Profile, etc.) — ONLY change that part
+- Backend auth/rate-limit config must stay exactly as-is unless Lukas explicitly says otherwise
+- This rule overrides any future task that might accidentally touch index.js rate limiting or AuthContext.jsx token logic
+
 ## Clocked App
 - Anonymous workplace review app — 50/50 Lukas + buddy
 - **LIVE at:** https://frontend-production-d4bd.up.railway.app

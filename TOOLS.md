@@ -4,11 +4,7 @@
 
 | Name | Schedule | Model | Purpose |
 |------|----------|-------|---------|
-| heartbeat-handler | Every 4hrs, 8AM/12/4PM/8PM | ollama/qwen2.5:0.5b | Lightweight heartbeat checks HEARTBEAT.md |
-| weather-bot | 7 AM daily | google/gemini-flash-2.0 | Alerts only if notable weather (rain/snow/extremes) |
 | morning-briefing | 7 AM daily | google/gemini-2.5-flash-preview | Full morning briefing — weather, trading bot summary, tip |
-| heartbeat-night-off | Midnight | — | Disables heartbeats overnight |
-| heartbeat-morning-on | 8 AM | — | Re-enables morning heartbeat |
 
 ## Coding Agent Defaults
 
