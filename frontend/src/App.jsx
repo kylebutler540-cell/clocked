@@ -242,7 +242,17 @@ function MobileProfileMenu() {
         </svg>
       </button>
       {open && (
-        <div className="topbar-dropdown" style={{ right: 0, left: 'auto', top: '100%', minWidth: 220 }}>
+        <div
+          className="topbar-dropdown"
+          style={{
+            position: 'fixed',
+            top: 52, // below the app header
+            right: 8,
+            left: 'auto',
+            minWidth: 230,
+            zIndex: 500,
+          }}
+        >
           <AccountSwitcherMenu onClose={() => setOpen(false)} />
         </div>
       )}
@@ -253,7 +263,6 @@ function MobileProfileMenu() {
 function PageHeader({ onOpenDrawer }) {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/search';
-  const isProfile = location.pathname === '/profile';
   const title = PAGE_TITLES[location.pathname];
 
   if (isHome) return <MobileHeader onOpenDrawer={onOpenDrawer} />;
@@ -262,7 +271,8 @@ function PageHeader({ onOpenDrawer }) {
     <header className="app-header" style={{ justifyContent: 'flex-start', gap: 12 }}>
       <BackButton />
       {title && <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, flex: 1 }}>{title}</h2>}
-      {isProfile && <MobileProfileMenu />}
+      {/* Three-dot menu on all non-home pages */}
+      <MobileProfileMenu />
     </header>
   );
 }

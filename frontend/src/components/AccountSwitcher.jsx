@@ -78,6 +78,10 @@ export default function AccountSwitcherMenu({ onClose }) {
       {/* Current account section */}
       {user?.email && (
         <>
+          <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/saved'); }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            Saved
+          </button>
           <button className="topbar-dropdown-item" onClick={() => { onClose(); navigate('/profile'); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Profile
