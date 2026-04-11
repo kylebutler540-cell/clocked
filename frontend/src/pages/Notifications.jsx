@@ -224,17 +224,37 @@ export default function Notifications() {
     if (persisted.length) return persisted;
     return cacheGet('notifications') || [];
   });
+  const [fetchLoading, setFetchLoading] = useState(true); // true until first fetch completes
   const { user } = useAuth();
   const navigate = useNavigate();
   const { clearUnread } = useNotif();
-  // Track which notification IDs the user has manually liked — skip server overwrites for these
   const userToggledRef = React.useRef(new Set());
 
-  // Clear badge as soon as user opens Alerts
   React.useEffect(() => { clearUnread(); }, []);
 
+  // Poll for new notifications every 30s for cross-device sync
   useEffect(() => {
     if (!user?.email) return;
+    const interval = setInterval(() => {
+      api.get('/notifications').then(res => {
+        const prevCached = cacheGet('notifications') || [];
+        const prevLikedMap = Object.fromEntries(prevCached.map(n => [n.id, { liked: n._commentLiked, count: n._commentLikesCount }]));
+        setNotifications(prev => {
+          const updated = res.data.map(n => ({
+            ...n,
+            _commentLiked: userToggledRef.current.has(n.id) ? (prev.find(p => p.id === n.id)?._commentLiked ?? false) : (prevLikedMap[n.id]?.liked ?? false),
+            _commentLikesCount: prevLikedMap[n.id]?.count ?? null,
+          }));
+          saveNotifications(updated);
+          return updated;
+        });
+      }).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.email) { setFetchLoading(false); return; }
 
     api.get('/notifications')
       .then(notifs => {
@@ -276,7 +296,8 @@ export default function Notifications() {
           } catch { /* ignore */ }
         });
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setFetchLoading(false));
   }, [user]);
 
   async function handleCommentLike(notifId, postId, commentId) {
@@ -321,7 +342,24 @@ export default function Notifications() {
     );
   }
 
-  if (notifications.length === 0) {
+  // Show skeletons while loading — never flash empty state during fetch
+  if (fetchLoading && notifications.length === 0) {
+    return (
+      <div style={{ maxWidth: 740, margin: '0 auto', padding: '8px 0' }}>
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '14px 16px', alignItems: 'center' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ width: '60%', height: 13, borderRadius: 6, background: 'var(--border)', marginBottom: 8 }} />
+              <div style={{ width: '40%', height: 11, borderRadius: 6, background: 'var(--border)', opacity: 0.6 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!fetchLoading && notifications.length === 0) {
     return (
       <div style={{ maxWidth: 740, margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
         <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>

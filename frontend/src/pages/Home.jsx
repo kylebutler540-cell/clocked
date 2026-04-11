@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Feed from '../components/Feed';
+import Feed, { clearFeedCache } from '../components/Feed';
 import EmployerLeaderboard from '../components/EmployerLeaderboard';
 
 function RightSidebar() {
@@ -57,11 +57,13 @@ export default function Home() {
     function syncFromEvent(e) {
       if (e.detail?.city) setLocation(e.detail.city);
     }
-    window.addEventListener('focus', sync);
+    // Clear feed cache on window focus so returning to tab always shows fresh data
+    const onFocus = () => { clearFeedCache(); sync(); };
+    window.addEventListener('focus', onFocus);
     window.addEventListener('storage', sync);
     window.addEventListener('locationchange', syncFromEvent);
     return () => {
-      window.removeEventListener('focus', sync);
+      window.removeEventListener('focus', onFocus);
       window.removeEventListener('storage', sync);
       window.removeEventListener('locationchange', syncFromEvent);
     };

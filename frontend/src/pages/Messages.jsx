@@ -342,10 +342,11 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const { user: currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [pendingImage, setPendingImage] = useState(null);
   const [viewingImage, setViewingImage] = useState(null);
-  const [convStatus, setConvStatus] = useState(initialUser?._convStatus || null); // 'pending' | 'accepted' | null
+  const [convStatus, setConvStatus] = useState(initialUser?._convStatus || null);
   const [otherUser, setOtherUser] = useState(initialUser || null);
   const scrollContainerRef = useRef(null);
   const pollRef = useRef(null);
@@ -402,6 +403,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       lastCountRef.current = data.length;
     } catch (err) {
       console.error('fetchMessages', err);
+      if (!hasLoadedRef.current) setFetchError(true);
     } finally {
       if (!hasLoadedRef.current) {
         hasLoadedRef.current = true;
@@ -589,6 +591,11 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
             {[55, 38, 75, 45, 65].map((w, i) => (
               <div key={i} style={{ alignSelf: i % 2 === 0 ? 'flex-end' : 'flex-start', width: `${w}%`, height: 42, borderRadius: 20, background: 'var(--border)', opacity: 0.45 }} />
             ))}
+          </div>
+        ) : fetchError ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '40px 20px' }}>
+            <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Couldn't load messages</div>
+            <button className="btn btn-secondary" style={{ fontSize: 13, padding: '8px 20px' }} onClick={() => { setFetchError(false); setLoading(true); hasLoadedRef.current = false; fetchMessages(); }}>Retry</button>
           </div>
         ) : (
           <>

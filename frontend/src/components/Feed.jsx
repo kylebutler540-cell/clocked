@@ -65,7 +65,7 @@ const MOCK_POST_2 = {
   disliked: false,
 };
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes — serve instantly from cache within this window
+const CACHE_TTL = 30 * 1000; // 30 seconds — serve instantly but always revalidate
 
 export default function Feed({ filters = {}, employerInfo = null, emptyState = null }) {
   const navigate = useNavigate();
@@ -102,14 +102,20 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
     const isFresh = cached && (Date.now() - cached.ts < CACHE_TTL);
 
     if (isFresh) {
-      // Fresh cache — render immediately, no fetch needed
+      // Serve cached data immediately
       setPosts(cached.posts);
       setNextCursor(cached.nextCursor);
       setLoading(false);
+      // Still background-refresh so data is never more than 30s stale
+      fetchPosts().then(({ posts, nextCursor }) => {
+        _feedCache.set(cacheKey, { posts, nextCursor, ts: Date.now() });
+        setPosts(posts);
+        setNextCursor(nextCursor);
+      }).catch(() => {});
       return;
     }
 
-    // Stale or no cache — show skeleton, fetch, then reveal all at once
+    // No cache — show skeleton, fetch, reveal
     setLoading(true);
     fetchPosts()
       .then(({ posts, nextCursor }) => {

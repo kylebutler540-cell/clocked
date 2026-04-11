@@ -1,15 +1,15 @@
 /**
- * Simple in-memory stale-while-revalidate cache.
- * Serves cached data instantly, refreshes in background.
+ * In-memory cache with stale-while-revalidate.
+ * Short TTL — we want fast initial renders, not long-lived stale data.
  */
 
 const store = new Map(); // key → { data, ts }
-const TTL = 5 * 60 * 1000; // 5 minutes before treating as truly stale
+const TTL = 30 * 1000; // 30 seconds — much shorter, keeps data fresh
 
 export function cacheGet(key) {
   const entry = store.get(key);
   if (!entry) return null;
-  return entry.data; // always return if exists (stale-while-revalidate)
+  return entry.data;
 }
 
 export function cacheSet(key, data) {
@@ -31,4 +31,20 @@ export function isFresh(key) {
   const entry = store.get(key);
   if (!entry) return false;
   return Date.now() - entry.ts < TTL;
+}
+
+// Invalidate all caches related to a specific context
+export function invalidateOnPost() {
+  cacheClear('feed');
+  cacheClear('posts');
+  cacheDelete('notifications');
+}
+
+export function invalidateOnComment() {
+  cacheClear('posts');
+  cacheDelete('notifications');
+}
+
+export function invalidateOnLike() {
+  cacheClear('posts');
 }
