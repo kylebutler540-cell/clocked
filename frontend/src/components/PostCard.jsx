@@ -476,7 +476,13 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
 
       {showFlag && createPortal(<FlagModal postId={post.id} onClose={() => setShowFlag(false)} />, document.body)}
-      <CommentSheet postId={post.id} post={post} isOpen={showComments} onClose={() => setShowComments(false)} />
+      <CommentSheet
+        postId={post.id}
+        post={post}
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        onCommentAdded={() => setPost(p => ({ ...p, comment_count: (p.comment_count || 0) + 1 }))}
+      />
 
       {showPostActionModal && (
         <div className="modal-overlay" onClick={() => setShowPostActionModal(false)}>

@@ -137,7 +137,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, onCommentAdded, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -363,6 +363,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, highlightC
         cacheSet('comments/' + postId, updated);
         return updated;
       });
+      // Notify PostCard so it can update comment_count in real time
+      if (!capturedReplyingTo) onCommentAdded?.();
     } catch (err) {
       // Remove optimistic on failure
       const remove = list => list.filter(c => c.id !== optimisticComment.id)
