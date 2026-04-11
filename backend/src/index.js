@@ -47,9 +47,13 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000, // 1000 requests per 15 min — plenty for normal app usage
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for auth endpoints entirely
+    return req.path.startsWith('/auth/');
+  },
 });
 app.use('/api/', limiter);
 
