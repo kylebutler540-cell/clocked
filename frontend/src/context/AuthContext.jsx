@@ -249,6 +249,18 @@ export function AuthProvider({ children }) {
   }
 
   async function switchToAccount(account) {
+    // ── Wipe ALL old account state synchronously before anything renders ──
+    // Clear in-memory caches
+    cacheClear();
+    clearFeedCache();
+    // Clear account-scoped localStorage
+    localStorage.removeItem('clocked_notifications');
+    localStorage.removeItem('clocked_unread_count');
+    // Clear old user immediately so no stale data can render
+    setUser(null);
+    // Signal all account-scoped components to reset
+    window.dispatchEvent(new CustomEvent('account:switching'));
+
     localStorage.setItem('clocked-token', account.token);
     api.defaults.headers.common['Authorization'] = `Bearer ${account.token}`;
     setToken(account.token);

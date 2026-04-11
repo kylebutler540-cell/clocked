@@ -768,6 +768,17 @@ export default function Messages() {
     return () => clearInterval(inboxPollRef.current);
   }, [fetchInbox]);
 
+  // Wipe inbox instantly on account switch
+  useEffect(() => {
+    const handler = () => {
+      setConversations([]);
+      setLoading(true);
+      closeConversation();
+    };
+    window.addEventListener('account:switching', handler);
+    return () => window.removeEventListener('account:switching', handler);
+  }, []); // eslint-disable-line
+
   useEffect(() => {
     setFullscreen(!!selectedUserId);
     return () => setFullscreen(false);

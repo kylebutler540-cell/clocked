@@ -21,6 +21,17 @@ export function NotifProvider({ children }) {
     } catch { /* silent */ }
   }, [user]);
 
+  // Reset instantly on account switch — no stale badge from old account
+  useEffect(() => {
+    const handler = () => {
+      setUnreadCount(0);
+      try { localStorage.setItem('clocked_unread_count', '0'); } catch {}
+      clearInterval(pollRef.current);
+    };
+    window.addEventListener('account:switching', handler);
+    return () => window.removeEventListener('account:switching', handler);
+  }, []);
+
   useEffect(() => {
     if (!user?.email) { setUnreadCount(0); return; }
 

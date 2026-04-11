@@ -219,20 +219,29 @@ export default function Notifications() {
     cacheSet('notifications', list);
   };
 
-  const [notifications, setNotifications] = useState(() => {
-    const persisted = getPersistedNotifications();
-    if (persisted.length) return persisted;
-    return cacheGet('notifications') || [];
-  });
-  // Only show skeleton if we have no persisted data to show yet
-  const [fetchLoading, setFetchLoading] = useState(() => {
-    const persisted = getPersistedNotifications();
-    return persisted.length === 0 && !cacheGet('notifications');
-  });
   const { user } = useAuth();
   const navigate = useNavigate();
   const { clearUnread } = useNotif();
   const userToggledRef = React.useRef(new Set());
+
+  // Seed from cache ONLY if it belongs to the current user
+  const [notifications, setNotifications] = useState(() => {
+    // Don't show any persisted data on init — always fetch fresh
+    // This prevents cross-account flash
+    return [];
+  });
+  const [fetchLoading, setFetchLoading] = useState(true);
+
+  // Wipe state instantly when account switch starts
+  React.useEffect(() => {
+    const handler = () => {
+      setNotifications([]);
+      setFetchLoading(true);
+      userToggledRef.current.clear();
+    };
+    window.addEventListener('account:switching', handler);
+    return () => window.removeEventListener('account:switching', handler);
+  }, []);
 
   React.useEffect(() => { clearUnread(); }, []);
 
