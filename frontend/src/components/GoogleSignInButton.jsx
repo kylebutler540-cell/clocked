@@ -56,6 +56,7 @@ export default function GoogleSignInButton({ onCredential, label = 'Sign in with
         shape: 'pill',
         text: 'signin_with',
         logo_alignment: 'left',
+        height: 44,
       });
     }
 
