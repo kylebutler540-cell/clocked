@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../lib/api';
+import { cacheClear } from '../lib/cache';
+import { clearFeedCache } from '../components/Feed';
 
 const AuthContext = createContext();
 
@@ -275,16 +277,18 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
-    // Clear ALL saved accounts too so anon can start fresh
+    // Wipe all local state so nothing stale leaks through after logout
     localStorage.removeItem('clocked-token');
     localStorage.removeItem(ACCOUNTS_KEY);
     localStorage.removeItem('clocked_notifications');
     localStorage.removeItem('clocked_unread_count');
+    // Clear all in-memory caches (feed, notifications, etc.)
+    cacheClear();
+    clearFeedCache();
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
     setSavedAccounts([]);
-    // Now initAnonymous will work because no real accounts block it
     initAnonymous();
   }
 
