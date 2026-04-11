@@ -603,25 +603,24 @@ img, video {
   -webkit-text-fill-color: unset;
 }
 
-/* ========== Google Sign-In Button — strip outer container box ========== */
-/* The Google GSI renderer wraps the button in an iframe + div with a border.
-   We override to hide that outer box and only show the pill button itself. */
+/* ========== Google Sign-In Button — clip outer container ========== */
+/* Wrap each google button div in overflow:hidden + border-radius to clip the outer box */
+#google-signin-btn,
+#switch-google-btn,
+#profile-google-btn {
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+/* Strip any extra padding/border injected by GSI */
 #google-signin-btn > div,
 #switch-google-btn > div,
-#profile-google-btn > div,
-[id*="google"][id*="btn"] > div {
+#profile-google-btn > div {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-}
-
-/* Target the Google iframe container */
-.S9gUrf-YoZ4jf,
-.nsm7Bb-HzV7m-LgbsSe {
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
+  margin: 0 !important;
 }
 
 /* ========== Dropdown menu (shared desktop + mobile) ========== */
