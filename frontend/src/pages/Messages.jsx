@@ -410,19 +410,23 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]);
 
-  // Back-swipe / browser back → close convo, not navigate away
+  // Back-swipe / browser back → always calls onBack which routes correctly by entry source
   useEffect(() => {
-    // Push a dummy state so the back gesture has something to pop
-    window.history.pushState({ msgConvo: true }, '');
-    const handlePop = (e) => {
-      // If our state is gone (user went back), close the convo
-      onBack();
-    };
+    // Push a dummy history entry only for inbox-opened convos
+    // Profile-opened convos already have the profile in history — don't double-push
+    const fromProfile = initialUser?._convStatus !== undefined
+      ? false // opened from inbox with convStatus
+      : window.location.search.includes('user='); // opened via ?user= from profile
+
+    if (!fromProfile) {
+      window.history.pushState({ msgConvo: true }, '');
+    }
+
+    const handlePop = () => { onBack(); };
     window.addEventListener('popstate', handlePop);
     return () => {
       window.removeEventListener('popstate', handlePop);
-      // If we're unmounting without the user pressing back, clean up the history entry
-      if (window.history.state?.msgConvo) {
+      if (!fromProfile && window.history.state?.msgConvo) {
         window.history.back();
       }
     };
@@ -722,11 +726,12 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [entrySource, setEntrySource] = useState(null); // 'inbox' | 'profile' | null
   const inboxPollRef = useRef(null);
 
   useEffect(() => {
     const uid = searchParams.get('user');
-    if (uid) openConversation(uid, null);
+    if (uid) openConversation(uid, null, null, 'profile');
   }, []); // eslint-disable-line
 
   const fetchInbox = useCallback(async (opts = {}) => {
@@ -755,16 +760,34 @@ export default function Messages() {
   useEffect(() => { return () => setFullscreen(false); }, [setFullscreen]);
 
   useEffect(() => {
-    const handler = () => closeConversation();
+    const handler = () => {
+      setSelectedUserId(null);
+      setSelectedUser(null);
+      setEntrySource(null);
+      fetchInbox();
+    };
     window.addEventListener('messages:close-convo', handler);
     return () => window.removeEventListener('messages:close-convo', handler);
-  }, []); // eslint-disable-line
+  }, [fetchInbox]);
 
-  const openConversation = (uid, convUser, convStatus) => {
+  const openConversation = (uid, convUser, convStatus, source = 'inbox') => {
     setSelectedUserId(uid);
     setSelectedUser(convUser ? { ...convUser, _convStatus: convStatus } : null);
+    setEntrySource(source);
   };
-  const closeConversation = () => { setSelectedUserId(null); setSelectedUser(null); fetchInbox(); };
+  const closeConversation = () => {
+    const source = entrySource;
+    setSelectedUserId(null);
+    setSelectedUser(null);
+    setEntrySource(null);
+    if (source === 'profile') {
+      // Go back to the profile page they came from
+      navigate(-1);
+    } else {
+      // Came from inbox — stay on Messages page, just close the convo
+      fetchInbox();
+    }
+  };
 
   const processedConversations = conversations.map(conv => ({
     ...conv,
