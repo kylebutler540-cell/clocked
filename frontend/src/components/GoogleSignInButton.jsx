@@ -35,6 +35,8 @@ export default function GoogleSignInButton({ onCredential, label = 'Sign in with
       shape: 'pill',
       text: 'signin_with',
       logo_alignment: 'left',
+      // popup mode works on both — on desktop it opens a centered window
+      ux_mode: 'popup',
     });
   }
 
