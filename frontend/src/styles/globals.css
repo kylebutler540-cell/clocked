@@ -603,18 +603,27 @@ img, video {
   -webkit-text-fill-color: unset;
 }
 
-/* ========== Google Sign-In Button — clean pill look ========== */
-/* Strip outer container injected by Google GSI renderer */
+/* ========== Google Sign-In Button — clean pill, matches email button ========== */
+.google-btn-wrap {
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 44px;
+}
 .google-btn-wrap > div {
-  background: transparent !important;
+  width: 100% !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
+}
+.google-btn-wrap div[data-idom-class],
+.google-btn-wrap > div > div {
   width: 100% !important;
 }
 .google-btn-wrap iframe {
   width: 100% !important;
+  min-height: 44px !important;
 }
 
 /* ========== Dropdown menu (shared desktop + mobile) ========== */

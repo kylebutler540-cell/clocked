@@ -15,9 +15,10 @@ export default function GoogleSignInButton({ onCredential, label = 'Sign in with
       window.google?.accounts.id.renderButton(btnRef.current, {
         theme: 'outline',
         size: 'large',
-        width: btnRef.current.offsetWidth || 340,
+        width: btnRef.current.offsetWidth || 480,
         shape: 'pill',
         text: 'signin_with',
+        logo_alignment: 'left',
       });
     }
 
