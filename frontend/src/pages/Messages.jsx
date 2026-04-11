@@ -410,6 +410,24 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]);
 
+  // Back-swipe / browser back → close convo, not navigate away
+  useEffect(() => {
+    // Push a dummy state so the back gesture has something to pop
+    window.history.pushState({ msgConvo: true }, '');
+    const handlePop = (e) => {
+      // If our state is gone (user went back), close the convo
+      onBack();
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => {
+      window.removeEventListener('popstate', handlePop);
+      // If we're unmounting without the user pressing back, clean up the history entry
+      if (window.history.state?.msgConvo) {
+        window.history.back();
+      }
+    };
+  }, []); // eslint-disable-line
+
   // Keyboard lift via visualViewport
   useEffect(() => {
     const vv = window.visualViewport;
@@ -561,26 +579,19 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
             ))}
           </div>
         ) : messages.length === 0 ? (
-          /* Empty state — Instagram-style profile preview */
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: 0 }}>
+          /* Empty state — profile pinned near top, TikTok-style */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 32, paddingBottom: 16, gap: 0 }}>
             {otherUser
-              ? <Avatar url={otherUser.avatar_url} name={otherName} size={80} />
-              : <AvatarSkeleton size={80} />}
-            {otherName && <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary)', marginTop: 14 }}>{otherName}</div>}
-            {otherUser?.username && <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2 }}>@{otherUser.username}</div>}
+              ? <Avatar url={otherUser.avatar_url} name={otherName} size={72} />
+              : <AvatarSkeleton size={72} />}
+            {otherName && <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginTop: 12 }}>{otherName}</div>}
+            {otherUser?.username && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{otherUser.username}</div>}
             {(otherUser?.follower_count != null || otherUser?.following_count != null) && (
-              <div style={{ display: 'flex', gap: 24, marginTop: 14 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{formatCount(otherUser.follower_count)}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>Followers</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{formatCount(otherUser.following_count)}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>Following</div>
-                </div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+                <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.follower_count)}</strong> Followers</span>
+                <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.following_count)}</strong> Following</span>
               </div>
             )}
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 20 }}>Say hi 👋</div>
           </div>
         ) : (
           <>
