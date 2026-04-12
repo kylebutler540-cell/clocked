@@ -1,6 +1,11 @@
 const https = require('https');
 
 async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer, postBody }) {
+  // Extract just the reason line if the full email body was passed
+  const reasonLine = reason?.split('\n')[0]?.replace(/^Report Reason:\s*/i, '').trim() || reason;
+  const detailsMatch = reason?.match(/Additional Details:\n([\s\S]*?)$/i);
+  const additionalDetails = detailsMatch?.[1]?.trim() || '';
+  reason = reasonLine;
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   const adminSecret = process.env.ADMIN_DELETE_SECRET;
@@ -19,6 +24,7 @@ async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer
     `*Employer:* ${escape(postEmployer || '—')}`,
     `*Reporter:* ${escape(reporterHandle)}`,
     `*Reason:* ${escape(reason)}`,
+    additionalDetails ? `*Details:* ${escape(additionalDetails)}` : null,
     preview ? `*Preview:* ${escape(preview)}` : null,
   ].filter(Boolean).join('\n');
 
