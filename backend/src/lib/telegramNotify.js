@@ -19,8 +19,8 @@ async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer
     `*Employer:* ${escape(postEmployer || '—')}`,
     `*Reporter:* ${escape(reporterHandle)}`,
     `*Reason:* ${escape(reason)}`,
-    `*Preview:* ${escape(preview)}`,
-  ].join('\n');
+    preview ? `*Preview:* ${escape(preview)}` : null,
+  ].filter(Boolean).join('\n');
 
   const body = JSON.stringify({
     chat_id: chatId,
@@ -57,7 +57,8 @@ async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer
 }
 
 function escape(str) {
-  return String(str || '').replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+  // Escape Markdown special chars for text fields only (not URLs)
+  return String(str || '').replace(/[_*`\[\]]/g, '\\$&');
 }
 
 module.exports = { sendTelegramReport };
