@@ -5,6 +5,7 @@ const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { generateUniqueAnonNumber } = require('../lib/anonNumber');
 const { notify } = require('../lib/notify');
 const { sendReportEmail } = require('../lib/mailer');
+const { sendTelegramReport } = require('../lib/telegramNotify');
 
 const router = express.Router();
 
@@ -770,15 +771,24 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
         : reporter?.anon_number
         ? `Anon #${reporter.anon_number}`
         : 'Unknown';
-      await sendReportEmail({
-        reporterHandle,
-        reason,
-        postId: req.params.id,
-        postEmployer: post?.employer_name,
-        postBody: post?.body,
-        timestamp: new Date(),
-      });
-      console.log('[flag] report email sent for post', req.params.id);
+      await Promise.allSettled([
+        sendReportEmail({
+          reporterHandle,
+          reason,
+          postId: req.params.id,
+          postEmployer: post?.employer_name,
+          postBody: post?.body,
+          timestamp: new Date(),
+        }),
+        sendTelegramReport({
+          reporterHandle,
+          reason,
+          postId: req.params.id,
+          postEmployer: post?.employer_name,
+          postBody: post?.body,
+        }),
+      ]);
+      console.log('[flag] report notifications sent for post', req.params.id);
     } catch (emailErr) {
       console.error('[flag] report email failed:', emailErr.message);
     }
