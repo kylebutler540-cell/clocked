@@ -25,7 +25,7 @@ async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer
     `*Reporter:* ${escape(reporterHandle)}`,
     `*Reason:* ${escape(reason)}`,
     additionalDetails ? `*Details:* ${escape(additionalDetails)}` : null,
-    preview ? `*Preview:* ${escape(preview)}` : null,
+    preview ? `\n${preview}` : null,
   ].filter(Boolean).join('\n');
 
   const body = JSON.stringify({

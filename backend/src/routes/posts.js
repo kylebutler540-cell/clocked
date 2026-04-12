@@ -929,8 +929,8 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
   };
 }
 
-// Admin delete via secret token (for Telegram inline button)
-router.delete('/:id/admin-delete', async (req, res) => {
+// Admin delete via secret token (for Telegram inline button — GET so browser links work)
+router.get('/:id/admin-delete', async (req, res) => {
   try {
     const secret = req.query.secret || req.headers['x-admin-secret'];
     if (!secret || secret !== process.env.ADMIN_DELETE_SECRET) {
