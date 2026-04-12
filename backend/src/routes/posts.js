@@ -754,6 +754,7 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
     });
 
     // Fire report email (non-blocking — don't fail the request if email fails)
+    console.log('[flag] post flagged, firing email for post:', req.params.id, 'reason:', reason);
     prisma.post.findUnique({
       where: { id: req.params.id },
       select: { body: true, employer_name: true, anonymous_user_id: true },

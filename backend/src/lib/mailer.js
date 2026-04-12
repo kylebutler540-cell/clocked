@@ -1,12 +1,16 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.REPORT_EMAIL_USER,
-    pass: process.env.REPORT_EMAIL_PASS,
-  },
-});
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.REPORT_EMAIL_USER,
+      pass: process.env.REPORT_EMAIL_PASS,
+    },
+  });
+}
 
 /**
  * Send a report notification email.
@@ -63,6 +67,8 @@ async function sendReportEmail({ reporterHandle, reason, postId, postEmployer, p
     </div>
   `;
 
+  console.log('[mailer] sending report email to clockedreports@gmail.com, reason:', reason);
+  const transporter = getTransporter();
   await transporter.sendMail({
     from: `"Clocked Reports" <${process.env.REPORT_EMAIL_USER}>`,
     to: 'clockedreports@gmail.com',
