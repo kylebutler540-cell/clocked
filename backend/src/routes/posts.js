@@ -753,33 +753,35 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
       create: { user_id: userId, post_id: req.params.id, reason },
     });
 
-    // Fire report email (non-blocking — don't fail the request if email fails)
-    console.log('[flag] post flagged, firing email for post:', req.params.id, 'reason:', reason);
-    prisma.post.findUnique({
-      where: { id: req.params.id },
-      select: { body: true, employer_name: true, anonymous_user_id: true },
-    }).then(post => {
-      return prisma.user.findUnique({
+    res.json({ flagged: true });
+
+    // Fire report email after response (non-blocking)
+    try {
+      const post = await prisma.post.findUnique({
+        where: { id: req.params.id },
+        select: { body: true, employer_name: true },
+      });
+      const reporter = await prisma.user.findUnique({
         where: { id: userId },
         select: { username: true, anon_number: true },
-      }).then(reporter => {
-        const reporterHandle = reporter?.username
-          ? `@${reporter.username}`
-          : reporter?.anon_number
-          ? `Anon #${reporter.anon_number}`
-          : 'Unknown';
-        return sendReportEmail({
-          reporterHandle,
-          reason,
-          postId: req.params.id,
-          postEmployer: post?.employer_name,
-          postBody: post?.body,
-          timestamp: new Date(),
-        });
       });
-    }).catch(err => console.error('[report email]', err));
-
-    res.json({ flagged: true });
+      const reporterHandle = reporter?.username
+        ? `@${reporter.username}`
+        : reporter?.anon_number
+        ? `Anon #${reporter.anon_number}`
+        : 'Unknown';
+      await sendReportEmail({
+        reporterHandle,
+        reason,
+        postId: req.params.id,
+        postEmployer: post?.employer_name,
+        postBody: post?.body,
+        timestamp: new Date(),
+      });
+      console.log('[flag] report email sent for post', req.params.id);
+    } catch (emailErr) {
+      console.error('[flag] report email failed:', emailErr.message);
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to flag post' });
