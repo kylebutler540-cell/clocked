@@ -60,6 +60,8 @@ model Post {
   employer_place_id String
   employer_name    String
   employer_address String
+  employer_lat      Float?
+  employer_lng      Float?
   rating_emoji     RatingEmoji
   header           String?
   body             String

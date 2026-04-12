@@ -121,7 +121,7 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
             <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <ClockedLogo height={44} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
+        <ClockedLogo height={28} style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
         <LocationPill />
       </div>
 
@@ -193,7 +193,7 @@ function MobileHeader({ onOpenDrawer }) {
           <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
-      <ClockedLogo height={56} onClick={() => navigate('/')} />
+      <ClockedLogo height={24} onClick={() => navigate('/')} />
       <div className="header-right">
         <div className="header-search-wrapper">
           <EmployerSearch onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })} placeholder="Search employers..." />
@@ -321,6 +321,37 @@ function AppInner() {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
+
+  // Left-edge swipe to open drawer (mobile only)
+  React.useEffect(() => {
+    let startX = null;
+    let startY = null;
+    const EDGE_ZONE = 28; // px from left edge
+    const MIN_SWIPE = 50; // min horizontal distance
+
+    function onTouchStart(e) {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }
+    function onTouchEnd(e) {
+      if (startX === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = Math.abs(t.clientY - startY);
+      if (startX <= EDGE_ZONE && dx >= MIN_SWIPE && dy < 60 && !drawerOpen) {
+        setDrawerOpen(true);
+      }
+      startX = null;
+      startY = null;
+    }
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
   }, [drawerOpen]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(

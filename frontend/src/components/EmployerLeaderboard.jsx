@@ -44,12 +44,29 @@ function SkeletonCard() {
   );
 }
 
+const FILTER_OPTIONS = [
+  { key: 'highest', label: 'Highest Rated' },
+  { key: 'lowest', label: 'Lowest Rated' },
+  { key: 'nearest', label: 'Nearest to Me' },
+];
+
 export default function EmployerLeaderboard({ location }) {
   const navigate = useNavigate();
   const [employers, setEmployers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [logoBatch, setLogoBatch] = useState(null);
+  const [filter, setFilter] = useState('highest');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!filterOpen) return;
+    function handle(e) { if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false); }
+    document.addEventListener('mousedown', handle);
+    document.addEventListener('touchstart', handle);
+    return () => { document.removeEventListener('mousedown', handle); document.removeEventListener('touchstart', handle); };
+  }, [filterOpen]);
 
   useEffect(() => {
     const cacheKey = 'employer-leaderboard/' + (location || '');
@@ -156,13 +173,71 @@ export default function EmployerLeaderboard({ location }) {
 
   const emojiMap = { GOOD: '😊', NEUTRAL: '😐', BAD: '😡' };
 
+  const sorted = [...employers].sort((a, b) => {
+    if (filter === 'lowest') return (a.avg_rating || 0) - (b.avg_rating || 0);
+    if (filter === 'nearest') return (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999);
+    return (b.avg_rating || 0) - (a.avg_rating || 0);
+  });
+
   return (
     <div className="employer-leaderboard">
-      {employers.map((employer, index) => {
+      {/* Filter bar */}
+      <div ref={filterRef} style={{ display: 'flex', alignItems: 'center', marginBottom: 12, position: 'relative', paddingLeft: 12 }}>
+        <button
+          onClick={() => setFilterOpen(v => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 20,
+            border: '1px solid var(--purple)',
+            background: filterOpen ? 'var(--purple-glow)' : 'var(--bg-elevated)',
+            color: 'var(--purple)', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+            <line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+            <line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+          {FILTER_OPTIONS.find(f => f.key === filter)?.label}
+        </button>
+        {filterOpen && (
+          <div
+            onClick={() => setFilterOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+          />
+        )}
+        {filterOpen && (
+          <div style={{
+            position: 'absolute', top: '110%', left: 0,
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+            borderRadius: 12, zIndex: 50, minWidth: 160,
+            boxShadow: '0 8px 24px var(--shadow-lg)', overflow: 'hidden',
+          }}>
+            {FILTER_OPTIONS.map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => { setFilter(opt.key); setFilterOpen(false); }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '11px 16px', fontSize: 14, fontWeight: filter === opt.key ? 700 : 500,
+                  color: filter === opt.key ? 'var(--purple)' : 'var(--text-primary)',
+                  background: filter === opt.key ? 'var(--purple-glow)' : 'transparent',
+                  cursor: 'pointer', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {sorted.map((employer, index) => {
         const fullAddr = (employer.employer_address || '').replace(/,?\s*USA\s*$/, '').trim();
         return (
           <div
-            key={employer.employer_place_id}
+            key={employer.employer_place_id + '-' + index}
             className="employer-card"
             onClick={() => navigate(`/company/${employer.employer_place_id}`)}
           >

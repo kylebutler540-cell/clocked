@@ -11,6 +11,32 @@ const router = express.Router();
 
 const PAGE_SIZE = 20;
 
+// Haversine distance in miles (module-level, shared by multiple routes)
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+// In-memory geocode cache keyed by address string
+if (!global._geocodeCache) global._geocodeCache = new Map();
+
+async function geocode(address) {
+  if (global._geocodeCache.has(address)) return global._geocodeCache.get(address);
+  try {
+    const axios = require('axios');
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+    const r = await axios.get(url, { timeout: 4000 });
+    const result = r.data?.results?.[0]?.geometry?.location;
+    if (!result) { global._geocodeCache.set(address, null); return null; }
+    const coords = { lat: result.lat, lng: result.lng };
+    global._geocodeCache.set(address, coords);
+    return coords;
+  } catch { global._geocodeCache.set(address, null); return null; }
+}
+
 const VIDEO_EXTS = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v', '.ogv'];
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.avif', '.bmp'];
 
@@ -110,6 +136,17 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const formatted = posts.map(post => formatPost(post, savedPostIds, isSubscribed, likedPostIds, dislikedPostIds));
 
+    // Attach distance_miles if user coords provided
+    const userLat = parseFloat(req.query.userLat);
+    const userLng = parseFloat(req.query.userLng);
+    if (!isNaN(userLat) && !isNaN(userLng)) {
+      formatted.forEach(post => {
+        if (post.employer_lat && post.employer_lng) {
+          post.distance_miles = Math.round(haversineMiles(userLat, userLng, post.employer_lat, post.employer_lng) * 10) / 10;
+        }
+      });
+    }
+
     res.json({ posts: formatted, nextCursor });
   } catch (err) {
     console.error(err);
@@ -124,32 +161,6 @@ router.get("/employer-leaderboard", optionalAuth, async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { location } = req.query;
-
-    // Haversine distance in miles
-    function haversineMiles(lat1, lon1, lat2, lon2) {
-      const R = 3958.8;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-      return R * 2 * Math.asin(Math.sqrt(a));
-    }
-
-    // In-memory geocode cache keyed by string
-    if (!global._geocodeCache) global._geocodeCache = new Map();
-
-    async function geocode(address) {
-      if (global._geocodeCache.has(address)) return global._geocodeCache.get(address);
-      try {
-        const axios = require("axios");
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-        const r = await axios.get(url, { timeout: 4000 });
-        const result = r.data?.results?.[0]?.geometry?.location;
-        if (!result) { global._geocodeCache.set(address, null); return null; }
-        const coords = { lat: result.lat, lng: result.lng };
-        global._geocodeCache.set(address, coords);
-        return coords;
-      } catch { global._geocodeCache.set(address, null); return null; }
-    }
 
     // Fetch posts (for emoji tallies) + explicit star ratings (for avg + count)
     const [posts, starRatings] = await Promise.all([
@@ -624,6 +635,18 @@ router.post('/', optionalAuth, async (req, res) => {
       });
     }
 
+    // Non-blocking: geocode employer address and store coords
+    if (post.employer_address) {
+      geocode(post.employer_address).then(coords => {
+        if (coords) {
+          prisma.post.update({
+            where: { id: post.id },
+            data: { employer_lat: coords.lat, employer_lng: coords.lng },
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     res.status(201).json(formatPost(post, new Set(), true));
   } catch (err) {
     console.error(err);
@@ -887,6 +910,8 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     employer_place_id: post.employer_place_id,
     employer_name: post.employer_name,
     employer_address: post.employer_address,
+    employer_lat: post.employer_lat ?? null,
+    employer_lng: post.employer_lng ?? null,
     employer_logo_url: employerLogoUrl(post.employer_name, post.employer_place_id),
     rating_emoji: post.rating_emoji,
     header: post.header,

@@ -49,13 +49,6 @@ export default function LeftSidebar({ collapsed = false }) {
   return (
     <div className={`left-sidebar${collapsed ? ' collapsed' : ''}`}>
 
-      {/* Logo — only when expanded */}
-      {!collapsed && (
-        <ClockedLogo height={72} onClick={() => navigate('/')} style={{ padding: '4px 0' }} />
-      )}
-
-      <div className="sidebar-divider" />
-
       {/* Main nav */}
       <NavItem collapsed={collapsed} active={isActive('/')} label="Home" onClick={() => navigate('/')}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>}
@@ -84,10 +77,7 @@ export default function LeftSidebar({ collapsed = false }) {
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>}
       />
       <NavItem collapsed={collapsed} active={activeSort === 'top'} label="Top Rated" onClick={() => navigate('/?sort=top')}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>}
-      />
-      <NavItem collapsed={collapsed} active={activeSort === 'history'} label="History" onClick={() => navigate('/?sort=history')}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .49-4.57"/><polyline points="12,7 12,12 15,15"/></svg>}
+        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>}
       />
 
       <div style={{ flex: 1 }} />

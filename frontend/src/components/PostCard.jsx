@@ -349,6 +349,12 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
                 </span>
               </>
             )}
+            {post.distance_miles != null && (
+              <>
+                <span className="post-employer-sep">·</span>
+                <span className="post-meta-time">{post.distance_miles} mi</span>
+              </>
+            )}
           </div>
         </div>
 

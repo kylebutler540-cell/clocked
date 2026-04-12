@@ -84,10 +84,25 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
   const observerRef = useRef(null);
   const sentinelRef = useRef(null);
   const isFetchingRef = useRef(false); // prevent duplicate concurrent fetches
+  const userCoordsRef = useRef(null); // { lat, lng } if geolocation granted
+
+  // Request geolocation once on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { userCoordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+        () => {} // silently ignore denial
+      );
+    }
+  }, []);
 
   const fetchPosts = useCallback(async (cursor = null) => {
     const params = { ...filters };
     if (cursor) params.cursor = cursor;
+    if (userCoordsRef.current) {
+      params.userLat = userCoordsRef.current.lat;
+      params.userLng = userCoordsRef.current.lng;
+    }
     const res = await api.get('/posts', { params });
     return { posts: res.data.posts || [], nextCursor: res.data.nextCursor || null };
   }, [cacheKey]); // eslint-disable-line
