@@ -840,7 +840,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const post = await prisma.post.findUnique({ where: { id: req.params.id } });
     if (!post) return res.status(404).json({ error: 'Post not found' });
-    if (post.anonymous_user_id !== req.user.id) {
+    const isAdmin = req.user.email === 'kylebutler540@gmail.com' || req.user.email === 'clockedreports@gmail.com';
+    if (post.anonymous_user_id !== req.user.id && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     await prisma.comment.deleteMany({ where: { post_id: req.params.id } });
