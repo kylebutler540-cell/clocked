@@ -604,17 +604,11 @@ img, video {
 }
 
 /* ========== Clocked Logo — theme-aware ========== */
-[data-theme="dark"] .clocked-logo-img {
-  mix-blend-mode: screen;
-  filter: none;
-}
-[data-theme="light"] .clocked-logo-img {
-  mix-blend-mode: normal;
-  filter: invert(1) hue-rotate(200deg) saturate(2.5) brightness(0.9);
-}
-.clocked-logo-img {
-  mix-blend-mode: screen; /* default dark */
-}
+/* Dark mode logo: screen blend removes black bg */
+[data-theme="dark"] .clocked-logo-img { mix-blend-mode: screen; }
+/* Light mode logo: plain PNG with white bg, no blend needed */
+[data-theme="light"] .clocked-logo-img { mix-blend-mode: normal; }
+.clocked-logo-img { mix-blend-mode: screen; }
 .left-sidebar .clocked-logo-img {
   margin: 0 auto;
   display: block;

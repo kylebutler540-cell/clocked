@@ -1,28 +1,14 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 
-/**
- * Clocked wordmark logo — actual logo JPG, works in light + dark mode.
- * CSS handles theme switching via the data-theme attribute.
- */
 export default function ClockedLogo({ height = 44, style = {}, onClick }) {
+  const { theme } = useTheme();
   const width = Math.round(height * 2.65);
+  const src = theme === 'light' ? '/logo-text-light.png' : '/logo-text.jpg';
   return (
-    <img
-      src="/logo-text.jpg"
-      alt="clocked"
-      width={width}
-      height={height}
-      draggable={false}
+    <img src={src} alt="clocked" width={width} height={height} draggable={false}
       className="clocked-logo-img"
-      style={{
-        display: 'block',
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        cursor: onClick ? 'pointer' : 'default',
-        objectFit: 'contain',
-        flexShrink: 0,
-        ...style,
-      }}
+      style={{ display:'block', userSelect:'none', WebkitUserSelect:'none', cursor: onClick?'pointer':'default', objectFit:'contain', flexShrink:0, ...style }}
       onClick={onClick}
     />
   );
