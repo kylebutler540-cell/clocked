@@ -403,6 +403,7 @@ async function geocodeAddress(address) {
 }
 
 // Get top employers by review count, with lat/lng for distance sorting
+// Also includes companies that have star ratings but zero emoji-review posts
 router.get('/top', async (req, res) => {
   try {
     const grouped = await prisma.post.groupBy({
@@ -412,20 +413,63 @@ router.get('/top', async (req, res) => {
       take: 30,
     });
 
-    const ids = grouped.map(g => g.employer_place_id);
+    const postPlaceIds = new Set(grouped.map(g => g.employer_place_id));
+
+    // Find companies with star ratings but no posts
+    const starOnlyRatings = await prisma.companyRating.groupBy({
+      by: ['place_id'],
+      _avg: { rating: true },
+      _count: { rating: true },
+      where: { place_id: { notIn: [...postPlaceIds] } },
+    });
+
+    // For star-only companies, try to find employer_name from any post (unlikely, but safe)
+    // Since companyRating has no employer_name, we can only include them if we have a name from
+    // a different source. For now, skip ones with no name — they won't be displayable.
+    // We still include them for future enrichment; frontend will filter nulls.
+    const starOnlyWithName = starOnlyRatings.map(r => ({
+      employer_place_id: r.place_id,
+      employer_name: null,
+      employer_address: null,
+      _count: { id: 0 },
+      _star_avg: r._avg.rating,
+      _star_count: r._count.rating,
+    }));
+
+    // Combine: posts list + star-only (null-name ones will be filtered on frontend)
+    const combined = [
+      ...grouped.map(g => ({ ...g, _star_avg: null, _star_count: 0 })),
+      ...starOnlyWithName,
+    ];
+
+    const ids = combined.map(g => g.employer_place_id);
+
+    // Fetch star ratings for companies that came from posts (enrich them)
+    const starRatings = await prisma.companyRating.groupBy({
+      by: ['place_id'],
+      _avg: { rating: true },
+      _count: { rating: true },
+      where: { place_id: { in: [...postPlaceIds] } },
+    });
+    const starByPlace = Object.fromEntries(starRatings.map(r => [r.place_id, r]));
+
     const logos = await prisma.employerLogo.findMany({
       where: { place_id: { in: ids } },
     });
     const logoByPlace = Object.fromEntries(logos.map(l => [l.place_id, l]));
 
     // Geocode addresses in parallel to get lat/lng for distance sorting
-    const withCoords = await Promise.all(grouped.map(async g => {
+    const withCoords = await Promise.all(combined.map(async g => {
+      if (!g.employer_name) return null; // can't display without a name
       const coords = await geocodeAddress(g.employer_address);
+      const star = starByPlace[g.employer_place_id];
       return {
         place_id: g.employer_place_id,
         employer_name: g.employer_name,
         employer_address: g.employer_address,
         review_count: g._count.id,
+        avg_rating: star?._avg?.rating ?? g._star_avg ?? null,
+        star_rating_count: star?._count?.rating ?? g._star_count ?? 0,
         logo_url: logoByPlace[g.employer_place_id]?.logo_url ?? null,
         domain: logoByPlace[g.employer_place_id]?.domain ?? null,
         lat: coords.lat,
@@ -433,7 +477,7 @@ router.get('/top', async (req, res) => {
       };
     }));
 
-    res.json(withCoords);
+    res.json(withCoords.filter(Boolean));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch top employers' });
