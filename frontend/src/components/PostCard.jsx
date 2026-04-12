@@ -481,7 +481,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
       </article>
 
 
-      {showFlag && createPortal(<FlagModal postId={post.id} onClose={() => setShowFlag(false)} />, document.body)}
+      {showFlag && createPortal(<FlagModal postId={post.id} postAuthor={post.author_display_name || post.author_username || 'Anonymous'} postUrl={`${window.location.origin}/post/${post.id}`} onClose={() => setShowFlag(false)} />, document.body)}
       <CommentSheet
         postId={post.id}
         post={post}

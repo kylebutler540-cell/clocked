@@ -356,6 +356,9 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const outerRef = useRef(null);
   const hasLoadedRef = useRef(false);
 
+  const otherUserRef = useRef(otherUser);
+  useEffect(() => { otherUserRef.current = otherUser; }, [otherUser]);
+
   const scrollToBottom = useCallback((behavior = 'auto') => {
     requestAnimationFrame(() => {
       const el = scrollContainerRef.current;
@@ -382,20 +385,19 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       setConvStatus(status);
 
       setMessages(prev => {
-        if (!opts.silent) return data;
+        // Always merge: keep in-flight (sending/failed) messages not yet confirmed by server
         const serverIds = new Set(data.map(m => m.id));
-        const inFlight = prev.filter(m => m._status === 'sending' && !serverIds.has(m.id));
+        const inFlight = prev.filter(m => (m._status === 'sending' || m._status === 'failed') && !serverIds.has(m.id));
         return [...data, ...inFlight];
       });
 
-      if (data.length > 0 && !otherUser) {
+      if (data.length > 0 && !otherUserRef.current) {
         setOtherUser(prev => prev || (data[0].sender_id === userId ? data[0].sender : data[0].recipient));
       }
 
       const isNew = data.length > lastCountRef.current;
-      // Always scroll to bottom on first load; on silent polls only if new messages
+      // Scroll to bottom on first load; on silent polls only if new messages arrived
       if (!opts.silent) {
-        // Use setTimeout to ensure DOM has rendered before scrolling
         setTimeout(() => scrollToBottom(), 0);
       } else if (isNew && !isInputFocusedRef.current) {
         scrollToBottom();
@@ -410,7 +412,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         setLoading(false);
       }
     }
-  }, [userId, otherUser, scrollToBottom]);
+  }, [userId, scrollToBottom]);
 
   useEffect(() => {
     // Always start at bottom when entering a thread

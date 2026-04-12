@@ -511,7 +511,7 @@ export default function Profile() {
                 <button
                   className="btn btn-secondary"
                   style={{ padding: '7px 16px', fontSize: 13 }}
-                  onClick={() => navigate('/profile-setup')}
+                  onClick={() => navigate('/profile-setup?mode=edit')}
                 >
                   Edit Profile
                 </button>

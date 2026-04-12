@@ -97,7 +97,7 @@ export default function SideDrawer({ isOpen, onClose }) {
 
         <div className="drawer-divider" />
 
-        <button className="drawer-nav-item" onClick={toggle} style={{ margin: '8px 16px' }}>
+        <button className="drawer-nav-item" onClick={toggle}>
           {theme === 'dark' ? (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="5"/>

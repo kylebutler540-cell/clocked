@@ -3,13 +3,16 @@ const https = require('https');
 async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer, postBody }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
+  const adminSecret = process.env.ADMIN_DELETE_SECRET;
   if (!token || !chatId) {
     console.warn('[telegram] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set');
     return;
   }
 
   const postUrl = `https://frontend-production-d4bd.up.railway.app/post/${postId}`;
+  const deleteUrl = `https://backend-production-7798f.up.railway.app/api/posts/${postId}/admin-delete?secret=${adminSecret}`;
   const preview = (postBody || '').slice(0, 150) + ((postBody || '').length > 150 ? '…' : '');
+
   const text = [
     `🚩 *New Report*`,
     ``,
@@ -17,8 +20,6 @@ async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer
     `*Reporter:* ${escape(reporterHandle)}`,
     `*Reason:* ${escape(reason)}`,
     `*Preview:* ${escape(preview)}`,
-    ``,
-    `[View Post](${postUrl})`,
   ].join('\n');
 
   const body = JSON.stringify({
@@ -26,6 +27,12 @@ async function sendTelegramReport({ reporterHandle, reason, postId, postEmployer
     text,
     parse_mode: 'Markdown',
     disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '👁 View Post', url: postUrl },
+        { text: '🗑 Delete Post', url: deleteUrl },
+      ]],
+    },
   });
 
   return new Promise((resolve, reject) => {

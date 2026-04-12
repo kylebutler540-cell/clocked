@@ -929,4 +929,25 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
   };
 }
 
+// Admin delete via secret token (for Telegram inline button)
+router.delete('/:id/admin-delete', async (req, res) => {
+  try {
+    const secret = req.query.secret || req.headers['x-admin-secret'];
+    if (!secret || secret !== process.env.ADMIN_DELETE_SECRET) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const post = await prisma.post.findUnique({ where: { id: req.params.id } });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    await prisma.comment.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.postReaction.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.save.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.flag.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.post.delete({ where: { id: req.params.id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
 module.exports = router;
