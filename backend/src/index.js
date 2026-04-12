@@ -102,6 +102,34 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Clocked API running on port ${PORT}`);
+  // Non-blocking backfill: geocode posts missing employer coords
+  setTimeout(() => {
+    const prisma = require('./lib/prisma');
+    const https = require('https');
+    const GMAPS_KEY = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyDVTt1iv8oqd9ziIMyqs_jCo6et5iucc2s';
+    function geocodeAddr(address) {
+      return new Promise(resolve => {
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GMAPS_KEY}`;
+        https.get(url, res => {
+          let d = ''; res.on('data', c => d += c);
+          res.on('end', () => {
+            try { const j = JSON.parse(d); const loc = j.results?.[0]?.geometry?.location; resolve(loc ? { lat: loc.lat, lng: loc.lng } : null); } catch { resolve(null); }
+          });
+        }).on('error', () => resolve(null));
+      });
+    }
+    prisma.post.findMany({ where: { employer_address: { not: null }, employer_lat: null }, select: { id: true, employer_address: true } })
+      .then(async posts => {
+        if (!posts.length) return;
+        console.log(`[backfill] geocoding ${posts.length} posts...`);
+        for (const post of posts) {
+          const coords = await geocodeAddr(post.employer_address);
+          if (coords) await prisma.post.update({ where: { id: post.id }, data: { employer_lat: coords.lat, employer_lng: coords.lng } }).catch(() => {});
+          await new Promise(r => setTimeout(r, 120));
+        }
+        console.log('[backfill] done');
+      }).catch(() => {});
+  }, 3000);
 });
 
 module.exports = app;

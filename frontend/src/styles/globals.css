@@ -2791,10 +2791,6 @@ textarea.form-input {
 .post-meta-time {
   font-size: 12px;
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
 }
 
 .post-byline {

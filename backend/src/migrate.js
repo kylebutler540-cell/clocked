@@ -76,6 +76,9 @@ async function run() {
       // Add missing columns if upgrading
       `ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "conversation_id" TEXT`,
       `ALTER TABLE "messages" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'sent'`,
+      // Employer coordinates for distance calculation
+      `ALTER TABLE "posts" ADD COLUMN IF NOT EXISTS "employer_lat" DOUBLE PRECISION`,
+      `ALTER TABLE "posts" ADD COLUMN IF NOT EXISTS "employer_lng" DOUBLE PRECISION`,
     ];
 
     for (const stmt of statements) {

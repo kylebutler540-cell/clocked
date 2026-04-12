@@ -86,13 +86,20 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
   const isFetchingRef = useRef(false); // prevent duplicate concurrent fetches
   const userCoordsRef = useRef(null); // { lat, lng } if geolocation granted
 
+  const [coordsReady, setCoordsReady] = useState(false);
+
   // Request geolocation once on mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        pos => { userCoordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
-        () => {} // silently ignore denial
+        pos => {
+          userCoordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setCoordsReady(true);
+        },
+        () => setCoordsReady(true) // denied — proceed without coords
       );
+    } else {
+      setCoordsReady(true);
     }
   }, []);
 
@@ -137,7 +144,7 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
         setLoading(false);
         isFetchingRef.current = false;
       });
-  }, [fetchPosts, cacheKey]);
+  }, [fetchPosts, cacheKey, coordsReady]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

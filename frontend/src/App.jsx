@@ -93,6 +93,12 @@ function GetAppModal({ onClose }) {
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  React.useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -368,6 +374,7 @@ function AppInner() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       {!fullscreen && <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />}
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}${fullscreen ? ' messaging-fullscreen' : ''}`}>
         {!fullscreen && <LeftSidebar collapsed={sidebarCollapsed} />}
