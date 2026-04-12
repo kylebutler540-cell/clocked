@@ -1,33 +1,12 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-function getTransporter() {
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.REPORT_EMAIL_USER,
-      pass: process.env.REPORT_EMAIL_PASS,
-    },
-  });
-}
-
-/**
- * Send a report notification email.
- * @param {object} opts
- * @param {string} opts.reporterHandle  - username/anon handle of reporter
- * @param {string} opts.reason          - selected report reason
- * @param {string} opts.postId          - post ID
- * @param {string} opts.postEmployer    - employer name on the post
- * @param {string} opts.postBody        - truncated post body
- * @param {Date}   opts.timestamp       - when report was submitted
- */
 async function sendReportEmail({ reporterHandle, reason, postId, postEmployer, postBody, timestamp }) {
-  if (!process.env.REPORT_EMAIL_USER || !process.env.REPORT_EMAIL_PASS) {
-    console.warn('[mailer] REPORT_EMAIL_USER or REPORT_EMAIL_PASS not set — skipping email');
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('[mailer] RESEND_API_KEY not set — skipping email');
     return;
   }
 
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const postUrl = `https://frontend-production-d4bd.up.railway.app/post/${postId}`;
   const ts = (timestamp || new Date()).toLocaleString('en-US', { timeZone: 'America/Detroit', hour12: true });
 
@@ -67,14 +46,19 @@ async function sendReportEmail({ reporterHandle, reason, postId, postEmployer, p
     </div>
   `;
 
-  console.log('[mailer] sending report email to clockedreports@gmail.com, reason:', reason);
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from: `"Clocked Reports" <${process.env.REPORT_EMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: 'Clocked Reports <onboarding@resend.dev>',
     to: 'clockedreports@gmail.com',
     subject: `🚩 Report: ${reason} — ${postEmployer || postId}`,
     html,
   });
+
+  if (error) {
+    console.error('[mailer] Resend error:', error);
+    throw error;
+  }
+
+  console.log('[mailer] email sent, id:', data?.id);
 }
 
 function escapeHtml(str) {
