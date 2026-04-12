@@ -1,14 +1,11 @@
 import React from 'react';
 
 /**
- * Clocked wordmark logo — actual logo JPG with mix-blend-mode:screen.
- * Screen blend makes the black background transparent on any bg color.
- * Purple text shows correctly on both light and dark mode.
+ * Clocked wordmark logo — actual logo JPG, works in light + dark mode.
+ * CSS handles theme switching via the data-theme attribute.
  */
 export default function ClockedLogo({ height = 44, style = {}, onClick }) {
-  // 1060x400 aspect ratio = 2.65:1
   const width = Math.round(height * 2.65);
-
   return (
     <img
       src="/logo-text.jpg"
@@ -16,6 +13,7 @@ export default function ClockedLogo({ height = 44, style = {}, onClick }) {
       width={width}
       height={height}
       draggable={false}
+      className="clocked-logo-img"
       style={{
         display: 'block',
         userSelect: 'none',
@@ -23,8 +21,6 @@ export default function ClockedLogo({ height = 44, style = {}, onClick }) {
         cursor: onClick ? 'pointer' : 'default',
         objectFit: 'contain',
         flexShrink: 0,
-        // screen blend: black → transparent, purple stays vibrant
-        mixBlendMode: 'screen',
         ...style,
       }}
       onClick={onClick}

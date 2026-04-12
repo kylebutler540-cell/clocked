@@ -603,6 +603,23 @@ img, video {
   -webkit-text-fill-color: unset;
 }
 
+/* ========== Clocked Logo — theme-aware ========== */
+[data-theme="dark"] .clocked-logo-img {
+  mix-blend-mode: screen;
+  filter: none;
+}
+[data-theme="light"] .clocked-logo-img {
+  mix-blend-mode: normal;
+  filter: invert(1) hue-rotate(200deg) saturate(2.5) brightness(0.9);
+}
+.clocked-logo-img {
+  mix-blend-mode: screen; /* default dark */
+}
+.left-sidebar .clocked-logo-img {
+  margin: 0 auto;
+  display: block;
+}
+
 /* ========== Google Sign-In Button — match email button size ========== */
 .google-btn-wrap {
   width: 100%;
