@@ -4,6 +4,7 @@ const prisma = require('../lib/prisma');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { generateUniqueAnonNumber } = require('../lib/anonNumber');
 const { notify } = require('../lib/notify');
+const { sendReportEmail } = require('../lib/mailer');
 
 const router = express.Router();
 
@@ -751,6 +752,31 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
       update: { reason },
       create: { user_id: userId, post_id: req.params.id, reason },
     });
+
+    // Fire report email (non-blocking — don't fail the request if email fails)
+    prisma.post.findUnique({
+      where: { id: req.params.id },
+      select: { body: true, employer_name: true, anonymous_user_id: true },
+    }).then(post => {
+      return prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true, anon_number: true },
+      }).then(reporter => {
+        const reporterHandle = reporter?.username
+          ? `@${reporter.username}`
+          : reporter?.anon_number
+          ? `Anon #${reporter.anon_number}`
+          : 'Unknown';
+        return sendReportEmail({
+          reporterHandle,
+          reason,
+          postId: req.params.id,
+          postEmployer: post?.employer_name,
+          postBody: post?.body,
+          timestamp: new Date(),
+        });
+      });
+    }).catch(err => console.error('[report email]', err));
 
     res.json({ flagged: true });
   } catch (err) {

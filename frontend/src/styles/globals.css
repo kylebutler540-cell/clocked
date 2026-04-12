@@ -24,7 +24,7 @@
   --shadow-lg: rgba(0, 0, 0, 0.15);
 
   --nav-height: 64px;
-  --header-height: 56px;
+  --header-height: 64px;
   --max-width: 680px;
 
   --radius-sm: 8px;
@@ -195,7 +195,7 @@ img, video {
     top: 0;
     left: 0;
     right: 0;
-    height: 52px;
+    height: 64px;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border);
     backdrop-filter: blur(12px);
@@ -603,12 +603,9 @@ img, video {
   -webkit-text-fill-color: unset;
 }
 
-/* ========== Clocked Logo — theme-aware ========== */
-/* Dark mode logo: screen blend removes black bg */
-[data-theme="dark"] .clocked-logo-img { mix-blend-mode: screen; }
-/* Light mode logo: plain PNG with white bg, no blend needed */
-[data-theme="light"] .clocked-logo-img { mix-blend-mode: normal; }
-.clocked-logo-img { mix-blend-mode: screen; }
+/* ========== Clocked Logo ========== */
+/* Transparent PNG — no blend mode needed */
+.clocked-logo-img { mix-blend-mode: normal; }
 .left-sidebar .clocked-logo-img {
   margin: 0 auto;
   display: block;
