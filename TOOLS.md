@@ -4,7 +4,7 @@
 
 | Name | Schedule | Model | Purpose |
 |------|----------|-------|---------|
-| morning-briefing | 7 AM daily | google/gemini-2.5-flash-preview | Full morning briefing — weather, trading bot summary, tip |
+| morning-reminder | 7 AM daily | — | "Good morning 🌅 Turn your ringer on and say good morning to your girlfriend 💜" |
 
 ## Coding Agent Defaults
 
