@@ -47,7 +47,7 @@ async function sendReportEmail({ reporterHandle, reason, postId, postEmployer, p
   `;
 
   const { data, error } = await resend.emails.send({
-    from: 'Clocked Reports <onboarding@resend.dev>',
+    from: 'Clocked Reports <reports@theclocked.com>',
     to: 'clockedreports@gmail.com',
     subject: `🚩 Report: ${reason} — ${postEmployer || postId}`,
     html,
