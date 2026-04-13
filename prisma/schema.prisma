@@ -172,12 +172,14 @@ model Subscription {
 }
 
 model CompanyRating {
-  id         String   @id @default(cuid())
-  user_id    String
-  place_id   String
-  rating     Int      // 1-5
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id               String   @id @default(cuid())
+  user_id          String
+  place_id         String
+  rating           Int      // 1-5
+  employer_name    String?
+  employer_address String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
   user User @relation(fields: [user_id], references: [id])
 

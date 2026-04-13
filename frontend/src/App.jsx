@@ -315,6 +315,59 @@ function AppMainWrapper({ children }) {
   );
 }
 
+// Route-aware swipe handler for left-edge gestures
+function SwipeHandler({ drawerOpen, setDrawerOpen }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    let startX = null;
+    let startY = null;
+    const EDGE_ZONE = 30;
+    const MIN_SWIPE = 50;
+
+    const isHome = location.pathname === '/' || location.pathname === '/search';
+    const isMessages = location.pathname === '/messages';
+
+    function onTouchStart(e) {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }
+
+    function onTouchEnd(e) {
+      if (startX === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = Math.abs(t.clientY - startY);
+      const isLeftEdgeSwipe = startX <= EDGE_ZONE && dx >= MIN_SWIPE && dy < 80;
+
+      if (isLeftEdgeSwipe) {
+        if (isHome && !drawerOpen) {
+          // Home: open sidebar drawer
+          setDrawerOpen(true);
+        } else if (isMessages) {
+          // Messages thread: fire back to messages list
+          window.dispatchEvent(new Event('messages:close-convo'));
+        }
+        // All other routes: do nothing
+      }
+
+      startX = null;
+      startY = null;
+    }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [location.pathname, drawerOpen, setDrawerOpen, navigate]);
+
+  return null;
+}
+
 function AppInner() {
   const { fullscreen } = useMessaging();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -329,36 +382,7 @@ function AppInner() {
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
 
-  // Left-edge swipe to open drawer (mobile only)
-  React.useEffect(() => {
-    let startX = null;
-    let startY = null;
-    const EDGE_ZONE = 28; // px from left edge
-    const MIN_SWIPE = 50; // min horizontal distance
-
-    function onTouchStart(e) {
-      const t = e.touches[0];
-      startX = t.clientX;
-      startY = t.clientY;
-    }
-    function onTouchEnd(e) {
-      if (startX === null) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - startX;
-      const dy = Math.abs(t.clientY - startY);
-      if (startX <= EDGE_ZONE && dx >= MIN_SWIPE && dy < 60 && !drawerOpen) {
-        setDrawerOpen(true);
-      }
-      startX = null;
-      startY = null;
-    }
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchend', onTouchEnd, { passive: true });
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [drawerOpen]);
+  // Left-edge swipe — route-aware (must be inside BrowserRouter, handled below via SwipeHandler)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem('hasSeenOnboarding')
@@ -375,6 +399,7 @@ function AppInner() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <SwipeHandler drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
       {!fullscreen && <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />}
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}${fullscreen ? ' messaging-fullscreen' : ''}`}>
         {!fullscreen && <LeftSidebar collapsed={sidebarCollapsed} />}

@@ -382,6 +382,29 @@ export default function ProfileSetup() {
       pointerEvents: 'all',
       overflow: 'auto',
     }}>
+
+      {/* Back button — fixed to top-left of screen, outside the card */}
+      {isEditMode && (
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            position: 'fixed',
+            top: 'max(env(safe-area-inset-top), 16px)',
+            left: 'max(env(safe-area-inset-left), 16px)',
+            zIndex: 10000,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 15, fontWeight: 600, padding: '8px 12px', borderRadius: 8,
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Back
+        </button>
+      )}
+
       <div style={{
         width: '100%', maxWidth: 440,
         background: 'var(--bg-card)',
@@ -389,25 +412,8 @@ export default function ProfileSetup() {
         border: '1px solid var(--border)',
         padding: '36px 32px',
         position: 'relative',
+        marginTop: isEditMode ? 48 : 0,
       }}>
-
-        {/* Back button — edit mode only */}
-        {isEditMode && (
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              position: 'absolute', top: 16, left: 16,
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 14, padding: '4px 8px', borderRadius: 6,
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-            Back
-          </button>
-        )}
 
         {/* Step indicator */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>

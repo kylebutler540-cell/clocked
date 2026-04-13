@@ -37,15 +37,15 @@ router.get('/:placeId', optionalAuth, async (req, res) => {
 // POST /api/ratings — upsert a star rating for a company
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { placeId, rating } = req.body;
+    const { placeId, rating, employerName, employerAddress } = req.body;
     if (!placeId || !rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'placeId and rating (1–5) are required' });
     }
 
     const saved = await prisma.companyRating.upsert({
       where: { user_id_place_id: { user_id: req.user.id, place_id: placeId } },
-      update: { rating },
-      create: { user_id: req.user.id, place_id: placeId, rating },
+      update: { rating, ...(employerName ? { employer_name: employerName } : {}), ...(employerAddress ? { employer_address: employerAddress } : {}) },
+      create: { user_id: req.user.id, place_id: placeId, rating, employer_name: employerName || null, employer_address: employerAddress || null },
     });
 
     res.json({ success: true, rating: saved.rating });

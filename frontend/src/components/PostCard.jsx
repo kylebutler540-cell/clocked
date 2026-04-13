@@ -423,57 +423,88 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
         {/* Actions row */}
         <div className="post-actions" onClick={e => e.stopPropagation()}>
-          {/* Vote pill */}
-          <div className="vote-pill">
-            <button
-              className={`vote-btn${post.liked ? ' active' : ''}`}
-              onClick={handleLike}
-              aria-label="Like"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={post.liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
-                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-              </svg>
-            </button>
-            <span className="vote-score" style={{ color: post.liked ? '#22C55E' : 'var(--text-muted)' }}>{post.likes}</span>
-            <div className="vote-divider" />
-            <button
-              className={`vote-btn${post.disliked ? ' active-down' : ''}`}
-              onClick={handleDislike}
-              aria-label="Dislike"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={post.disliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
-                <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
-              </svg>
-            </button>
-            <span className="vote-score" style={{ color: post.disliked ? '#EF4444' : 'var(--text-muted)' }}>{post.dislikes}</span>
-          </div>
+          {/* Like pill */}
+          <button
+            onClick={handleLike}
+            aria-label="Like"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: post.liked ? 'rgba(34,197,94,0.12)' : 'var(--bg-elevated)',
+              borderRadius: 20, padding: '6px 12px',
+              border: `1px solid ${post.liked ? '#22C55E' : 'var(--border)'}`,
+              flexShrink: 0, color: post.liked ? '#22C55E' : 'var(--text-muted)',
+              minHeight: 36, cursor: 'pointer', outline: 'none',
+              transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={post.liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+              <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{post.likes}</span>
+          </button>
 
-          {/* Comments */}
-          <button className="action-btn" onClick={e => { e.stopPropagation(); if (!user?.email) { navigate('/signup'); return; } if (!isMock && !showComments) setShowComments(true); }} aria-label="Comments" style={{ whiteSpace: 'nowrap', flexShrink: 0, opacity: showComments ? 0.4 : 1, pointerEvents: showComments ? 'none' : 'auto', outline: 'none' }} onBlur={e => e.currentTarget.blur()}>
+          {/* Dislike pill */}
+          <button
+            onClick={handleDislike}
+            aria-label="Dislike"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: post.disliked ? 'rgba(239,68,68,0.12)' : 'var(--bg-elevated)',
+              borderRadius: 20, padding: '6px 12px',
+              border: `1px solid ${post.disliked ? '#EF4444' : 'var(--border)'}`,
+              flexShrink: 0, color: post.disliked ? '#EF4444' : 'var(--text-muted)',
+              minHeight: 36, cursor: 'pointer', outline: 'none',
+              transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={post.disliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+              <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{post.dislikes}</span>
+          </button>
+
+          {/* Comments — pill bubble matching vote-pill style */}
+          <button
+            onClick={e => { e.stopPropagation(); if (!user?.email) { navigate('/signup'); return; } if (!isMock && !showComments) setShowComments(true); }}
+            aria-label="Comments"
+            onBlur={e => e.currentTarget.blur()}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'var(--bg-elevated)', borderRadius: 20,
+              padding: '6px 12px', border: '1px solid var(--border)',
+              flexShrink: 0, color: showComments ? 'var(--purple)' : 'var(--text-muted)',
+              opacity: showComments ? 0.6 : 1,
+              pointerEvents: showComments ? 'none' : 'auto',
+              outline: 'none', cursor: 'pointer', transition: 'color 0.15s',
+              WebkitTapHighlightColor: 'transparent',
+              minHeight: 36,
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            <span style={{ flexShrink: 0 }}>{post.comment_count > 0 ? `${post.comment_count} Comments` : 'Comment'}</span>
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{post.comment_count > 0 ? post.comment_count : 0}</span>
           </button>
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
 
           {/* Save */}
-          <button className={`action-btn${post.saved ? ' saved' : ''}`} onClick={handleSave} aria-label="Save">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={post.saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button className={`action-btn${post.saved ? ' saved' : ''}`} onClick={handleSave} aria-label="Save" style={{ flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={post.saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
-            <span>{post.saved ? 'Saved' : 'Save'}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{post.saved ? 'Saved' : 'Save'}</span>
           </button>
-
-          <div style={{ flex: 1 }} />
 
           {/* Flag */}
           <button
             className="action-btn"
             onClick={e => { e.stopPropagation(); if (!user?.email) { navigate('/signup'); return; } setShowFlag(true); }}
             aria-label="Flag"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-muted)', flexShrink: 0 }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           </button>

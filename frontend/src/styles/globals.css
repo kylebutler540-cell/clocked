@@ -531,7 +531,7 @@ img, video {
   padding: 0 12px;
   gap: 10px;
   background: var(--bg-primary);
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   /* iOS Safari: sticky must be on a direct child of the scroll container */
@@ -995,14 +995,24 @@ img, video {
 /* ========== Post Card ========== */
 .post-card {
   background: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px;
-  margin: 0 10px 8px 10px;
+  margin: 0;
   border: none;
+  border-bottom: 1px solid var(--border);
   /* Not a button — no hover/press states, no cursor change */
   cursor: default;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+}
+
+@media (max-width: 767px) {
+  .post-card {
+    border-radius: 0;
+    margin: 0;
+    border-left: none;
+    border-right: none;
+  }
 }
 
 @media (min-width: 768px) {
@@ -1010,7 +1020,7 @@ img, video {
     margin: 0 0 10px 0;
     border-radius: 12px;
     padding: 16px 20px;
-    border: none;
+    border: 1px solid var(--border);
     box-shadow: none;
     cursor: default;
   }
@@ -1248,7 +1258,13 @@ img, video {
   flex-direction: column;
   background: var(--bg-primary);
   min-height: 100%;
-  padding: 8px 0 0 0;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .feed {
+    padding: 8px 0 0 0;
+  }
 }
 
 .feed-empty {

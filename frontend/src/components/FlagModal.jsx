@@ -77,24 +77,6 @@ export default function FlagModal({ postId, postAuthor, postUrl, onClose }) {
         <div className="modal-handle" />
         <h2 className="modal-title">Report Post</h2>
 
-        {/* Email-style header */}
-        <div style={{
-          background: 'var(--bg-input)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          marginBottom: 16,
-          overflow: 'hidden',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, width: 52, flexShrink: 0 }}>To</span>
-            <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>clockedreports@gmail.com</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', padding: '9px 12px' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, width: 52, flexShrink: 0 }}>Subject</span>
-            <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>Reported Post - Clocked App</span>
-          </div>
-        </div>
-
         {/* Reason buttons */}
         <p className="modal-subtitle" style={{ marginBottom: 10 }}>Select a reason</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>

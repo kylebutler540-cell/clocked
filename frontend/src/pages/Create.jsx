@@ -23,7 +23,11 @@ export default function Create() {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const fileInputRef = useRef(null);
+  const employerRef = useRef(null);
+  const ratingRef = useRef(null);
+  const headerRef = useRef(null);
   const { addToast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -151,8 +155,10 @@ export default function Create() {
 
       <form onSubmit={handleSubmit}>
         {/* Employer */}
-        <div className="form-group">
-          <label className="form-label">Employer *</label>
+        <div className="form-group" ref={employerRef}>
+          <label className="form-label" style={{ color: fieldErrors.employer ? '#EF4444' : undefined }}>
+            Employer *{fieldErrors.employer && <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 4 }}>(required)</span>}
+          </label>
           {employer ? (
             <div className="employer-selected">
               <div className="employer-selected-info">
@@ -169,26 +175,30 @@ export default function Create() {
             </div>
           ) : (
             <EmployerSearch
-              onSelect={setEmployer}
+              onSelect={emp => { setEmployer(emp); setFieldErrors(prev => ({ ...prev, employer: undefined })); }}
               placeholder="Search for your employer..."
             />
           )}
         </div>
 
         {/* Rating */}
-        <div className="form-group">
-          <label className="form-label">Overall Rating *</label>
-          <RatingSelector value={rating} onChange={setRating} />
+        <div className="form-group" ref={ratingRef}>
+          <label className="form-label" style={{ color: fieldErrors.rating ? '#EF4444' : undefined }}>
+            Overall Rating *{fieldErrors.rating && <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 4 }}>(required)</span>}
+          </label>
+          <RatingSelector value={rating} onChange={v => { setRating(v); setFieldErrors(prev => ({ ...prev, rating: undefined })); }} />
         </div>
 
         {/* Header */}
-        <div className="form-group">
-          <label className="form-label">Headline *</label>
+        <div className="form-group" ref={headerRef}>
+          <label className="form-label" style={{ color: fieldErrors.header ? '#EF4444' : undefined }}>
+            Headline *{fieldErrors.header && <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 4 }}>(required)</span>}
+          </label>
           <input
             className="form-input"
             type="text"
             value={header}
-            onChange={e => setHeader(e.target.value)}
+            onChange={e => { setHeader(e.target.value); if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, header: undefined })); }}
             placeholder="Summarize your experience..."
             maxLength={120}
           />
@@ -284,7 +294,7 @@ export default function Create() {
         <button
           type="submit"
           className="btn btn-primary btn-full"
-          disabled={submitting || !employer || !rating || !header.trim() || (body.trim().length > 0 && body.trim().length < 10)}
+          disabled={submitting}
         >
           {submitting ? (isEditMode ? 'Saving...' : 'Posting...') : (isEditMode ? 'Save Changes' : 'Post Anonymously')}
         </button>

@@ -194,24 +194,16 @@ function InputBar({ inputRef, inputValue, setInputValue, onSend, onFocused, onBl
         <input ref={cameraRef} type="file" accept="image/*" capture="camera" onChange={handleFileChange} style={{ display: 'none' }} />
         <input ref={libraryRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
 
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
-          onKeyDown={e => {
-            // Mobile: Enter sends. Desktop: Enter = new line, Shift+Enter sends
-            const isMobile = window.matchMedia('(max-width: 767px)').matches;
-            if (e.key === 'Enter') {
-              if (isMobile && !e.shiftKey) { onSend(e); }
-              else if (!isMobile && e.shiftKey) { onSend(e); }
-            }
-          }}
           onFocus={onFocused}
           onBlur={onBlurred}
           placeholder="Message…"
           autoComplete="off"
-          style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 24, padding: '10px 16px', fontSize: 15, background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', WebkitAppearance: 'none' }}
+          rows={1}
+          style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 24, padding: '10px 16px', fontSize: 15, background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', WebkitAppearance: 'none', resize: 'none', fontFamily: 'inherit', lineHeight: 1.4, overflowY: 'auto', maxHeight: 120 }}
         />
         <button
           onClick={onSend}
@@ -398,7 +390,8 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       const isNew = data.length > lastCountRef.current;
       // Scroll to bottom on first load; on silent polls only if new messages arrived
       if (!opts.silent) {
-        setTimeout(() => scrollToBottom(), 0);
+        // Use two rAF passes to ensure DOM has fully painted before scrolling
+        setTimeout(() => scrollToBottom(), 80);
       } else if (isNew && !isInputFocusedRef.current) {
         scrollToBottom();
       }
@@ -416,7 +409,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
 
   useEffect(() => {
     // Always start at bottom when entering a thread
-    setTimeout(() => scrollToBottom(), 0);
+    setTimeout(() => scrollToBottom(), 150);
     fetchMessages();
     pollRef.current = setInterval(() => fetchMessages({ silent: true }), 10000);
     return () => clearInterval(pollRef.current);
@@ -560,6 +553,19 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   // Sender sees pending when waiting for receiver
   const isPendingRequest = convStatus === 'pending' && messages.length > 0 && messages[0]?.sender_id === currentUser?.id;
 
+  // Determine if a message is the last in its consecutive same-sender cluster.
+  // A cluster breaks when: different sender, time gap > 5 min, or different day.
+  function isLastInCluster(index) {
+    const curr = messages[index];
+    const next = messages[index + 1];
+    if (!next) return true;
+    if (next.sender_id !== curr.sender_id) return true;
+    if (!isSameDay(curr.created_at, next.created_at)) return true;
+    const timeDiff = Math.abs(new Date(next.created_at) - new Date(curr.created_at));
+    if (timeDiff > 5 * 60 * 1000) return true;
+    return false;
+  }
+
   // Build message list with day separators
   const messagesWithSeparators = [];
   messages.forEach((msg, i) => {
@@ -567,7 +573,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     if (!prev || !isSameDay(prev.created_at, msg.created_at)) {
       messagesWithSeparators.push({ type: 'separator', date: msg.created_at, key: `sep-${msg.id}` });
     }
-    messagesWithSeparators.push({ type: 'message', msg, key: msg.id });
+    messagesWithSeparators.push({ type: 'message', msg, key: msg.id, showTimestamp: isLastInCluster(i) });
   });
 
   return (
@@ -624,7 +630,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
                   </div>
                 );
               }
-              const { msg } = item;
+              const { msg, showTimestamp } = item;
               const isOwn = msg.sender_id === currentUser?.id;
               const isFailed = msg._status === 'failed';
               const isSending = msg._status === 'sending';
@@ -664,11 +670,14 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
                       {msg.body}
                     </div>
                   ) : null}
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, paddingLeft: isOwn ? 0 : 4, paddingRight: isOwn ? 4 : 0 }}>
-                    {isSending && 'Sending…'}
-                    {isFailed && <span style={{ color: '#ef4444' }}>Not sent · Tap to retry</span>}
-                    {!isSending && !isFailed && formatMsgTime(msg.created_at)}
-                  </div>
+                  {/* Timestamp — always show for sending/failed; only show for last message in cluster otherwise */}
+                  {(isSending || isFailed || showTimestamp) && (
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, paddingLeft: isOwn ? 0 : 4, paddingRight: isOwn ? 4 : 0 }}>
+                      {isSending && 'Sending…'}
+                      {isFailed && <span style={{ color: '#ef4444' }}>Not sent · Tap to retry</span>}
+                      {!isSending && !isFailed && formatMsgTime(msg.created_at)}
+                    </div>
+                  )}
                 </div>
               );
             })}

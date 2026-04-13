@@ -141,7 +141,7 @@ export default function CompanyProfile() {
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2, flexWrap: 'wrap' }}>
-              <StarRating placeId={placeId} />
+              <StarRating placeId={placeId} employerName={profile?.employer_name || stateInfo.name} employerAddress={profile?.employer_address || stateInfo.address} />
               <button
                 className="btn btn-primary"
                 style={{ padding: '6px 14px', fontSize: 13 }}

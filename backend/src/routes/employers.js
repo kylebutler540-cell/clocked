@@ -416,6 +416,7 @@ router.get('/top', async (req, res) => {
     const postPlaceIds = new Set(grouped.map(g => g.employer_place_id));
 
     // Find companies with star ratings but no posts
+    // Pull one rating row per place_id to get stored employer_name
     const starOnlyRatings = await prisma.companyRating.groupBy({
       by: ['place_id'],
       _avg: { rating: true },
@@ -423,14 +424,19 @@ router.get('/top', async (req, res) => {
       where: { place_id: { notIn: [...postPlaceIds] } },
     });
 
-    // For star-only companies, try to find employer_name from any post (unlikely, but safe)
-    // Since companyRating has no employer_name, we can only include them if we have a name from
-    // a different source. For now, skip ones with no name — they won't be displayable.
-    // We still include them for future enrichment; frontend will filter nulls.
+    // Get employer names stored in companyRating rows
+    const starOnlyPlaceIds = starOnlyRatings.map(r => r.place_id);
+    const starOnlyNameRows = await prisma.companyRating.findMany({
+      where: { place_id: { in: starOnlyPlaceIds }, employer_name: { not: null } },
+      select: { place_id: true, employer_name: true, employer_address: true },
+      distinct: ['place_id'],
+    });
+    const nameByPlace = Object.fromEntries(starOnlyNameRows.map(r => [r.place_id, r]));
+
     const starOnlyWithName = starOnlyRatings.map(r => ({
       employer_place_id: r.place_id,
-      employer_name: null,
-      employer_address: null,
+      employer_name: nameByPlace[r.place_id]?.employer_name || null,
+      employer_address: nameByPlace[r.place_id]?.employer_address || null,
       _count: { id: 0 },
       _star_avg: r._avg.rating,
       _star_count: r._count.rating,

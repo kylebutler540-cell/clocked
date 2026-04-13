@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { cacheGet, cacheSet, cacheDelete } from '../lib/cache';
 
-export default function StarRating({ placeId }) {
+export default function StarRating({ placeId, employerName, employerAddress }) {
   const [rating, setRating] = useState(0);
   const [average, setAverage] = useState(0);
   const [totalRatings, setTotalRatings] = useState(0);
@@ -52,7 +52,7 @@ export default function StarRating({ placeId }) {
     setTotalRatings(newTotal);
     setSaving(true);
     try {
-      await api.post('/ratings', { placeId, rating: star });
+      await api.post('/ratings', { placeId, rating: star, employerName: employerName || null, employerAddress: employerAddress || null });
       const res = await api.get(`/ratings/${placeId}`);
       cacheSet(`ratings/${placeId}`, res.data);
       setRating(res.data.userRating || star);

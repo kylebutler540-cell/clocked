@@ -125,11 +125,20 @@ export default function Search() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {(emp.employer_address || '').replace(/,?\s*USA\s*$/, '').trim()}
                     </div>
+                    {emp.review_count === 0 && (
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 1 }}>
+                        No emoji reviews yet
+                      </div>
+                    )}
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0, textAlign: 'right' }}>
                     {emp.distanceMiles != null && emp.distanceMiles < 9999
                       ? formatDist(emp.distanceMiles)
-                      : `${emp.review_count} reviews`}
+                      : emp.review_count > 0
+                        ? `${emp.review_count} reviews`
+                        : emp.avg_rating
+                          ? `★ ${emp.avg_rating.toFixed(1)}`
+                          : 'No reviews'}
                   </div>
                 </button>
               ));
