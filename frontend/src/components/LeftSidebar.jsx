@@ -33,7 +33,7 @@ function NavItem({ icon, label, path, collapsed, active, onClick, badge }) {
 }
 
 export default function LeftSidebar({ collapsed = false }) {
-  const { unreadCount } = useNotif();
+  const { unreadCount, unreadMessages } = useNotif();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -64,6 +64,7 @@ export default function LeftSidebar({ collapsed = false }) {
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
       />
       <NavItem collapsed={collapsed} active={isActive('/messages')} label="Messages" onClick={() => navigate('/messages')}
+        badge={unreadMessages}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>}
       />
       <NavItem collapsed={collapsed} active={isActive('/saved')} label="Saved" onClick={() => navigate('/saved')}

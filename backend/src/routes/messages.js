@@ -216,6 +216,31 @@ router.post('/:userId/reject', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/messages/unread-count — total unread messages + pending requests
+router.get('/unread-count', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const conversations = await prisma.conversation.findMany({
+      where: { participant_ids: { has: userId }, status: { not: 'rejected' } },
+      select: { id: true, status: true, participant_ids: true },
+    });
+    // Count unread messages across all accepted conversations
+    const unreadMessages = await prisma.message.count({
+      where: {
+        conversation_id: { in: conversations.filter(c => c.status === 'accepted').map(c => c.id) },
+        recipient_id: userId,
+        read: false,
+      },
+    });
+    // Count pending requests (incoming only)
+    const pendingRequests = conversations.filter(c => c.status === 'pending').length;
+    res.json({ count: unreadMessages + pendingRequests });
+  } catch (err) {
+    console.error('unread-count error:', err);
+    res.status(500).json({ error: 'Failed to fetch unread count' });
+  }
+});
+
 // GET /api/messages/inbox
 router.get('/inbox', requireAuth, async (req, res) => {
   try {

@@ -61,7 +61,7 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { unreadCount } = useNotif();
+  const { unreadCount, unreadMessages } = useNotif();
   const { fullscreen, setFullscreen } = useMessaging();
 
   return (
@@ -70,7 +70,8 @@ export default function BottomNav() {
         const isActive = item.path === '/'
           ? location.pathname === '/'
           : location.pathname.startsWith(item.path);
-        const showBadge = item.path === '/notifications' && unreadCount > 0;
+        const showBadge = (item.path === '/notifications' && unreadCount > 0) || (item.path === '/messages' && unreadMessages > 0);
+        const badgeCount = item.path === '/messages' ? unreadMessages : unreadCount;
 
         return (
           <button
@@ -100,7 +101,7 @@ export default function BottomNav() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '0 3px',
                 }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {badgeCount > 99 ? '99+' : badgeCount}
                 </span>
               )}
             </span>

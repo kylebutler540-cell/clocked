@@ -7,8 +7,10 @@ const router = express.Router();
 // Get notifications for current user — enriches actor info if missing
 router.get('/', requireAuth, async (req, res) => {
   try {
+    // Exclude message-type notifications — those only show in the Messages tab
+    const MESSAGE_NOTIF_TYPES = ['message_request', 'message_accepted'];
     const notifications = await prisma.notification.findMany({
-      where: { user_id: req.user.id },
+      where: { user_id: req.user.id, type: { notIn: MESSAGE_NOTIF_TYPES } },
       orderBy: { created_at: 'desc' },
       take: 50,
     });
@@ -147,8 +149,9 @@ router.post('/read', requireAuth, async (req, res) => {
 // Unread count
 router.get('/unread-count', requireAuth, async (req, res) => {
   try {
+    const MESSAGE_NOTIF_TYPES = ['message_request', 'message_accepted'];
     const count = await prisma.notification.count({
-      where: { user_id: req.user.id, read: false },
+      where: { user_id: req.user.id, read: false, type: { notIn: MESSAGE_NOTIF_TYPES } },
     });
     res.json({ count });
   } catch (err) {

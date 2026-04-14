@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useMessaging } from '../context/MessagingContext';
+import { useNotif } from '../context/NotifContext';
 
 // ─── Timestamp helpers ────────────────────────────────────────────────────────
 
@@ -767,6 +768,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
 export default function Messages() {
   const { user } = useAuth();
   const { setFullscreen } = useMessaging();
+  const { clearUnreadMessages, refreshMessages } = useNotif();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
@@ -795,9 +797,11 @@ export default function Messages() {
 
   useEffect(() => {
     fetchInbox();
-    inboxPollRef.current = setInterval(() => fetchInbox({ silent: true }), 10000);
+    // Clear messages badge when Messages page is open
+    clearUnreadMessages();
+    inboxPollRef.current = setInterval(() => { fetchInbox({ silent: true }); refreshMessages(); }, 10000);
     return () => clearInterval(inboxPollRef.current);
-  }, [fetchInbox]);
+  }, [fetchInbox]); // eslint-disable-line
 
   // Wipe inbox instantly on account switch
   useEffect(() => {
