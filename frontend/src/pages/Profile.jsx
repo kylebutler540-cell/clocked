@@ -402,8 +402,25 @@ export default function Profile() {
     const pubName = publicUser?.display_name || 'Anonymous';
     return (
       <div className="profile-page">
-        <div className="profile-hero">
+        <div className="profile-hero" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
           <AvatarCircle avatarUrl={publicUser?.avatar_url} name={pubName} size={72} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button
+              className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
+              style={{ padding: '10px 18px', fontSize: 13, fontWeight: 600, height: 42 }}
+              onClick={handleFollow}
+              disabled={followLoading}
+            >
+              {followLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ padding: '10px 18px', fontSize: 13, fontWeight: 600, height: 42 }}
+              onClick={() => navigate("/messages?user=" + viewingUserId)}
+            >
+              Message
+            </button>
+          </div>
           <div className="profile-hero-info">
             <div className="profile-username-large">{pubName}</div>
             {publicUser?.username && (
@@ -425,21 +442,6 @@ export default function Profile() {
                 <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Following</span>
               </button>
             </div>
-            <button
-              className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
-              style={{ marginTop: 12, padding: '7px 20px', fontSize: 13, fontWeight: 600 }}
-              onClick={handleFollow}
-              disabled={followLoading}
-            >
-              {followLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
-            </button>
-            <button
-              className="btn btn-secondary"
-              style={{ marginTop: 12, padding: '7px 20px', fontSize: 13, fontWeight: 600, marginLeft: 8 }}
-              onClick={() => navigate("/messages?user=" + viewingUserId)}
-            >
-              Message
-            </button>
           </div>
         </div>
         <UserPostList url={`/posts/user/${viewingUserId}/posts`} emptyState={<EmptyState text="This user hasn't posted anything yet." />} />

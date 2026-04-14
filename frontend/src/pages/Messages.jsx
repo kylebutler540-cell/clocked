@@ -577,7 +577,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   });
 
   return (
-    <div ref={outerRef} style={{ display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: 'var(--bg-primary)', zIndex: 200, overflow: 'hidden', willChange: 'height, top' }}>
+    <div ref={outerRef} style={{ display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 0px)', maxWidth: 680, height: '100dvh', background: 'var(--bg-primary)', zIndex: 200, overflow: 'hidden', willChange: 'height, top' }}>
 
       {/* Header — no bottom border */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', paddingTop: 'max(env(safe-area-inset-top), 12px)', background: 'var(--bg-primary)', flexShrink: 0, zIndex: 1 }}>

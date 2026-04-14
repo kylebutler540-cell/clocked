@@ -62,7 +62,12 @@ function NotificationItem({ n, onCommentLike }) {
 
   function handleProfileClick(e) {
     e.stopPropagation();
-    if (actorId) navigate(`/profile/${actorId}`);
+    // For message requests, navigate to chat instead of profile
+    if (isMessageRequest && actorId) {
+      navigate(`/messages?user=${actorId}`);
+    } else if (actorId) {
+      navigate(`/profile/${actorId}`);
+    }
   }
 
   function handleLikeComment(e) {
