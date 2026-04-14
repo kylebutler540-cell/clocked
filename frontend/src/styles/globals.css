@@ -484,6 +484,8 @@ img, video {
   flex-direction: column;
   /* iOS Safari: allow sticky children to work inside scroll container */
   -webkit-overflow-scrolling: touch;
+  /* Prevent bounce/overscroll from snapping back to top on mobile */
+  overscroll-behavior-y: none;
 }
 
 @media (min-width: 768px) {

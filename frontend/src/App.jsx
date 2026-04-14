@@ -95,7 +95,14 @@ function GetAppModal({ onClose }) {
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  React.useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  const prevPathname = React.useRef(pathname);
+  React.useEffect(() => {
+    // Only scroll to top when pathname actually changes (not on re-renders)
+    if (pathname !== prevPathname.current) {
+      prevPathname.current = pathname;
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
   return null;
 }
 
