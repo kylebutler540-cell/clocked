@@ -642,7 +642,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
               {otherUser?.username && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{otherUser.username}</div>}
               {(otherUser?.follower_count != null || otherUser?.following_count != null) && (
                 <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
-                  <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.follower_count)}</strong> Followers</span>
+                  <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.follower_count)}</strong> {otherUser.follower_count === 1 ? 'Follower' : 'Followers'}</span>
                   <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatCount(otherUser.following_count)}</strong> Following</span>
                 </div>
               )}

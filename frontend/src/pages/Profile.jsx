@@ -50,11 +50,12 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
   const [followStates, setFollowStates] = useState({});
 
   useEffect(() => {
-    api.get(`/follows/${userId}/${type}`)
-      .then(async res => {
+    async function load() {
+      try {
+        const res = await api.get(`/follows/${userId}/${type}`);
         const list = Array.isArray(res.data) ? res.data : [];
         setUsers(list);
-        // Check which ones current user already follows
+        // Fetch follow states before showing the list
         if (currentUser?.email && list.length > 0) {
           const checks = await Promise.all(
             list.map(u =>
@@ -67,9 +68,13 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
           checks.forEach(([id, val]) => { if (val !== null) states[id] = val; });
           setFollowStates(states);
         }
-      })
-      .catch(() => setUsers([]))
-      .finally(() => setLoading(false));
+      } catch {
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, [userId, type]); // eslint-disable-line
 
   async function toggleFollow(targetId, currentlyFollowing) {
@@ -106,7 +111,6 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
             {users.map(u => {
               // Use loaded state; while loading show nothing (null = not yet fetched)
               const isFollowing = followStates[u.id] ?? false;
-              const stateLoaded = u.id in followStates || !currentUser?.email || u.id === currentUser.id;
               const name = u.display_name || 'Anonymous';
               return (
                 <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -123,7 +127,7 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
                     <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
                     {u.username && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>@{u.username}</div>}
                   </div>
-                  {currentUser?.email && u.id !== currentUser.id && stateLoaded && (
+                  {currentUser?.email && u.id !== currentUser.id && (
                     <button
                       className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
                       style={{ padding: '5px 14px', fontSize: 12, flexShrink: 0 }}
@@ -458,7 +462,7 @@ export default function Profile() {
                   onClick={() => setFollowListModal('followers')}
                 >
                   <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(publicUser?.follower_count)}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Followers</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>{publicUser?.follower_count === 1 ? 'Follower' : 'Followers'}</span>
                 </button>
                 <button
                   style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
@@ -546,7 +550,7 @@ export default function Profile() {
                   onClick={() => setFollowListModal('followers')}
                 >
                   <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.follower_count)}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Followers</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>{user?.follower_count === 1 ? 'Follower' : 'Followers'}</span>
                 </button>
                 <button
                   style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
