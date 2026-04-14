@@ -706,11 +706,6 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
                 </div>
               );
             })}
-            {isPendingRequest && (
-              <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', padding: '12px 20px', background: 'rgba(168,85,247,0.06)', borderRadius: 12, margin: '8px 0' }}>
-                Message request sent · Waiting for them to accept
-              </div>
-            )}
             </> /* end inner fragment for messages */}
           </>
         )}
