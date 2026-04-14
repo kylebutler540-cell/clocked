@@ -3171,3 +3171,22 @@ body[data-comments-open] .mobile-only-header {
     opacity: 0.5;
   }
 }
+
+/* ─── DM Conversation overlay — desktop width fix ─────────────────────────── */
+/* Desktop positioning is handled via JS inline styles in ConversationView.
+   This class only sets the base (mobile) styles. */
+.dm-conversation-overlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 680px;
+  height: 100dvh;
+  background: var(--bg-primary);
+  z-index: 200;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  will-change: height, top;
+}

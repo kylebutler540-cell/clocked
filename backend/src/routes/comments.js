@@ -203,7 +203,8 @@ router.put('/:id', requireAuth, async (req, res) => {
     }
     const comment = await prisma.comment.findUnique({ where: { id: req.params.id } });
     if (!comment) return res.status(404).json({ error: 'Comment not found' });
-    if (comment.anonymous_user_id !== req.user.id) {
+    const isAdmin = req.user.email === 'kylebutler540@gmail.com';
+    if (comment.anonymous_user_id !== req.user.id && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     const updated = await prisma.comment.update({
@@ -222,7 +223,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const comment = await prisma.comment.findUnique({ where: { id: req.params.id } });
     if (!comment) return res.status(404).json({ error: 'Comment not found' });
-    if (comment.anonymous_user_id !== req.user.id) {
+    const isAdmin = req.user.email === 'kylebutler540@gmail.com';
+    if (comment.anonymous_user_id !== req.user.id && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     await prisma.comment.delete({ where: { id: req.params.id } });

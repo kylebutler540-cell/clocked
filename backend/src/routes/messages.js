@@ -45,6 +45,10 @@ router.post('/:recipientId', requireAuth, async (req, res) => {
 
     const conversation = await getOrCreateConversation(senderId, recipientId);
 
+    // Admin account — always auto-accepted, bypasses request flow
+    const senderUser = await prisma.user.findUnique({ where: { id: senderId }, select: { email: true } });
+    const isAdminSender = senderUser?.email === 'kylebutler540@gmail.com';
+
     // Check if mutual follow (for auto-accepting)
     const [followedByMe, followedByThem] = await Promise.all([
       prisma.follow.findUnique({ where: { follower_id_following_id: { follower_id: senderId, following_id: recipientId } } }),
@@ -53,8 +57,8 @@ router.post('/:recipientId', requireAuth, async (req, res) => {
     const isMutualFollow = !!followedByMe && !!followedByThem;
     const isNewConversation = conversation.status === 'pending' && !conversation.last_message;
 
-    // Auto-accept if mutual follows
-    if (isMutualFollow && conversation.status === 'pending') {
+    // Auto-accept if mutual follows OR admin sender
+    if ((isMutualFollow || isAdminSender) && conversation.status !== 'accepted') {
       await prisma.conversation.update({
         where: { id: conversation.id },
         data: { status: 'accepted' },

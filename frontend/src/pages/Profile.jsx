@@ -41,32 +41,51 @@ function AvatarCircle({ avatarUrl, name, size = 72 }) {
   );
 }
 
-function FollowListModal({ userId, type, onClose }) {
+function FollowListModal({ userId, type, onClose, onFollowChange }) {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  // followStates: null = not loaded yet, true/false = known state
   const [followStates, setFollowStates] = useState({});
 
   useEffect(() => {
     api.get(`/follows/${userId}/${type}`)
-      .then(res => {
-        setUsers(Array.isArray(res.data) ? res.data : []);
+      .then(async res => {
+        const list = Array.isArray(res.data) ? res.data : [];
+        setUsers(list);
+        // Check which ones current user already follows
+        if (currentUser?.email && list.length > 0) {
+          const checks = await Promise.all(
+            list.map(u =>
+              u.id !== currentUser.id
+                ? api.get(`/follows/${u.id}/is-following`).then(r => [u.id, r.data.following]).catch(() => [u.id, false])
+                : Promise.resolve([u.id, null])
+            )
+          );
+          const states = {};
+          checks.forEach(([id, val]) => { if (val !== null) states[id] = val; });
+          setFollowStates(states);
+        }
       })
       .catch(() => setUsers([]))
       .finally(() => setLoading(false));
-  }, [userId, type]);
+  }, [userId, type]); // eslint-disable-line
 
   async function toggleFollow(targetId, currentlyFollowing) {
+    // Optimistic update
+    setFollowStates(s => ({ ...s, [targetId]: !currentlyFollowing }));
     try {
       if (currentlyFollowing) {
         await api.delete(`/follows/${targetId}`);
-        setFollowStates(s => ({ ...s, [targetId]: false }));
       } else {
         await api.post(`/follows/${targetId}`);
-        setFollowStates(s => ({ ...s, [targetId]: true }));
       }
-    } catch {}
+      onFollowChange?.();
+    } catch {
+      // Revert on error
+      setFollowStates(s => ({ ...s, [targetId]: currentlyFollowing }));
+    }
   }
 
   return (
@@ -85,7 +104,9 @@ function FollowListModal({ userId, type, onClose }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '60vh', overflowY: 'auto' }}>
             {users.map(u => {
+              // Use loaded state; while loading show nothing (null = not yet fetched)
               const isFollowing = followStates[u.id] ?? false;
+              const stateLoaded = u.id in followStates || !currentUser?.email || u.id === currentUser.id;
               const name = u.display_name || 'Anonymous';
               return (
                 <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -102,7 +123,7 @@ function FollowListModal({ userId, type, onClose }) {
                     <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
                     {u.username && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>@{u.username}</div>}
                   </div>
-                  {currentUser?.email && u.id !== currentUser.id && (
+                  {currentUser?.email && u.id !== currentUser.id && stateLoaded && (
                     <button
                       className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
                       style={{ padding: '5px 14px', fontSize: 12, flexShrink: 0 }}
@@ -290,6 +311,15 @@ export default function Profile() {
 
   const isOwnProfile = !viewingUserId || viewingUserId === user?.id;
 
+  // Refresh own user counts from server (to fix stale following_count)
+  useEffect(() => {
+    if (isOwnProfile && user?.email) {
+      api.get('/auth/me')
+        .then(res => { if (res.data?.user) setUser(res.data.user); })
+        .catch(() => {});
+    }
+  }, [isOwnProfile]); // eslint-disable-line
+
   // For public profile (/profile/:userId)
   useEffect(() => {
     if (viewingUserId && !isOwnProfile) {
@@ -331,17 +361,27 @@ export default function Profile() {
   async function handleFollow() {
     if (!user?.email) return navigate('/signup');
     setFollowLoading(true);
+    // Optimistic UI update
+    const wasFollowing = isFollowing;
+    setIsFollowing(!wasFollowing);
+    setPublicUser(u => u ? { ...u, follower_count: (u.follower_count || 0) + (wasFollowing ? -1 : 1) } : u);
+    // Optimistically update own following_count in context
+    setUser({ ...user, following_count: (user.following_count || 0) + (wasFollowing ? -1 : 1) });
     try {
-      if (isFollowing) {
+      if (wasFollowing) {
         const res = await api.delete(`/follows/${viewingUserId}`);
-        setIsFollowing(false);
         setPublicUser(u => u ? { ...u, follower_count: res.data.follower_count } : u);
       } else {
         const res = await api.post(`/follows/${viewingUserId}`);
-        setIsFollowing(true);
         setPublicUser(u => u ? { ...u, follower_count: res.data.follower_count } : u);
       }
+      // Refresh own user from server to get accurate following_count
+      api.get('/auth/me').then(r => { if (r.data?.user) setUser(r.data.user); }).catch(() => {});
     } catch {
+      // Revert optimistic updates
+      setIsFollowing(wasFollowing);
+      setPublicUser(u => u ? { ...u, follower_count: (u.follower_count || 0) + (wasFollowing ? 1 : -1) } : u);
+      setUser({ ...user, following_count: (user.following_count || 0) + (wasFollowing ? 1 : -1) });
       addToast('Failed to update follow');
     } finally {
       setFollowLoading(false);
@@ -402,12 +442,39 @@ export default function Profile() {
     const pubName = publicUser?.display_name || 'Anonymous';
     return (
       <div className="profile-page">
-        <div className="profile-hero" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-          <AvatarCircle avatarUrl={publicUser?.avatar_url} name={pubName} size={72} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        {/* Profile hero: avatar left, info right, buttons below */}
+        <div style={{ padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Top row: avatar + name/handle/counts */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+            <AvatarCircle avatarUrl={publicUser?.avatar_url} name={pubName} size={72} />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 4, minWidth: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pubName}</div>
+              {publicUser?.username && (
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{publicUser.username}</div>
+              )}
+              <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                <button
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                  onClick={() => setFollowListModal('followers')}
+                >
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(publicUser?.follower_count)}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Followers</span>
+                </button>
+                <button
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                  onClick={() => setFollowListModal('following')}
+                >
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(publicUser?.following_count)}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Following</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Buttons below — wider, shorter */}
+          <div style={{ display: 'flex', gap: 10 }}>
             <button
               className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
-              style={{ padding: '10px 18px', fontSize: 13, fontWeight: 600, height: 42 }}
+              style={{ flex: 1, padding: '8px 0', fontSize: 14, fontWeight: 600, height: 36 }}
               onClick={handleFollow}
               disabled={followLoading}
             >
@@ -415,33 +482,11 @@ export default function Profile() {
             </button>
             <button
               className="btn btn-secondary"
-              style={{ padding: '10px 18px', fontSize: 13, fontWeight: 600, height: 42 }}
-              onClick={() => navigate("/messages?user=" + viewingUserId)}
+              style={{ flex: 1, padding: '8px 0', fontSize: 14, fontWeight: 600, height: 36 }}
+              onClick={() => navigate('/messages?user=' + viewingUserId)}
             >
               Message
             </button>
-          </div>
-          <div className="profile-hero-info">
-            <div className="profile-username-large">{pubName}</div>
-            {publicUser?.username && (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{publicUser.username}</div>
-            )}
-            <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-              <button
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                onClick={() => setFollowListModal('followers')}
-              >
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(publicUser?.follower_count)}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Followers</span>
-              </button>
-              <button
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                onClick={() => setFollowListModal('following')}
-              >
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(publicUser?.following_count)}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Following</span>
-              </button>
-            </div>
           </div>
         </div>
         <UserPostList url={`/posts/user/${viewingUserId}/posts`} emptyState={<EmptyState text="This user hasn't posted anything yet." />} />
@@ -450,6 +495,11 @@ export default function Profile() {
             userId={viewingUserId}
             type={followListModal}
             onClose={() => setFollowListModal(null)}
+            onFollowChange={() => {
+              // Refresh current user's following_count and public user's follower_count
+              api.get('/auth/me').then(r => { if (r.data?.user) setUser(r.data.user); }).catch(() => {});
+              api.get(`/auth/user/${viewingUserId}`).then(r => setPublicUser(r.data)).catch(() => {});
+            }}
           />
         )}
       </div>
@@ -635,6 +685,10 @@ export default function Profile() {
           userId={user?.id}
           type={followListModal}
           onClose={() => setFollowListModal(null)}
+          onFollowChange={() => {
+            // Refresh own user to get accurate follower/following counts
+            api.get('/auth/me').then(r => { if (r.data?.user) setUser(r.data.user); }).catch(() => {});
+          }}
         />
       )}
     </div>

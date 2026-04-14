@@ -117,7 +117,8 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const menuRef = useRef(null);
 
   const isMock = post.id?.startsWith('mock-');
-  const isOwner = !isMock && user?.id && post.anonymous_user_id === user.id;
+  const isAdmin = user?.email === 'kylebutler540@gmail.com';
+  const isOwner = !isMock && user?.id && (post.anonymous_user_id === user.id || isAdmin);
 
   // When the parent re-fetches and passes a fresh initialPost, re-apply cache if server has no reaction
   useEffect(() => {

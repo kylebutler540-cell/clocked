@@ -25,10 +25,11 @@ function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
   );
 }
 
-function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, depth = 0, highlightId,
+function CommentItem({ comment, currentUserId, currentUserEmail, onReply, onLike, onActionModal, depth = 0, highlightId,
   editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit }) {
   const navigate = useNavigate();
-  const isOwner = currentUserId && comment.anonymous_user_id === currentUserId;
+  const isAdmin = currentUserEmail === 'kylebutler540@gmail.com';
+  const isOwner = currentUserId && (comment.anonymous_user_id === currentUserId || isAdmin);
   const [showReplies, setShowReplies] = useState(true);
   const [highlighted, setHighlighted] = useState(false);
   const itemRef = React.useRef(null);
@@ -125,7 +126,7 @@ function CommentItem({ comment, currentUserId, onReply, onLike, onActionModal, d
               <button style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', padding: '0 16px 4px', cursor: 'pointer', marginLeft: 36 }}
                 onClick={() => setShowReplies(false)}>Hide replies</button>
               {comment.replies.map(reply => (
-                <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId}
+                <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} currentUserEmail={currentUserEmail}
                   onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId}
                   {...editProps} />
               ))}
@@ -552,7 +553,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
             </div>
           ) : (
             comments.map(comment => (
-              <CommentItem key={comment.id} comment={comment} currentUserId={user?.id}
+              <CommentItem key={comment.id} comment={comment} currentUserId={user?.id} currentUserEmail={user?.email}
                 onReply={c => setReplyingTo(c)} onLike={handleLike} onActionModal={setCommentActionModal}
                 highlightId={highlightCommentId}
                 editingCommentId={editingCommentId}
