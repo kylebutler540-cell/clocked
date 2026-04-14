@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../lib/api';
+import { lsGet, lsSet, lsDelete, lsClear } from '../lib/cache';
 import Feed from '../components/Feed';
 import PostCard from '../components/PostCard';
 
@@ -51,11 +52,18 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
 
   useEffect(() => {
     async function load() {
+      const cacheKey = `follows_${userId}_${type}`;
+      // Show cached list instantly
+      const cached = lsGet(cacheKey);
+      if (cached) {
+        setUsers(cached.users || []);
+        setFollowStates(cached.states || {});
+        setLoading(false);
+      }
       try {
         const res = await api.get(`/follows/${userId}/${type}`);
         const list = Array.isArray(res.data) ? res.data : [];
         setUsers(list);
-        // Fetch follow states before showing the list
         if (currentUser?.email && list.length > 0) {
           const checks = await Promise.all(
             list.map(u =>
@@ -67,9 +75,12 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
           const states = {};
           checks.forEach(([id, val]) => { if (val !== null) states[id] = val; });
           setFollowStates(states);
+          lsSet(cacheKey, { users: list, states });
+        } else {
+          lsSet(cacheKey, { users: list, states: {} });
         }
       } catch {
-        setUsers([]);
+        if (!cached) setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -327,9 +338,20 @@ export default function Profile() {
   // For public profile (/profile/:userId)
   useEffect(() => {
     if (viewingUserId && !isOwnProfile) {
-      setPublicUserLoading(true);
+      // Show cached profile instantly, fetch fresh in background
+      const profileKey = `profile_${viewingUserId}`;
+      const cached = lsGet(profileKey);
+      if (cached) {
+        setPublicUser(cached);
+        setPublicUserLoading(false);
+      } else {
+        setPublicUserLoading(true);
+      }
       api.get(`/auth/user/${viewingUserId}`)
-        .then(res => setPublicUser(res.data))
+        .then(res => {
+          setPublicUser(res.data);
+          lsSet(profileKey, res.data);
+        })
         .catch(() => {})
         .finally(() => setPublicUserLoading(false));
 
@@ -381,6 +403,9 @@ export default function Profile() {
       }
       // Refresh own user from server to get accurate following_count
       api.get('/auth/me').then(r => { if (r.data?.user) setUser(r.data.user); }).catch(() => {});
+      // Invalidate cached profile so next visit shows fresh count
+      lsDelete(`profile_${viewingUserId}`);
+      lsClear(`follows_${viewingUserId}`);
     } catch {
       // Revert optimistic updates
       setIsFollowing(wasFollowing);

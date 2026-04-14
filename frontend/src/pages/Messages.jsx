@@ -4,6 +4,7 @@ import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useMessaging } from '../context/MessagingContext';
 import { useNotif } from '../context/NotifContext';
+import { lsGet, lsSet } from '../lib/cache';
 
 // ─── Timestamp helpers ────────────────────────────────────────────────────────
 
@@ -359,16 +360,31 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     });
   }, []);
 
-  // Prefetch otherUser immediately if not seeded — so header is instant
+  // Prefetch otherUser from cache or API immediately — so header is instant
   useEffect(() => {
-    if (!otherUser) {
+    const profileKey = `profile_${userId}`;
+    const cached = lsGet(profileKey);
+    if (cached && !otherUser) setOtherUser(cached);
+    if (!otherUser || !cached) {
       api.get(`/auth/user/${userId}`)
-        .then(res => setOtherUser(prev => prev || res.data))
+        .then(res => { setOtherUser(prev => prev || res.data); lsSet(profileKey, res.data); })
         .catch(() => {});
     }
   }, [userId]); // eslint-disable-line
 
   const fetchMessages = useCallback(async (opts = {}) => {
+    const msgKey = `msgs_${userId}`;
+    // Show cached messages instantly on first open
+    if (!opts.silent && !hasLoadedRef.current) {
+      const cached = lsGet(msgKey);
+      if (cached?.messages?.length) {
+        setMessages(cached.messages);
+        setConvStatus(cached.status);
+        hasLoadedRef.current = true;
+        setLoading(false);
+        setTimeout(() => scrollToBottom(), 50);
+      }
+    }
     try {
       const res = await api.get(`/messages/conversation/${userId}`);
       // Backend now returns { messages, conversation_status }
@@ -376,6 +392,8 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       const status = res.data?.conversation_status || null;
 
       setConvStatus(status);
+      // Persist to localStorage for instant next open
+      lsSet(msgKey, { messages: data, status });
 
       setMessages(prev => {
         // Always merge: keep in-flight (sending/failed) messages not yet confirmed by server
@@ -771,6 +789,7 @@ export default function Messages() {
   const { clearUnreadMessages, refreshMessages } = useNotif();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // Seed from localStorage instantly — no spinner on revisit
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -785,9 +804,20 @@ export default function Messages() {
 
   const fetchInbox = useCallback(async (opts = {}) => {
     if (!user?.email) return;
+    const cacheKey = `inbox_${user.id}`;
+    // Show cached inbox instantly on first load
+    if (!opts.silent) {
+      const cached = lsGet(cacheKey);
+      if (cached?.length) {
+        setConversations(cached);
+        setLoading(false);
+      }
+    }
     try {
       const res = await api.get('/messages/inbox');
-      setConversations(Array.isArray(res.data) ? res.data : []);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setConversations(data);
+      lsSet(cacheKey, data);
     } catch (err) {
       console.error('inbox', err);
     } finally {
