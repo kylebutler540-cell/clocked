@@ -548,8 +548,8 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   };
 
   const otherName = otherUser?.display_name || null;
-  // Receiver sees pending when they have not yet accepted
-  const isIncomingRequest = convStatus === 'pending' && messages.length > 0 && messages[0]?.sender_id === userId;
+  // Receiver sees pending/rejected when they have not yet accepted
+  const isIncomingRequest = (convStatus === 'pending' || convStatus === 'rejected') && messages.length > 0 && messages[0]?.sender_id === userId;
   // Sender sees pending when waiting for receiver
   const isPendingRequest = convStatus === 'pending' && messages.length > 0 && messages[0]?.sender_id === currentUser?.id;
 
@@ -721,8 +721,8 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         </div>
       )}
 
-      {/* Input — only show if accepted or sender of pending */}
-      {(convStatus === 'accepted' || isPendingRequest || convStatus === null) && (
+      {/* Input — only show if accepted or sender of pending or rejected (soft reject allows re-opening) */}
+      {(convStatus === 'accepted' || isPendingRequest || convStatus === 'rejected' || convStatus === null) && (
         <InputBar
           inputRef={inputRef}
           inputValue={inputValue}

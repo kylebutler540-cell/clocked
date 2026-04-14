@@ -45,11 +45,6 @@ router.post('/:recipientId', requireAuth, async (req, res) => {
 
     const conversation = await getOrCreateConversation(senderId, recipientId);
 
-    // If conversation was rejected, block further messages
-    if (conversation.status === 'rejected') {
-      return res.status(403).json({ error: 'Message request was declined' });
-    }
-
     // Check if mutual follow (for auto-accepting)
     const [followedByMe, followedByThem] = await Promise.all([
       prisma.follow.findUnique({ where: { follower_id_following_id: { follower_id: senderId, following_id: recipientId } } }),
@@ -190,17 +185,11 @@ router.post('/:userId/reject', requireAuth, async (req, res) => {
     });
     if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-    // Mark conversation as rejected + add sender to blocked list
-    await Promise.all([
-      prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { status: 'rejected' },
-      }),
-      prisma.user.update({
-        where: { id: currentUserId },
-        data: { blocked_user_ids: { push: otherUserId } },
-      }),
-    ]);
+    // Mark conversation as rejected (soft reject — not deleted, just hidden)
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { status: 'rejected' },
+    });
 
     // Delete the message_request notification
     await prisma.notification.deleteMany({
