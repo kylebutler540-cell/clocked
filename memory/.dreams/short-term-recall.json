@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-12T17:24:01.414Z",
+  "entries": {
+    "memory:memory/2026-04-12.md:1:34": {
+      "key": "memory:memory/2026-04-12.md:1:34",
+      "path": "memory/2026-04-12.md",
+      "startLine": 1,
+      "endLine": 34,
+      "source": "memory",
+      "snippet": "# Memory — April 12, 2026 ## TOKEN CONSERVATION — STANDING ORDERS - Minimum replies, no narration while working - Do task, say \"done\" when finished - /new between sessions to reset context - Never iterate 10x on same problem — solve it once right ## Clocked Logo Status (as of April 12 AM) - Logo: `/logo-text.jpg` (dark mode, black bg + purple, mix-blend-mode:screen) - Logo: `/logo-text-light.png` (light mode, white bg + purple SVG render) - Component: `ClockedLogo.jsx` uses `useTheme()` to swap between them - Top bar: height=36, Sidebar: height=52, Mobile header: height=42 - Sidebar logo centered with `margin: 0 auto` - All deployed as of ~9:41 AM ## Clocked App — Current State (April 12)",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7427607654910964,
+      "maxScore": 0.7427607654910964,
+      "firstRecalledAt": "2026-04-12T17:24:01.414Z",
+      "lastRecalledAt": "2026-04-12T17:24:01.414Z",
+      "queryHashes": [
+        "c38a38a67834"
+      ],
+      "recallDays": [
+        "2026-04-12"
+      ],
+      "conceptTags": [
+        "logo-text.jpg",
+        "mix-blend-mode",
+        "logo-text-light.png",
+        "clockedlogo.jsx",
+        "april",
+        "token",
+        "conservation",
+        "standing"
+      ]
+    },
+    "memory:memory/2026-04-09.md:1:21": {
+      "key": "memory:memory/2026-04-09.md:1:21",
+      "path": "memory/2026-04-09.md",
+      "startLine": 1,
+      "endLine": 21,
+      "source": "memory",
+      "snippet": "# Memory — April 9, 2026 ## Clocked App — Messaging System (April 6-7) - Built full DM messaging system from scratch - Schema: added `Message` and `Conversation` models to Prisma schema - Backend: `/api/messages` routes (send, inbox, conversation, mark-read) - Frontend: fullscreen conversation view, inbox with friends/requests split - Fixed critical deploy bug: duplicate `dependencies` block in `package.json` caused ALL Railway deploys to fail silently for ~7 deploys - Fixed prisma schema path: Railway container only gets `backend/` dir, so prisma schema must be at `backend/prisma/schema.prisma` (copied from root) - Backend `railway.json` buildCommand: `npm install && npx prisma generate --",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7190272673804841,
+      "maxScore": 0.7190272673804841,
+      "firstRecalledAt": "2026-04-12T17:24:01.414Z",
+      "lastRecalledAt": "2026-04-12T17:24:01.414Z",
+      "queryHashes": [
+        "c38a38a67834"
+      ],
+      "recallDays": [
+        "2026-04-12"
+      ],
+      "conceptTags": [
+        "6-7",
+        "api/messages",
+        "mark-read",
+        "friends/requests",
+        "package.json",
+        "backend/prisma/schema.prisma",
+        "railway.json",
+        "april"
+      ]
+    },
+    "memory:memory/2026-04-12.md:28:59": {
+      "key": "memory:memory/2026-04-12.md:28:59",
+      "path": "memory/2026-04-12.md",
+      "startLine": 28,
+      "endLine": 59,
+      "source": "memory",
+      "snippet": "- Do task, say \"done\" when finished - /new between sessions to reset context - Never iterate 10x on same problem — solve it once right ## Clocked Logo Status (as of April 12 AM) - Logo: `/logo-text.jpg` (dark mode, black bg + purple, mix-blend-mode:screen) - Logo: `/logo-text-light.png` (light mode, white bg + purple SVG render) - Component: `ClockedLogo.jsx` uses `useTheme()` to swap between them - Top bar: height=36, Sidebar: height=52, Mobile header: height=42 - Sidebar logo centered with `margin: 0 auto` - All deployed as of ~9:41 AM ## Clocked App — Current State (April 12) - Backend: rate limit 1000/15min, auth endpoints excluded — DO NOT TOUCH - Frontend: Express server with no-cach",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7174052541571461,
+      "maxScore": 0.7174052541571461,
+      "firstRecalledAt": "2026-04-12T17:24:01.414Z",
+      "lastRecalledAt": "2026-04-12T17:24:01.414Z",
+      "queryHashes": [
+        "c38a38a67834"
+      ],
+      "recallDays": [
+        "2026-04-12"
+      ],
+      "conceptTags": [
+        "logo-text.jpg",
+        "mix-blend-mode",
+        "logo-text-light.png",
+        "clockedlogo.jsx",
+        "1000/15min",
+        "no-cach",
+        "task",
+        "say"
+      ]
+    }
+  }
+}
