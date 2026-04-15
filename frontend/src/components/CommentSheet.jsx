@@ -310,12 +310,14 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
     e.preventDefault();
     if (!commentText.trim() && !selectedImage) return;
 
-    // Optimistic comment — show instantly
+    // Optimistic comment — show instantly with current user's display info
     const optimisticComment = {
       id: `optimistic-${Date.now()}`,
       post_id: postId,
       anonymous_user_id: user?.id || 'anon',
       author_anon_number: user?.anon_number ?? null,
+      author_display_name: user?.display_name ?? user?.displayName ?? null,
+      author_avatar_url: user?.avatar_url ?? user?.avatarUrl ?? null,
       body: commentText.trim() || '',
       image_url: selectedImage?.dataUrl || null,
       created_at: new Date().toISOString(),
@@ -611,7 +613,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
                 e.target.style.height = next + 'px';
                 setInputHeight(next);
               }}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
+              onKeyDown={e => { if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
               placeholder={replyingTo ? 'Write a reply...' : 'Add a comment...'}
               maxLength={1600} rows={1}
               style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14, resize: 'none', overflowY: inputHeight >= 120 ? 'auto' : 'hidden', height: inputHeight, minHeight: 36, maxHeight: 120, lineHeight: '1.4', display: 'block', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }} />

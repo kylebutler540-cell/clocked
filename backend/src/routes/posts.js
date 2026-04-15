@@ -825,10 +825,7 @@ router.post('/:id/flag', optionalAuth, async (req, res) => {
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const { body, header, rating_emoji, media_urls, employer_place_id, employer_name, employer_address } = req.body;
-    if (!body || body.trim().length < 10) {
-      return res.status(400).json({ error: 'Review body must be at least 10 characters' });
-    }
-    if (body.length > 5000) {
+    if (body !== undefined && body !== null && body.length > 5000) {
       return res.status(400).json({ error: 'Review body too long (max 5000 chars)' });
     }
     const post = await prisma.post.findUnique({ where: { id: req.params.id } });
@@ -837,7 +834,8 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (post.anonymous_user_id !== req.user.id && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized' });
     }
-    const updateData = { body: body.trim() };
+    const updateData = {};
+    if (body !== undefined && body !== null) updateData.body = body.trim();
     if (header) updateData.header = header.trim();
     if (rating_emoji) updateData.rating_emoji = rating_emoji;
     if (Array.isArray(media_urls)) updateData.media_urls = media_urls.slice(0, 10);
