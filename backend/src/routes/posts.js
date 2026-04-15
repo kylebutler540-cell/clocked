@@ -870,6 +870,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await prisma.postReaction.deleteMany({ where: { post_id: req.params.id } });
     await prisma.save.deleteMany({ where: { post_id: req.params.id } });
     await prisma.flag.deleteMany({ where: { post_id: req.params.id } });
+    await prisma.notification.deleteMany({
+      where: { data: { path: ['post_id'], equals: req.params.id } },
+    }).catch(() => {}); // non-fatal
     await prisma.post.delete({ where: { id: req.params.id } });
     res.json({ deleted: true });
   } catch (err) {
