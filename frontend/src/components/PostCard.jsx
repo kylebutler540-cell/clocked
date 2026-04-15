@@ -406,6 +406,14 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
                     style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
                   >See more</button>
                 </>
+              ) : previewText && previewText.length > TRUNCATE_LIMIT && expanded ? (
+                <>
+                  <p style={{ margin: 0 }}>{previewText}</p>
+                  <button
+                    onClick={e => { e.stopPropagation(); setExpanded(false); }}
+                    style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
+                  >See less</button>
+                </>
               ) : (
                 <p style={{ margin: 0 }}>{previewText}</p>
               )}
