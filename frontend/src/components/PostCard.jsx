@@ -69,7 +69,8 @@ function RatingBadge({ value }) {
   );
 }
 
-const TRUNCATE_LIMIT = 400; // chars before "See more" appears
+const TRUNCATE_LIMIT_MOBILE = 400;
+const TRUNCATE_LIMIT_DESKTOP = 600;
 
 export default function PostCard({ post: initialPost, onUpdate, onDelete, closeButton }) {
   // Apply cached reaction as fallback if server didn't return user context
@@ -96,6 +97,8 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const [editText, setEditText] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+  const TRUNCATE_LIMIT = isDesktop ? TRUNCATE_LIMIT_DESKTOP : TRUNCATE_LIMIT_MOBILE;
 
   // Lock body scroll when lightbox is open
   useEffect(() => {
@@ -398,22 +401,15 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         ) : (
           <>
             <div className="post-text">
-              {previewText && previewText.length > TRUNCATE_LIMIT && !expanded ? (
-                <>
-                  <p style={{ margin: 0 }}>{previewText.slice(0, TRUNCATE_LIMIT).trimEnd()}…</p>
+              {previewText && previewText.length > TRUNCATE_LIMIT ? (
+                <p style={{ margin: 0 }}>
+                  {expanded ? previewText : previewText.slice(0, TRUNCATE_LIMIT).trimEnd() + '…'}
+                  {' '}
                   <button
-                    onClick={e => { e.stopPropagation(); setExpanded(true); }}
-                    style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
-                  >See more</button>
-                </>
-              ) : previewText && previewText.length > TRUNCATE_LIMIT && expanded ? (
-                <>
-                  <p style={{ margin: 0 }}>{previewText}</p>
-                  <button
-                    onClick={e => { e.stopPropagation(); setExpanded(false); }}
-                    style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
-                  >See less</button>
-                </>
+                    onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'inline', lineHeight: 'inherit' }}
+                  >{expanded ? 'See less' : 'See more'}</button>
+                </p>
               ) : (
                 <p style={{ margin: 0 }}>{previewText}</p>
               )}
