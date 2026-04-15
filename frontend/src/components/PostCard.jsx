@@ -69,6 +69,8 @@ function RatingBadge({ value }) {
   );
 }
 
+const TRUNCATE_LIMIT = 400; // chars before "See more" appears
+
 export default function PostCard({ post: initialPost, onUpdate, onDelete, closeButton }) {
   // Apply cached reaction as fallback if server didn't return user context
   const getInitialPost = () => {
@@ -93,6 +95,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [expanded, setExpanded] = useState(false);
 
   // Lock body scroll when lightbox is open
   useEffect(() => {
@@ -117,7 +120,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const menuRef = useRef(null);
 
   const isMock = post.id?.startsWith('mock-');
-  const isAdmin = user?.email === 'kylebutler540@gmail.com';
+  const isAdmin = !!(user?.is_admin || user?.email === 'kylebutler540@gmail.com');
   const isOwner = !isMock && user?.id && (post.anonymous_user_id === user.id || isAdmin);
 
   // When the parent re-fetches and passes a fresh initialPost, re-apply cache if server has no reaction
@@ -395,10 +398,18 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         ) : (
           <>
             <div className="post-text">
-              <p style={{ margin: 0 }}>{previewText}</p>
+              {previewText && previewText.length > TRUNCATE_LIMIT && !expanded ? (
+                <>
+                  <p style={{ margin: 0 }}>{previewText.slice(0, TRUNCATE_LIMIT).trimEnd()}…</p>
+                  <button
+                    onClick={e => { e.stopPropagation(); setExpanded(true); }}
+                    style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
+                  >See more</button>
+                </>
+              ) : (
+                <p style={{ margin: 0 }}>{previewText}</p>
+              )}
             </div>
-
-
           </>
         )}
 

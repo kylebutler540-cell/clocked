@@ -83,12 +83,14 @@ router.post('/google', async (req, res) => {
       }
     }
 
+    const ADMIN_EMAILS = ['kylebutler540@gmail.com', 'clockedreports@gmail.com'];
     const token = signToken(user.id);
     res.json({
       token,
       user: {
         id: user.id,
         email: user.email,
+        is_admin: ADMIN_EMAILS.includes(user.email),
         anonymous_id: user.anonymous_id,
         subscription_status: user.subscription_status,
         anon_number: user.anon_number,

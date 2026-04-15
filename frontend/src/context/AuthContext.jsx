@@ -39,9 +39,11 @@ function getInitialUser(token) {
   if (!payload?.userId) return null;
   const saved = getSavedAccounts().find(a => a.userId === payload.userId);
   if (!saved) return null;
+  const ADMIN_EMAILS = ['kylebutler540@gmail.com', 'clockedreports@gmail.com'];
   return {
     id: saved.userId,
     email: saved.email,
+    is_admin: ADMIN_EMAILS.includes(saved.email),
     display_name: saved.displayName,
     avatar_url: saved.avatarUrl,
     _fromCache: true,

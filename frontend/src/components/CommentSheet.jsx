@@ -25,10 +25,9 @@ function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
   );
 }
 
-function CommentItem({ comment, currentUserId, currentUserEmail, onReply, onLike, onActionModal, depth = 0, highlightId,
+function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onReply, onLike, onActionModal, depth = 0, highlightId,
   editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit }) {
   const navigate = useNavigate();
-  const isAdmin = currentUserEmail === 'kylebutler540@gmail.com';
   const isOwner = currentUserId && (comment.anonymous_user_id === currentUserId || isAdmin);
   const [showReplies, setShowReplies] = useState(true);
   const [highlighted, setHighlighted] = useState(false);
@@ -126,7 +125,7 @@ function CommentItem({ comment, currentUserId, currentUserEmail, onReply, onLike
               <button style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', padding: '0 16px 4px', cursor: 'pointer', marginLeft: 36 }}
                 onClick={() => setShowReplies(false)}>Hide replies</button>
               {comment.replies.map(reply => (
-                <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} currentUserEmail={currentUserEmail}
+                <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} currentUserEmail={currentUserEmail} isAdmin={isAdmin}
                   onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId}
                   {...editProps} />
               ))}
@@ -437,8 +436,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         cacheSet('comments/' + postId, updated);
         return updated;
       });
-    } catch {
-      addToast('Failed to delete comment');
+      addToast('Comment deleted');
+    } catch (err) {
+      addToast(err?.response?.data?.error || 'Failed to delete comment');
     }
   }
 
@@ -452,8 +452,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
     if (!editText.trim()) return;
     try {
       const res = await api.put(`/posts/${postId}/comments/${commentId}`, { body: editText.trim() });
+      const savedBody = res.data.body ?? editText.trim();
       const update = list => list.map(c => {
-        if (c.id === commentId) return { ...c, body: res.data.body };
+        if (c.id === commentId) return { ...c, body: savedBody };
         if (c.replies) return { ...c, replies: update(c.replies) };
         return c;
       });
@@ -463,8 +464,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         return updated;
       });
       setEditingCommentId(null);
-    } catch {
-      addToast('Failed to update comment');
+      addToast('Comment updated');
+    } catch (err) {
+      addToast(err?.response?.data?.error || 'Failed to update comment');
     }
   }
 
@@ -555,7 +557,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
             </div>
           ) : (
             comments.map(comment => (
-              <CommentItem key={comment.id} comment={comment} currentUserId={user?.id} currentUserEmail={user?.email}
+              <CommentItem key={comment.id} comment={comment} currentUserId={user?.id} currentUserEmail={user?.email} isAdmin={!!(user?.is_admin || user?.email === 'kylebutler540@gmail.com')}
                 onReply={c => setReplyingTo(c)} onLike={handleLike} onActionModal={setCommentActionModal}
                 highlightId={highlightCommentId}
                 editingCommentId={editingCommentId}
