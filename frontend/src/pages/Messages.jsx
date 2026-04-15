@@ -334,6 +334,7 @@ function ImageViewer({ src, onClose }) {
 
 function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -630,10 +631,12 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        {otherName === null ? <AvatarSkeleton size={36} /> : <Avatar url={otherUser?.avatar_url} name={otherName} size={36} />}
-        <div style={{ fontWeight: 700, fontSize: 16, color: otherName ? 'var(--text-primary)' : 'var(--border)', flex: 1 }}>
-          {otherName || <div style={{ width: 100, height: 16, borderRadius: 8, background: 'var(--border)' }} />}
-        </div>
+        <button onClick={() => userId && navigate(`/profile/${userId}`)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, flex: 1, WebkitTapHighlightColor: 'transparent' }}>
+          {otherName === null ? <AvatarSkeleton size={36} /> : <Avatar url={otherUser?.avatar_url} name={otherName} size={36} />}
+          <div style={{ fontWeight: 700, fontSize: 16, color: otherName ? 'var(--text-primary)' : 'var(--border)' }}>
+            {otherName || <div style={{ width: 100, height: 16, borderRadius: 8, background: 'var(--border)' }} />}
+          </div>
+        </button>
       </div>
 
       {/* Messages */}
@@ -652,7 +655,10 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         ) : (
           <>
             {/* Profile header — always shown at top of thread, new or existing */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 28, paddingBottom: 20, gap: 0 }}>
+            <div
+              onClick={() => userId && navigate(`/profile/${userId}`)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 28, paddingBottom: 20, gap: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+            >
               {otherUser
                 ? <Avatar url={otherUser.avatar_url} name={otherName} size={72} />
                 : <AvatarSkeleton size={72} />}
