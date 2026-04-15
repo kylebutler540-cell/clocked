@@ -535,6 +535,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         isOpen={showComments}
         onClose={() => setShowComments(false)}
         onCommentAdded={() => setPost(p => ({ ...p, comment_count: (p.comment_count || 0) + 1 }))}
+        onCommentDeleted={() => setPost(p => ({ ...p, comment_count: Math.max(0, (p.comment_count || 0) - 1) }))}
       />
 
       {showPostActionModal && (

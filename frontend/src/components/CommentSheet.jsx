@@ -138,7 +138,7 @@ function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onRepl
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose, onCommentAdded, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, onCommentAdded, onCommentDeleted, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -432,6 +432,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
   async function handleDeleteComment(commentId) {
     setCommentActionModal(null);
     setDeletingCommentId(commentId);
+    // Check if it's a top-level comment (not a reply) before deleting
+    const isTopLevel = comments.some(c => c.id === commentId);
     try {
       await api.delete(`/posts/${postId}/comments/${commentId}`);
       const remove = list => list.filter(c => c.id !== commentId).map(c => c.replies ? { ...c, replies: remove(c.replies) } : c);
@@ -440,6 +442,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         cacheSet('comments/' + postId, updated);
         return updated;
       });
+      if (isTopLevel) onCommentDeleted?.();
       addToast('Comment deleted');
     } catch (err) {
       addToast(err?.response?.data?.error || 'Failed to delete comment');
