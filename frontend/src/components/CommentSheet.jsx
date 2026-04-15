@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { timeAgo, generateAnonName } from '../lib/utils';
@@ -26,7 +27,7 @@ function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
 }
 
 function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onReply, onLike, onActionModal, depth = 0, highlightId,
-  editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit }) {
+  editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit, savingEdit }) {
   const navigate = useNavigate();
   const isOwner = currentUserId && (comment.anonymous_user_id === currentUserId || isAdmin);
   const [showReplies, setShowReplies] = useState(true);
@@ -47,7 +48,7 @@ function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onRepl
     }
   }, [isHighlighted]);
 
-  const editProps = { editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit };
+  const editProps = { editingCommentId, editText, onEditText, onStartEdit, onSaveEdit, onCancelEdit, savingEdit };
 
   return (
     <div ref={itemRef} style={{ marginLeft: depth > 0 ? 36 : 0, transition: 'background 0.3s ease', background: highlighted ? 'var(--purple-glow)' : 'transparent', borderRadius: highlighted ? 10 : 0 }}>
@@ -58,9 +59,9 @@ function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onRepl
             rows={3} maxLength={1000} style={{ width: '100%', resize: 'none', marginBottom: 8, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', overflow: 'auto' }} autoFocus />
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: 13 }}
-              onClick={() => onSaveEdit(comment.id)} disabled={!editText.trim()}>Save</button>
+              onClick={() => onSaveEdit(comment.id)} disabled={!editText.trim() || savingEdit}>{savingEdit ? 'Saving…' : 'Save'}</button>
             <button className="btn btn-ghost" style={{ padding: '6px 16px', fontSize: 13 }}
-              onClick={onCancelEdit}>Cancel</button>
+              onClick={onCancelEdit} disabled={savingEdit}>Cancel</button>
           </div>
         </div>
       ) : (
@@ -126,7 +127,7 @@ function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onRepl
                 onClick={() => setShowReplies(false)}>Hide replies</button>
               {comment.replies.map(reply => (
                 <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} currentUserEmail={currentUserEmail} isAdmin={isAdmin}
-                  onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId}
+                  onReply={onReply} onLike={onLike} onActionModal={onActionModal} depth={depth + 1} highlightId={highlightId} savingEdit={savingEdit}
                   {...editProps} />
               ))}
             </>
@@ -148,6 +149,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [commentActionModal, setCommentActionModal] = useState(null);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editText, setEditText] = useState('');
   const [inputHeight, setInputHeight] = useState(36);
@@ -428,6 +431,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
 
   async function handleDeleteComment(commentId) {
     setCommentActionModal(null);
+    setDeletingCommentId(commentId);
     try {
       await api.delete(`/posts/${postId}/comments/${commentId}`);
       const remove = list => list.filter(c => c.id !== commentId).map(c => c.replies ? { ...c, replies: remove(c.replies) } : c);
@@ -439,6 +443,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       addToast('Comment deleted');
     } catch (err) {
       addToast(err?.response?.data?.error || 'Failed to delete comment');
+    } finally {
+      setDeletingCommentId(null);
     }
   }
 
@@ -450,6 +456,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
 
   async function handleSaveEdit(commentId) {
     if (!editText.trim()) return;
+    setSavingEdit(true);
     try {
       const res = await api.put(`/posts/${postId}/comments/${commentId}`, { body: editText.trim() });
       const savedBody = res.data.body ?? editText.trim();
@@ -467,6 +474,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       addToast('Comment updated');
     } catch (err) {
       addToast(err?.response?.data?.error || 'Failed to update comment');
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -527,7 +536,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
           {post && (
             <div
               className="comment-sheet-post"
-              style={{ WebkitTapHighlightColor: 'transparent', maxHeight: '30vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <PostCard post={post} closeButton={
                 <button onClick={handleClose} style={{
@@ -566,6 +575,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
                 onStartEdit={startEditComment}
                 onSaveEdit={handleSaveEdit}
                 onCancelEdit={() => setEditingCommentId(null)}
+                savingEdit={savingEdit}
               />
             ))
           )}
@@ -637,22 +647,40 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         </div>
       </div>
 
-      {/* Comment action modal */}
-      {commentActionModal && (
-        <div className="modal-overlay" style={{ zIndex: 1300 }} onClick={() => setCommentActionModal(null)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', padding: '24px 20px 20px' }}>
-            <div className="modal-handle" />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-              <button className="btn btn-secondary btn-full" style={{ padding: '12px', fontSize: 15, fontWeight: 600 }}
-                onClick={() => startEditComment(commentActionModal)}>Edit</button>
-              <button className="btn btn-full"
+      {/* Comment action modal — rendered in a portal to avoid any stacking context issues */}
+      {commentActionModal && createPortal(
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}
+          onClick={() => setCommentActionModal(null)}
+        >
+          <div
+            style={{ width: '100%', maxWidth: 480, background: 'var(--bg-secondary)', borderRadius: 20, padding: '24px 20px 20px', textAlign: 'center' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                className="btn btn-secondary btn-full"
+                style={{ padding: '12px', fontSize: 15, fontWeight: 600 }}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => { e.stopPropagation(); startEditComment(commentActionModal); }}
+              >Edit</button>
+              <button
+                className="btn btn-full"
                 style={{ padding: '12px', fontSize: 15, fontWeight: 600, background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)' }}
-                onClick={() => handleDeleteComment(commentActionModal.id)}>Delete</button>
-              <button className="btn btn-ghost btn-full" style={{ padding: '12px', fontSize: 15 }}
-                onClick={() => setCommentActionModal(null)}>Cancel</button>
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => { e.stopPropagation(); handleDeleteComment(commentActionModal.id); }}
+                disabled={deletingCommentId === commentActionModal.id}
+              >{deletingCommentId === commentActionModal.id ? 'Deleting…' : 'Delete'}</button>
+              <button
+                className="btn btn-ghost btn-full"
+                style={{ padding: '12px', fontSize: 15 }}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => { e.stopPropagation(); setCommentActionModal(null); }}
+              >Cancel</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
