@@ -485,20 +485,6 @@ export default function Profile() {
     const pubName = publicUser?.display_name || 'Anonymous';
     return (
       <div className="profile-page">
-        {/* Back button when opened from a DM thread */}
-        {fromDM && (
-          <div style={{ padding: '12px 16px 0' }}>
-            <button
-              onClick={() => navigate(-1)}
-              style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6, WebkitTapHighlightColor: 'transparent' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              Back to conversation
-            </button>
-          </div>
-        )}
         {/* Profile hero: avatar left, info right, buttons below */}
         <div style={{ padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Top row: avatar + name/handle/counts */}
