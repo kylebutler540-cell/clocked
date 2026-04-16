@@ -254,30 +254,54 @@ router.get('/inbox', requireAuth, async (req, res) => {
       orderBy: { last_message_at: 'desc' },
     });
 
-    const result = await Promise.all(conversations.map(async (conv) => {
+    if (conversations.length === 0) return res.json([]);
+
+    const partnerIds = conversations
+      .map(c => c.participant_ids.find(id => id !== userId))
+      .filter(Boolean);
+    const convIds = conversations.map(c => c.id);
+
+    // Batch all lookups — 4 queries total regardless of conversation count
+    const [partners, unreadGroups, follows] = await Promise.all([
+      prisma.user.findMany({ where: { id: { in: partnerIds } }, select: USER_SELECT }),
+      prisma.message.groupBy({
+        by: ['conversation_id'],
+        where: { conversation_id: { in: convIds }, recipient_id: userId, read: false },
+        _count: { id: true },
+      }),
+      prisma.follow.findMany({
+        where: {
+          OR: [
+            { follower_id: userId, following_id: { in: partnerIds } },
+            { follower_id: { in: partnerIds }, following_id: userId },
+          ],
+        },
+        select: { follower_id: true, following_id: true },
+      }),
+    ]);
+
+    // Build lookup maps
+    const partnerMap = Object.fromEntries(partners.map(p => [p.id, p]));
+    const unreadMap = Object.fromEntries(unreadGroups.map(g => [g.conversation_id, g._count.id]));
+    const iFollowSet = new Set(follows.filter(f => f.follower_id === userId).map(f => f.following_id));
+    const theyFollowSet = new Set(follows.filter(f => f.following_id === userId).map(f => f.follower_id));
+
+    const result = conversations.map(conv => {
       const partnerId = conv.participant_ids.find(id => id !== userId);
       if (!partnerId) return null;
-
-      const [partner, unreadCount, followedByMe, followedByThem] = await Promise.all([
-        prisma.user.findUnique({ where: { id: partnerId }, select: USER_SELECT }),
-        prisma.message.count({ where: { conversation_id: conv.id, recipient_id: userId, read: false } }),
-        prisma.follow.findUnique({ where: { follower_id_following_id: { follower_id: userId, following_id: partnerId } } }),
-        prisma.follow.findUnique({ where: { follower_id_following_id: { follower_id: partnerId, following_id: userId } } }),
-      ]);
-
       return {
         conversation_id: conv.id,
-        conversation_status: conv.status, // 'pending' | 'accepted'
-        user: partner,
+        conversation_status: conv.status,
+        user: partnerMap[partnerId] || null,
         lastMessage: conv.last_message ? {
           body: conv.last_message,
           created_at: conv.last_message_at,
           sender_id: conv.last_message_sender,
         } : null,
-        unread: unreadCount,
-        isFriend: !!followedByMe && !!followedByThem,
+        unread: unreadMap[conv.id] || 0,
+        isFriend: iFollowSet.has(partnerId) && theyFollowSet.has(partnerId),
       };
-    }));
+    });
 
     res.json(result.filter(Boolean));
   } catch (err) {
@@ -303,16 +327,18 @@ router.get('/conversation/:userId', requireAuth, async (req, res) => {
 
     if (!conversation) return res.json({ messages: [], conversation_status: null });
 
-    const messages = await prisma.message.findMany({
-      where: { conversation_id: conversation.id },
-      include: { sender: { select: USER_SELECT }, recipient: { select: USER_SELECT } },
-      orderBy: { created_at: 'asc' },
-    });
-
-    await prisma.message.updateMany({
-      where: { conversation_id: conversation.id, recipient_id: currentUserId, read: false },
-      data: { read: true },
-    });
+    // Fetch messages and mark read in parallel
+    const [messages] = await Promise.all([
+      prisma.message.findMany({
+        where: { conversation_id: conversation.id },
+        include: { sender: { select: USER_SELECT }, recipient: { select: USER_SELECT } },
+        orderBy: { created_at: 'asc' },
+      }),
+      prisma.message.updateMany({
+        where: { conversation_id: conversation.id, recipient_id: currentUserId, read: false },
+        data: { read: true },
+      }),
+    ]);
 
     res.json({ messages, conversation_status: conversation.status });
   } catch (err) {
