@@ -402,24 +402,14 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           <>
             <div className="post-text">
               {previewText && previewText.length > TRUNCATE_LIMIT ? (
-                isDesktop ? (
-                  <p style={{ margin: 0 }}>
-                    {expanded ? previewText : previewText.slice(0, TRUNCATE_LIMIT).trimEnd() + '…'}
-                    {' '}
-                    <button
-                      onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'inline', lineHeight: 'inherit' }}
-                    >{expanded ? 'See less' : 'See more'}</button>
-                  </p>
-                ) : (
-                  <>
-                    <p style={{ margin: 0 }}>{expanded ? previewText : previewText.slice(0, TRUNCATE_LIMIT).trimEnd() + '…'}</p>
-                    <button
-                      onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                      style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
-                    >{expanded ? 'See less' : 'See more'}</button>
-                  </>
-                )
+                <p style={{ margin: 0 }}>
+                  {expanded ? previewText : previewText.slice(0, TRUNCATE_LIMIT).trimEnd() + '…'}
+                  {' '}
+                  <button
+                    onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'inline', lineHeight: 'inherit' }}
+                  >{expanded ? 'See less' : 'See more'}</button>
+                </p>
               ) : (
                 <p style={{ margin: 0 }}>{previewText}</p>
               )}
