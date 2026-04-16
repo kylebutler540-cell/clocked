@@ -335,21 +335,24 @@ function ImageViewer({ src, onClose }) {
 function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Seed from cache synchronously at init — zero loading flash on back-navigation
+  const _cached = lsGet(`msgs_${userId}`);
+  const [messages, setMessages] = useState(_cached?.messages?.length ? _cached.messages : []);
+  const [loading, setLoading] = useState(!_cached?.messages?.length);
   const [fetchError, setFetchError] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [pendingImage, setPendingImage] = useState(null);
   const [viewingImage, setViewingImage] = useState(null);
-  const [convStatus, setConvStatus] = useState(initialUser?._convStatus || null);
-  const [otherUser, setOtherUser] = useState(initialUser || null);
+  const [convStatus, setConvStatus] = useState(_cached?.status || initialUser?._convStatus || null);
+  const _cachedProfile = lsGet(`profile_${userId}`);
+  const [otherUser, setOtherUser] = useState(initialUser || _cachedProfile || null);
   const scrollContainerRef = useRef(null);
   const pollRef = useRef(null);
   const inputRef = useRef(null);
-  const lastCountRef = useRef(0);
+  const lastCountRef = useRef(_cached?.messages?.length || 0);
   const isInputFocusedRef = useRef(false);
   const outerRef = useRef(null);
-  const hasLoadedRef = useRef(false);
+  const hasLoadedRef = useRef(!!_cached?.messages?.length);
 
   const otherUserRef = useRef(otherUser);
   useEffect(() => { otherUserRef.current = otherUser; }, [otherUser]);
@@ -428,9 +431,10 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   }, [userId, scrollToBottom]);
 
   useEffect(() => {
-    // Always start at bottom when entering a thread
-    setTimeout(() => scrollToBottom(), 150);
-    fetchMessages();
+    // Scroll to bottom immediately (cache data already in state)
+    setTimeout(() => scrollToBottom(), 30);
+    // Fetch fresh in background — cache already shown
+    fetchMessages({ silent: hasLoadedRef.current });
     pollRef.current = setInterval(() => fetchMessages({ silent: true }), 10000);
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]); // eslint-disable-line
