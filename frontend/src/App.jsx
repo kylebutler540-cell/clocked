@@ -24,7 +24,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import CommunityGuidelines from './pages/CommunityGuidelines';
 import Contact from './pages/Contact';
-import Messages from './pages/Messages';
+import Messages, { MessageThread } from './pages/Messages';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import CompanyProfile from './pages/CompanyProfile';
@@ -334,7 +334,6 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
     const MIN_SWIPE = 50;
 
     const isHome = location.pathname === '/' || location.pathname === '/search';
-    const isMessages = location.pathname === '/messages';
 
     function onTouchStart(e) {
       const t = e.touches[0];
@@ -353,11 +352,8 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
         if (isHome && !drawerOpen) {
           // Home: open sidebar drawer
           setDrawerOpen(true);
-        } else if (isMessages) {
-          // Messages thread: fire back to messages list
-          window.dispatchEvent(new Event('messages:close-convo'));
         }
-        // All other routes: do nothing
+        // All other routes (including /messages/:userId): let the browser handle back naturally
       }
 
       startX = null;
@@ -424,6 +420,7 @@ function AppInner() {
               <Route path="/create" element={<Create />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/messages/:userId" element={<MessageThread />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/post/:id" element={<PostDetail />} />

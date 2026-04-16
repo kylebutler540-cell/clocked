@@ -80,11 +80,9 @@ export default function BottomNav() {
             onClick={() => {
               if (item.path === '/create' && !user?.email) {
                 navigate('/signup');
-              } else if (item.path === '/messages' && fullscreen) {
-                // Fix #6: tapping Messages tab while in a convo closes it back to inbox
-                setFullscreen(false);
-                // Trigger inbox view by dispatching a custom event Messages.jsx listens to
-                window.dispatchEvent(new CustomEvent('messages:close-convo'));
+              } else if (item.path === '/messages' && location.pathname.startsWith('/messages/')) {
+                // In a DM thread — tap Messages tab to go back to inbox
+                navigate('/messages');
               } else {
                 navigate(item.path);
               }

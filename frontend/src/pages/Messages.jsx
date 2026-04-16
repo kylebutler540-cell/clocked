@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useMessaging } from '../context/MessagingContext';
@@ -335,7 +335,6 @@ function ImageViewer({ src, onClose }) {
 function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
-  const navigatedToProfile = useRef(false);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -436,35 +435,8 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]); // eslint-disable-line
 
-  // Back-swipe / browser back → always calls onBack which routes correctly by entry source
-  useEffect(() => {
-    // Push a dummy history entry only for inbox-opened convos
-    // Profile-opened convos already have the profile in history — don't double-push
-    const fromProfile = initialUser?._convStatus !== undefined
-      ? false // opened from inbox with convStatus
-      : window.location.search.includes('user='); // opened via ?user= from profile
-
-    if (!fromProfile) {
-      window.history.pushState({ msgConvo: true }, '');
-    }
-
-    const handlePop = () => {
-      // If we intentionally navigated to the user's profile, the first popstate
-      // is the profile route being popped — let React Router handle it, reset flag.
-      if (navigatedToProfile.current) {
-        navigatedToProfile.current = false;
-        return;
-      }
-      onBack();
-    };
-    window.addEventListener('popstate', handlePop);
-    return () => {
-      window.removeEventListener('popstate', handlePop);
-      if (!fromProfile && window.history.state?.msgConvo) {
-        window.history.back();
-      }
-    };
-  }, []); // eslint-disable-line
+  // No pushState hacks needed — ConversationView is now mounted at /messages/:userId
+  // React Router handles back navigation naturally
 
   // Keyboard lift via visualViewport
   useEffect(() => {
@@ -640,7 +612,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <button onClick={() => { if (!userId) return; navigatedToProfile.current = true; window.history.pushState({ msgConvoBack: true }, ''); navigate(`/profile/${userId}`, { state: { fromDM: userId } }); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, flex: 1, WebkitTapHighlightColor: 'transparent' }}>
+        <button onClick={() => userId && navigate(`/profile/${userId}`, { state: { fromDM: userId } })} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, flex: 1, WebkitTapHighlightColor: 'transparent' }}>
           {otherName === null ? <AvatarSkeleton size={36} /> : <Avatar url={otherUser?.avatar_url} name={otherName} size={36} />}
           <div style={{ fontWeight: 700, fontSize: 16, color: otherName ? 'var(--text-primary)' : 'var(--border)' }}>
             {otherName || <div style={{ width: 100, height: 16, borderRadius: 8, background: 'var(--border)' }} />}
@@ -665,7 +637,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
           <>
             {/* Profile header — always shown at top of thread, new or existing */}
             <div
-              onClick={() => { if (!userId) return; navigatedToProfile.current = true; window.history.pushState({ msgConvoBack: true }, ''); navigate(`/profile/${userId}`, { state: { fromDM: userId } }); }}
+              onClick={() => userId && navigate(`/profile/${userId}`, { state: { fromDM: userId } })}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 28, paddingBottom: 20, gap: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
             >
               {otherUser
@@ -796,37 +768,58 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   );
 }
 
+// ─── Message Thread Page (route: /messages/:userId) ─────────────────────────
+// Mounted as its own route so back-swipe from profile returns here, not inbox.
+
+export function MessageThread() {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { setFullscreen } = useMessaging();
+
+  useEffect(() => {
+    setFullscreen(true);
+    return () => setFullscreen(false);
+  }, [setFullscreen]);
+
+  if (!user?.email) {
+    navigate('/messages', { replace: true });
+    return null;
+  }
+
+  return (
+    <ConversationView
+      userId={userId}
+      initialUser={null}
+      onBack={() => navigate('/messages')}
+      onMessageSent={() => {}}
+    />
+  );
+}
+
 // ─── Main Messages Page ───────────────────────────────────────────────────────
 
 export default function Messages() {
   const { user } = useAuth();
-  const { setFullscreen } = useMessaging();
   const { clearUnreadMessages, refreshMessages } = useNotif();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // Seed from localStorage instantly — no spinner on revisit
+  const inboxPollRef = useRef(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [entrySource, setEntrySource] = useState(null); // 'inbox' | 'profile' | null
-  const inboxPollRef = useRef(null);
 
+  // If opened via ?user= (from profile Message button), redirect to the thread route
   useEffect(() => {
     const uid = searchParams.get('user');
-    if (uid) openConversation(uid, null, null, 'profile');
+    if (uid) navigate(`/messages/${uid}`, { replace: true });
   }, []); // eslint-disable-line
 
   const fetchInbox = useCallback(async (opts = {}) => {
     if (!user?.email) return;
     const cacheKey = `inbox_${user.id}`;
-    // Show cached inbox instantly on first load
     if (!opts.silent) {
       const cached = lsGet(cacheKey);
-      if (cached?.length) {
-        setConversations(cached);
-        setLoading(false);
-      }
+      if (cached?.length) { setConversations(cached); setLoading(false); }
     }
     try {
       const res = await api.get('/messages/inbox');
@@ -842,7 +835,6 @@ export default function Messages() {
 
   useEffect(() => {
     fetchInbox();
-    // Clear messages badge when Messages page is open
     clearUnreadMessages();
     inboxPollRef.current = setInterval(() => { fetchInbox({ silent: true }); refreshMessages(); }, 10000);
     return () => clearInterval(inboxPollRef.current);
@@ -850,69 +842,10 @@ export default function Messages() {
 
   // Wipe inbox instantly on account switch
   useEffect(() => {
-    const handler = () => {
-      setConversations([]);
-      setLoading(true);
-      closeConversation();
-    };
+    const handler = () => { setConversations([]); setLoading(true); };
     window.addEventListener('account:switching', handler);
     return () => window.removeEventListener('account:switching', handler);
-  }, []); // eslint-disable-line
-
-  useEffect(() => {
-    setFullscreen(!!selectedUserId);
-    return () => setFullscreen(false);
-  }, [selectedUserId, setFullscreen]);
-
-  useEffect(() => { return () => setFullscreen(false); }, [setFullscreen]);
-
-  useEffect(() => {
-    const handler = () => {
-      setSelectedUserId(null);
-      setSelectedUser(null);
-      setEntrySource(null);
-      fetchInbox();
-    };
-    window.addEventListener('messages:close-convo', handler);
-    return () => window.removeEventListener('messages:close-convo', handler);
-  }, [fetchInbox]);
-
-  const openConversation = (uid, convUser, convStatus, source = 'inbox') => {
-    setSelectedUserId(uid);
-    setSelectedUser(convUser ? { ...convUser, _convStatus: convStatus } : null);
-    setEntrySource(source);
-  };
-  const closeConversation = () => {
-    const source = entrySource;
-    setSelectedUserId(null);
-    setSelectedUser(null);
-    setEntrySource(null);
-    if (source === 'profile') {
-      // Go back to the profile page they came from
-      navigate(-1);
-    } else {
-      // Came from inbox — stay on Messages page, just close the convo
-      fetchInbox();
-    }
-  };
-
-  const processedConversations = conversations.map(conv => ({
-    ...conv,
-    // Show as request if backend says pending AND the other person sent it (receiver side)
-    _showAsRequest: conv.conversation_status === 'pending' && conv.lastMessage?.sender_id !== user?.id,
-  }));
-
-  const handleMessageSent = useCallback((toUserId, body, sentAt, toUser) => {
-    setConversations(prev => {
-      const existing = prev.find(c => c.user?.id === toUserId);
-      const updatedConv = existing
-        ? { ...existing, lastMessage: { body, created_at: sentAt, sender_id: user?.id }, unread: 0 }
-        : { user: toUser || { id: toUserId }, lastMessage: { body, created_at: sentAt, sender_id: user?.id }, unread: 0, isFriend: false };
-      const others = prev.filter(c => c.user?.id !== toUserId);
-      if (updatedConv.isFriend) return [updatedConv, ...others];
-      return [...others.filter(c => c.isFriend), updatedConv, ...others.filter(c => !c.isFriend && c.user?.id !== toUserId)];
-    });
-  }, [user]);
+  }, []);
 
   if (!user?.email) {
     return (
@@ -927,22 +860,18 @@ export default function Messages() {
     );
   }
 
+  const processedConversations = conversations.map(conv => ({
+    ...conv,
+    _showAsRequest: conv.conversation_status === 'pending' && conv.lastMessage?.sender_id !== user?.id,
+  }));
+
   const friends = processedConversations.filter(c => !c._showAsRequest);
   const requests = processedConversations.filter(c => c._showAsRequest);
 
   return (
     <>
-      {selectedUserId && (
-        <ConversationView
-          userId={selectedUserId}
-          initialUser={selectedUser ? { ...selectedUser, isFriend: conversations.find(c => c.user?.id === selectedUserId)?.isFriend } : null}
-          onBack={closeConversation}
-          onMessageSent={handleMessageSent}
-        />
-      )}
-
       {/* Inbox — no gray header background, larger title, no dividers */}
-      <div style={{ display: selectedUserId ? 'none' : 'flex', flexDirection: 'column', minHeight: '60vh', maxWidth: 680, width: '100%', margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh', maxWidth: 680, width: '100%', margin: '0 auto' }}>
         {/* Title — matches Home/Alerts style */}
         <div style={{ padding: '20px 20px 12px', background: 'transparent' }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Messages</h1>
@@ -978,7 +907,7 @@ export default function Messages() {
                   </div>
                 )}
                 {friends.map(conv => (
-                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={conv.lastMessage?.sender_id === user?.id} onClick={() => openConversation(conv.user?.id, conv.user, conv.conversation_status)} />
+                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={conv.lastMessage?.sender_id === user?.id} onClick={() => navigate(`/messages/${conv.user?.id}`)} />
                 ))}
               </>
             )}
@@ -988,7 +917,7 @@ export default function Messages() {
                   Message Requests
                 </div>
                 {requests.map(conv => (
-                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={false} onClick={() => openConversation(conv.user?.id, conv.user, conv.conversation_status)} />
+                  <ConversationListItem key={conv.user?.id} conversation={conv} isSentByMe={false} onClick={() => navigate(`/messages/${conv.user?.id}`)} />
                 ))}
               </>
             )}
