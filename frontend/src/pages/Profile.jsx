@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../lib/api';
@@ -309,9 +309,12 @@ function UserCommentList() {
 
 export default function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId: viewingUserId } = useParams();
   const { user, loading: authInitializing, isSubscribed, login, register, loginWithGoogle, setUser } = useAuth();
   const { addToast } = useToast();
+  // fromDM: the userId of the DM thread we came from (so back goes to that thread)
+  const fromDM = location.state?.fromDM || null;
   const [activeTab, setActiveTab] = useState('posts');
   const [showLogin, setShowLogin] = useState(false);
   const [email, setEmail] = useState('');
@@ -320,7 +323,12 @@ export default function Profile() {
   const [authLoading, setAuthLoading] = useState(false);
   const [publicUser, setPublicUser] = useState(null);
   const [publicUserLoading, setPublicUserLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
+  // Seed follow state from cache immediately to avoid flash
+  const [isFollowing, setIsFollowing] = useState(() => {
+    if (!viewingUserId) return false;
+    const cached = lsGet(`follow_state_${viewingUserId}`);
+    return cached?.following ?? false;
+  });
   const [followLoading, setFollowLoading] = useState(false);
   const [followListModal, setFollowListModal] = useState(null); // 'followers' | 'following' | null
 
@@ -357,7 +365,10 @@ export default function Profile() {
 
       if (user?.email) {
         api.get(`/follows/${viewingUserId}/is-following`)
-          .then(res => setIsFollowing(res.data.following))
+          .then(res => {
+            setIsFollowing(res.data.following);
+            lsSet(`follow_state_${viewingUserId}`, { following: res.data.following });
+          })
           .catch(() => {});
       }
     }
@@ -403,12 +414,15 @@ export default function Profile() {
       }
       // Refresh own user from server to get accurate following_count
       api.get('/auth/me').then(r => { if (r.data?.user) setUser(r.data.user); }).catch(() => {});
+      // Cache new follow state so next visit loads instantly with correct button
+      lsSet(`follow_state_${viewingUserId}`, { following: !wasFollowing });
       // Invalidate cached profile so next visit shows fresh count
       lsDelete(`profile_${viewingUserId}`);
       lsClear(`follows_${viewingUserId}`);
     } catch {
       // Revert optimistic updates
       setIsFollowing(wasFollowing);
+      lsSet(`follow_state_${viewingUserId}`, { following: wasFollowing });
       setPublicUser(u => u ? { ...u, follower_count: (u.follower_count || 0) + (wasFollowing ? 1 : -1) } : u);
       setUser({ ...user, following_count: (user.following_count || 0) + (wasFollowing ? 1 : -1) });
       addToast('Failed to update follow');
@@ -471,6 +485,20 @@ export default function Profile() {
     const pubName = publicUser?.display_name || 'Anonymous';
     return (
       <div className="profile-page">
+        {/* Back button when opened from a DM thread */}
+        {fromDM && (
+          <div style={{ padding: '12px 16px 0' }}>
+            <button
+              onClick={() => navigate(-1)}
+              style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6, WebkitTapHighlightColor: 'transparent' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Back to conversation
+            </button>
+          </div>
+        )}
         {/* Profile hero: avatar left, info right, buttons below */}
         <div style={{ padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Top row: avatar + name/handle/counts */}
