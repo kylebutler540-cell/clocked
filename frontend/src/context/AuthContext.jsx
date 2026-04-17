@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../lib/api';
-import { cacheClear } from '../lib/cache';
+import { cacheClear, lsClear } from '../lib/cache';
 import { clearFeedCache } from '../components/Feed';
 
 const AuthContext = createContext();
@@ -251,11 +251,10 @@ export function AuthProvider({ children }) {
   }
 
   async function switchToAccount(account) {
-    // ── Wipe ALL old account state synchronously before anything renders ──
-    // Clear in-memory caches
+    // Clear ALL caches — in-memory, feed, and localStorage (inbox/msgs/profiles/follows)
     cacheClear();
     clearFeedCache();
-    // Clear account-scoped localStorage
+    lsClear(''); // clears all clocked_c_ prefixed keys
     localStorage.removeItem('clocked_notifications');
     localStorage.removeItem('clocked_unread_count');
     // Clear old user immediately so no stale data can render
@@ -271,6 +270,7 @@ export function AuthProvider({ children }) {
       const res = await api.get('/auth/me');
       const freshUser = res.data.user;
       setUser(freshUser);
+      // Update saved account with latest data and token
       upsertSavedAccount({
         token: account.token,
         userId: freshUser.id,
@@ -279,12 +279,28 @@ export function AuthProvider({ children }) {
         avatarUrl: freshUser.avatar_url || null,
       });
       setSavedAccounts(getSavedAccounts());
-    } catch {
-      removeSavedAccount(account.userId);
-      setSavedAccounts(getSavedAccounts());
-      localStorage.removeItem('clocked-token');
-      setToken(null);
-      initAnonymous();
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        // Token expired — remove this account from saved list but DON'T log user out
+        // Just fall back to whatever was active before
+        removeSavedAccount(account.userId);
+        setSavedAccounts(getSavedAccounts());
+        // Restore previous token if we have one
+        const realAccounts = getSavedAccounts().filter(a => a.email && a.token);
+        if (realAccounts.length > 0) {
+          const best = realAccounts[0];
+          localStorage.setItem('clocked-token', best.token);
+          api.defaults.headers.common['Authorization'] = `Bearer ${best.token}`;
+          setToken(best.token);
+          await fetchMe();
+        } else {
+          localStorage.removeItem('clocked-token');
+          setToken(null);
+          initAnonymous();
+        }
+      }
+      // On network errors: keep current state, don't wipe anything
     } finally {
       setLoading(false);
     }
@@ -296,9 +312,10 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(ACCOUNTS_KEY);
     localStorage.removeItem('clocked_notifications');
     localStorage.removeItem('clocked_unread_count');
-    // Clear all in-memory caches (feed, notifications, etc.)
+    // Clear all in-memory and localStorage caches
     cacheClear();
     clearFeedCache();
+    lsClear(''); // clears inbox, messages, profiles, follow states
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);

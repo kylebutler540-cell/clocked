@@ -2,70 +2,77 @@ import React, { useEffect, useRef } from 'react';
 
 const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
 
-let gsiReady = false;
-let gsiQueue = [];
+// Load GSI script once globally
+let gsiScriptLoaded = false;
+let gsiScriptLoading = false;
+const gsiCallbacks = [];
+
 function loadGSI(cb) {
-  if (gsiReady) { cb(); return; }
-  gsiQueue.push(cb);
-  if (gsiQueue.length > 1) return;
+  if (gsiScriptLoaded) { cb(); return; }
+  gsiCallbacks.push(cb);
+  if (gsiScriptLoading) return;
+  gsiScriptLoading = true;
   const s = document.createElement('script');
   s.src = 'https://accounts.google.com/gsi/client';
   s.async = true;
-  s.onload = () => { gsiReady = true; gsiQueue.forEach(f => f()); gsiQueue = []; };
-  document.body.appendChild(s);
+  s.defer = true;
+  s.onload = () => {
+    gsiScriptLoaded = true;
+    gsiScriptLoading = false;
+    gsiCallbacks.splice(0).forEach(fn => fn());
+  };
+  s.onerror = () => { gsiScriptLoading = false; };
+  document.head.appendChild(s);
 }
 
 export default function GoogleSignInButton({ onCredential, label = 'Sign in with Google', style = {} }) {
   const wrapRef = useRef(null);
+  // Use a ref for onCredential so the GSI callback always sees the latest version
+  const onCredentialRef = useRef(onCredential);
+  useEffect(() => { onCredentialRef.current = onCredential; }, [onCredential]);
 
-  function render() {
-    if (!wrapRef.current || !window.google?.accounts?.id) return;
-    const w = wrapRef.current.getBoundingClientRect().width || 340;
-    try { window.google.accounts.id.cancel(); } catch {}
-    wrapRef.current.innerHTML = '';
+  function renderButton() {
+    const el = wrapRef.current;
+    if (!el || !window.google?.accounts?.id) return;
+
+    const w = Math.floor(el.getBoundingClientRect().width) || 340;
+
+    // Fully re-initialize with latest callback ref
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      callback: (r) => onCredential?.(r.credential),
+      callback: (response) => {
+        if (!response?.credential) return; // user dismissed popup — do nothing
+        onCredentialRef.current?.(response.credential);
+      },
       cancel_on_tap_outside: false,
+      ux_mode: 'popup',
     });
-    window.google.accounts.id.renderButton(wrapRef.current, {
+
+    el.innerHTML = '';
+    window.google.accounts.id.renderButton(el, {
       theme: 'outline',
       size: 'large',
-      width: Math.floor(w),
+      width: w,
       shape: 'pill',
       text: 'signin_with',
       logo_alignment: 'left',
-      // popup mode works on both — on desktop it opens a centered window
-      ux_mode: 'popup',
     });
   }
 
-  useEffect(() => { loadGSI(render); }, []);
-
   useEffect(() => {
-    const reinit = () => { if (!document.hidden) loadGSI(render); };
-    document.addEventListener('visibilitychange', reinit);
-    window.addEventListener('focus', reinit);
-    return () => {
-      document.removeEventListener('visibilitychange', reinit);
-      window.removeEventListener('focus', reinit);
-    };
-  }, [onCredential]);
+    loadGSI(renderButton);
+    // Re-render button when tab regains focus (Google requires this)
+    const onFocus = () => { if (gsiScriptLoaded) renderButton(); };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []); // eslint-disable-line
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100%',
-        borderRadius: 24,
-        overflow: 'hidden',
-        ...style,
-      }}
-    >
-      {/* GSI button fills full width */}
+    <div style={{ position: 'relative', width: '100%', borderRadius: 24, overflow: 'hidden', minHeight: 44, ...style }}>
+      {/* Real GSI button (hidden behind overlay, still clickable) */}
       <div ref={wrapRef} style={{ width: '100%', display: 'block' }} />
 
-      {/* Label overlay — covers GSI button completely, clicks pass through */}
+      {/* Visual overlay — passes clicks through to the GSI button */}
       <div style={{
         position: 'absolute',
         inset: 0,
