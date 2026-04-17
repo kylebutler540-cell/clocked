@@ -160,9 +160,8 @@ function FollowListModal({ userId, type, onClose, onFollowChange }) {
 function EmptyState({ text }) {
   return (
     <div className="profile-empty-state">
-      <svg width="48" height="48" viewBox="0 0 100 100" style={{ marginBottom: 16 }}>
-        <rect width="100" height="100" rx="20" fill="var(--purple-glow)" />
-        <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="var(--purple)" textAnchor="middle">c</text>
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
       </svg>
       <p className="profile-empty-text">{text}</p>
     </div>
@@ -436,9 +435,8 @@ export default function Profile() {
 
   const postsEmptyState = (
     <div className="profile-empty-state">
-      <svg width="56" height="56" viewBox="0 0 100 100" style={{ marginBottom: 16 }}>
-        <rect width="100" height="100" rx="20" fill="var(--purple-glow)" />
-        <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="var(--purple)" textAnchor="middle">c</text>
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
       </svg>
       <p className="profile-empty-title">You haven't made any posts yet.</p>
       <p className="profile-empty-text">Create your first post and share your experience anonymously.</p>
@@ -555,9 +553,8 @@ export default function Profile() {
       {/* Hero: avatar + info */}
       {!user?.email ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px 24px', textAlign: 'center' }}>
-          <svg width="64" height="64" viewBox="0 0 100 100" style={{ marginBottom: 20 }}>
-            <rect width="100" height="100" rx="22" fill="rgba(168,85,247,0.12)" />
-            <text x="50" y="68" fontFamily="system-ui, sans-serif" fontSize="42" fontWeight="700" fill="#A855F7" textAnchor="middle">c</text>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 20 }}>
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
           </svg>
           <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>You're not signed in</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 15, marginBottom: 28, maxWidth: 320 }}>

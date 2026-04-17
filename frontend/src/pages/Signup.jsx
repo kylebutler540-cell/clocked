@@ -19,9 +19,9 @@ export default function Signup() {
 
 
 
-  async function handleGoogleCredential(response) {
+  async function handleGoogleCredential(credential) {
     try {
-      const data = await loginWithGoogle(response.credential);
+      const data = await loginWithGoogle(credential);
       if (!data.user?.username) {
         navigate('/profile-setup');
       } else {
