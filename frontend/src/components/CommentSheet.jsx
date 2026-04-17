@@ -274,23 +274,23 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
     }
   }, [openReplyToId, comments]);
 
-  // Touch drag-to-close
-  function onTouchStart(e) {
+  // Touch drag-to-close — ONLY from the handle area, never from the comments list
+  function onHandleTouchStart(e) {
     dragStartY.current = e.touches[0].clientY;
     dragCurrentY.current = 0;
     if (sheetRef.current) sheetRef.current.style.transition = 'none';
   }
 
-  function onTouchMove(e) {
+  function onHandleTouchMove(e) {
     const dy = e.touches[0].clientY - dragStartY.current;
-    if (dy < 0) return; // only drag down
+    if (dy < 0) return;
     dragCurrentY.current = dy;
     if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
   }
 
-  function onTouchEnd() {
+  function onHandleTouchEnd() {
     if (sheetRef.current) sheetRef.current.style.transition = 'transform 300ms ease';
-    if (dragCurrentY.current > 100) {
+    if (dragCurrentY.current > 80) {
       handleClose();
     } else {
       if (sheetRef.current) sheetRef.current.style.transform = 'translateX(-50%) translateY(0)';
@@ -524,23 +524,20 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       >
         {/* Drag handle + pinned post header — never scrolls */}
         <div style={{ flexShrink: 0 }}>
-          {/* Drag handle — mobile only, tall hit area */}
+          {/* Drag handle — full-width, tall hit target, only this triggers close-on-swipe */}
           <div
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
+            onTouchStart={onHandleTouchStart}
+            onTouchMove={onHandleTouchMove}
+            onTouchEnd={onHandleTouchEnd}
             className="comment-sheet-handle"
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 0 12px', cursor: 'grab', minHeight: 44 }}
+            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 0 12px', cursor: 'grab', minHeight: 44, touchAction: 'none' }}
           >
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Full PostCard — pinned at top, full width, capped height */}
+          {/* Post pinned at top — desktop only. On mobile, post stays behind the overlay. */}
           {post && (
-            <div
-              className="comment-sheet-post"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
+            <div className="comment-sheet-post desktop-only">
               <PostCard post={post} closeButton={
                 <button onClick={handleClose} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -550,6 +547,12 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
               } />
             </div>
           )}
+
+          {/* Mobile-only header: title + close button (replaces the pinned post) */}
+          <div className="comment-sheet-mobile-header mobile-only" style={{ display: 'none', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 12px' }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Comments</span>
+            <button onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, padding: '0 2px' }}>×</button>
+          </div>
 
           {/* Separator removed */}
         </div>

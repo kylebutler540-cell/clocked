@@ -3192,3 +3192,17 @@ body[data-comments-open] .mobile-only-header {
   flex-direction: column;
   will-change: height, top;
 }
+
+/* ─── Comment sheet: mobile vs desktop post visibility ─────────────────────── */
+
+/* Desktop: show pinned post, hide mobile header */
+@media (min-width: 768px) {
+  .comment-sheet-post.desktop-only { display: block; }
+  .comment-sheet-mobile-header.mobile-only { display: none !important; }
+}
+
+/* Mobile: hide pinned post, show compact header instead */
+@media (max-width: 767px) {
+  .comment-sheet-post.desktop-only { display: none !important; }
+  .comment-sheet-mobile-header.mobile-only { display: flex !important; }
+}
