@@ -120,12 +120,15 @@ export default function AccountSwitcherMenu({ onClose }) {
         </button>
       )}
 
-      <button className="topbar-dropdown-item" onClick={handleAddAccount}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h7"/>
-        </svg>
-        Add Another Account
-      </button>
+      {/* Only show Add Account option when already signed in */}
+      {user?.email && (
+        <button className="topbar-dropdown-item" onClick={handleAddAccount}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h7"/>
+          </svg>
+          Add Another Account
+        </button>
+      )}
 
       {user?.email && (
         <>
