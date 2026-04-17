@@ -24,7 +24,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import CommunityGuidelines from './pages/CommunityGuidelines';
 import Contact from './pages/Contact';
-import Messages, { MessageThread } from './pages/Messages';
+import Messages from './pages/Messages';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import CompanyProfile from './pages/CompanyProfile';
@@ -420,7 +420,7 @@ function AppInner() {
               <Route path="/create" element={<Create />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/messages" element={<Messages />} />
-              <Route path="/messages/:userId" element={<MessageThread />} />
+              <Route path="/messages/:userId" element={<Messages />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/post/:id" element={<PostDetail />} />

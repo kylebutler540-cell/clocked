@@ -772,47 +772,40 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   );
 }
 
-// ─── Message Thread Page (route: /messages/:userId) ─────────────────────────
-// Mounted as its own route so back-swipe from profile returns here, not inbox.
+// ─── Stub export so App.jsx import doesn't break ─────────────────────────────
+export function MessageThread() { return null; }
 
-export function MessageThread() {
-  const { userId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { setFullscreen } = useMessaging();
-
-  useEffect(() => {
-    setFullscreen(true);
-    return () => setFullscreen(false);
-  }, [setFullscreen]);
-
-  if (!user?.email) {
-    navigate('/messages', { replace: true });
-    return null;
-  }
-
-  return (
-    <ConversationView
-      userId={userId}
-      initialUser={null}
-      onBack={() => navigate('/messages')}
-      onMessageSent={() => {}}
-    />
-  );
-}
-
-// ─── Main Messages Page ───────────────────────────────────────────────────────
+// ─── Messages Page (handles both /messages and /messages/:userId) ─────────────
+// ConversationView stays mounted once opened — hidden with CSS when on inbox.
+// This means back-swipe from profile is instant: same DOM, no remount.
 
 export default function Messages() {
   const { user } = useAuth();
   const { clearUnreadMessages, refreshMessages } = useNotif();
+  const { setFullscreen } = useMessaging();
   const navigate = useNavigate();
+  const { userId: routeUserId } = useParams();
   const [searchParams] = useSearchParams();
   const inboxPollRef = useRef(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Track which userId we've mounted a ConversationView for
+  const [mountedUserId, setMountedUserId] = useState(routeUserId || null);
 
-  // If opened via ?user= (from profile Message button), redirect to the thread route
+  const inThread = !!routeUserId;
+
+  // When route gains a userId, record it so ConversationView stays mounted
+  useEffect(() => {
+    if (routeUserId) setMountedUserId(routeUserId);
+  }, [routeUserId]);
+
+  // Fullscreen when in thread
+  useEffect(() => {
+    setFullscreen(inThread);
+  }, [inThread, setFullscreen]);
+  useEffect(() => () => setFullscreen(false), [setFullscreen]);
+
+  // If opened via ?user= (from profile Message button), redirect to thread route
   useEffect(() => {
     const uid = searchParams.get('user');
     if (uid) navigate(`/messages/${uid}`, { replace: true });
@@ -844,7 +837,6 @@ export default function Messages() {
     return () => clearInterval(inboxPollRef.current);
   }, [fetchInbox]); // eslint-disable-line
 
-  // Wipe inbox instantly on account switch
   useEffect(() => {
     const handler = () => { setConversations([]); setLoading(true); };
     window.addEventListener('account:switching', handler);
@@ -874,8 +866,21 @@ export default function Messages() {
 
   return (
     <>
-      {/* Inbox — no gray header background, larger title, no dividers */}
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh', maxWidth: 680, width: '100%', margin: '0 auto' }}>
+      {/* ConversationView — mounted once, hidden when on inbox. Never unmounts. */}
+      {mountedUserId && (
+        <div style={{ display: inThread ? 'contents' : 'none' }}>
+          <ConversationView
+            key={mountedUserId}
+            userId={mountedUserId}
+            initialUser={null}
+            onBack={() => navigate('/messages')}
+            onMessageSent={() => {}}
+          />
+        </div>
+      )}
+
+      {/* Inbox — hidden when in thread */}
+      <div style={{ display: inThread ? 'none' : 'flex', flexDirection: 'column', minHeight: '60vh', maxWidth: 680, width: '100%', margin: '0 auto' }}>
         {/* Title — matches Home/Alerts style */}
         <div style={{ padding: '20px 20px 12px', background: 'transparent' }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Messages</h1>
