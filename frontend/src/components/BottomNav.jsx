@@ -83,6 +83,7 @@ export default function BottomNav() {
               } else if (item.path === '/messages' && location.pathname.startsWith('/messages/')) {
                 // In a DM thread — tap Messages tab to go back to inbox
                 navigate('/messages');
+                // closeThread is handled by route effect in Messages component
               } else {
                 navigate(item.path);
               }

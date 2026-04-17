@@ -24,7 +24,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import CommunityGuidelines from './pages/CommunityGuidelines';
 import Contact from './pages/Contact';
-import Messages from './pages/Messages';
+import Messages, { AppLevelConversationView } from './pages/Messages';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import CompanyProfile from './pages/CompanyProfile';
@@ -372,7 +372,7 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
 }
 
 function AppInner() {
-  const { fullscreen } = useMessaging();
+  const { fullscreen, activeThreadUserId } = useMessaging();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Lock body scroll when sidebar is open
@@ -403,6 +403,8 @@ function AppInner() {
     <BrowserRouter>
       <ScrollToTop />
       <SwipeHandler drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
+      {/* ConversationView lives HERE — outside routes, never unmounts, just hidden/shown */}
+      <AppLevelConversationView />
       {!fullscreen && <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />}
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}${fullscreen ? ' messaging-fullscreen' : ''}`}>
         {!fullscreen && <LeftSidebar collapsed={sidebarCollapsed} />}
