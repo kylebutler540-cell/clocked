@@ -395,12 +395,19 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       const data = Array.isArray(res.data) ? res.data : (res.data?.messages || []);
       const status = res.data?.conversation_status || null;
 
+      const isNew = data.length > lastCountRef.current;
+
+      // On silent polls, skip state updates entirely if nothing changed — prevents re-render flash
+      if (opts.silent && !isNew) {
+        lsSet(msgKey, { messages: data, status });
+        return;
+      }
+
       setConvStatus(status);
-      // Persist to localStorage for instant next open
       lsSet(msgKey, { messages: data, status });
 
       setMessages(prev => {
-        // Always merge: keep in-flight (sending/failed) messages not yet confirmed by server
+        // Merge: keep in-flight (sending/failed) messages not yet confirmed by server
         const serverIds = new Set(data.map(m => m.id));
         const inFlight = prev.filter(m => (m._status === 'sending' || m._status === 'failed') && !serverIds.has(m.id));
         return [...data, ...inFlight];
@@ -410,10 +417,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
         setOtherUser(prev => prev || (data[0].sender_id === userId ? data[0].sender : data[0].recipient));
       }
 
-      const isNew = data.length > lastCountRef.current;
-      // Scroll to bottom on first load; on silent polls only if new messages arrived
       if (!opts.silent) {
-        // Use two rAF passes to ensure DOM has fully painted before scrolling
         setTimeout(() => scrollToBottom(), 80);
       } else if (isNew && !isInputFocusedRef.current) {
         scrollToBottom();
@@ -433,8 +437,8 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   useEffect(() => {
     // Scroll to bottom immediately (cache data already in state)
     setTimeout(() => scrollToBottom(), 30);
-    // Fetch fresh in background — cache already shown
-    fetchMessages({ silent: hasLoadedRef.current });
+    // Always fetch silently on mount — cache is already rendered, only update if new messages
+    fetchMessages({ silent: true });
     pollRef.current = setInterval(() => fetchMessages({ silent: true }), 10000);
     return () => clearInterval(pollRef.current);
   }, [fetchMessages]); // eslint-disable-line
