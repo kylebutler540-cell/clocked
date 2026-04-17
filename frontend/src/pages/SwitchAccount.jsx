@@ -38,7 +38,7 @@ export default function SwitchAccount() {
     setSwitching(account.userId);
     try {
       await switchToAccount(account);
-      navigate('/');
+      navigate('/', { replace: true }); // replace so back button never returns to switch screen
     } catch {
       addToast('Failed to switch account');
       setSwitching(null);
@@ -51,8 +51,8 @@ export default function SwitchAccount() {
     setSubmitting(true);
     try {
       const data = await login(email, password);
-      if (!data.user?.username) navigate('/profile-setup');
-      else navigate('/');
+      if (!data.user?.username) navigate('/profile-setup', { replace: true });
+      else navigate('/', { replace: true });
     } catch (err) {
       addToast(err?.response?.data?.error || 'Incorrect email or password');
     } finally {
@@ -120,8 +120,8 @@ export default function SwitchAccount() {
           onCredential={async (credential) => {
             try {
               const data = await loginWithGoogle(credential);
-              if (!data.user?.username) navigate('/profile-setup');
-              else navigate('/');
+              if (!data.user?.username) navigate('/profile-setup', { replace: true });
+              else navigate('/', { replace: true }); // replace so back never returns to switch screen
             } catch (err) {
               addToast(err?.response?.data?.error || 'Google sign-in failed.');
             }

@@ -27,7 +27,7 @@ export default function AccountSwitcherMenu({ onClose }) {
   async function handleSwitch(account) {
     onClose();
     await switchToAccount(account);
-    navigate('/');
+    navigate('/', { replace: true }); // replace so back button never restores old account
   }
 
   function handleAddAccount() {
