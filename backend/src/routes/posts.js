@@ -665,9 +665,12 @@ router.post('/:id/like', optionalAuth, async (req, res) => {
     });
 
     if (existing?.type === 'like') {
-      // Unlike
+      // Unlike — remove reaction and its notification
       await prisma.postReaction.delete({ where: { id: existing.id } });
-      const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
+      const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { decrement: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
+      await prisma.notification.deleteMany({
+        where: { user_id: post.anonymous_user_id, type: 'like', data: { path: ['post_id'], equals: req.params.id } },
+      }).catch(() => {});
       return res.json({ ...post, liked: false, disliked: false });
     }
 
@@ -707,9 +710,12 @@ router.post('/:id/dislike', optionalAuth, async (req, res) => {
     });
 
     if (existing?.type === 'dislike') {
-      // Un-dislike
+      // Un-dislike — remove reaction and its notification
       await prisma.postReaction.delete({ where: { id: existing.id } });
-      const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
+      const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { decrement: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
+      await prisma.notification.deleteMany({
+        where: { user_id: post.anonymous_user_id, type: 'dislike', data: { path: ['post_id'], equals: req.params.id } },
+      }).catch(() => {});
       return res.json({ ...post, liked: false, disliked: false });
     }
 

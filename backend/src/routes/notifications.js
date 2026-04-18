@@ -84,11 +84,60 @@ router.get('/', requireAuth, async (req, res) => {
       existing.forEach(c => existingCommentIds.add(c.id));
     }
 
+    // IDs of posts that still exist (filter orphaned like/dislike/comment notifications)
+    const postIdsToCheck = [...new Set(
+      notifications.filter(n => n.data?.post_id).map(n => n.data.post_id)
+    )];
+    const existingPostIds = new Set();
+    if (postIdsToCheck.length > 0) {
+      const existing = await prisma.post.findMany({
+        where: { id: { in: postIdsToCheck } },
+        select: { id: true },
+      });
+      existing.forEach(p => existingPostIds.add(p.id));
+    }
+
+    // IDs of actors that still exist (filter notifications from deleted accounts)
+    const actorIdsToCheck = [...new Set(
+      notifications.filter(n => n.data?.actor_id).map(n => n.data.actor_id)
+    )];
+    const existingActorIds = new Set();
+    if (actorIdsToCheck.length > 0) {
+      const existing = await prisma.user.findMany({
+        where: { id: { in: actorIdsToCheck } },
+        select: { id: true },
+      });
+      existing.forEach(u => existingActorIds.add(u.id));
+    }
+
+    // IDs of follow actors that still follow (filter removed follow notifications)
+    const followActorIds = [...new Set(
+      notifications.filter(n => n.type === 'follow' && n.data?.follower_id).map(n => n.data.follower_id)
+    )];
+    const activeFollowerIds = new Set();
+    if (followActorIds.length > 0) {
+      const activeFollows = await prisma.follow.findMany({
+        where: { follower_id: { in: followActorIds }, following_id: req.user.id },
+        select: { follower_id: true },
+      });
+      activeFollows.forEach(f => activeFollowerIds.add(f.follower_id));
+    }
+
     const enriched = notifications
       // Remove notifications whose comment has been deleted
       .filter(n => {
         if (!n.data?.comment_id) return true;
         return existingCommentIds.has(n.data.comment_id);
+      })
+      // Remove notifications whose post has been deleted
+      .filter(n => {
+        if (!n.data?.post_id) return true;
+        return existingPostIds.has(n.data.post_id);
+      })
+      // Remove follow notifications where the follow no longer exists
+      .filter(n => {
+        if (n.type !== 'follow' || !n.data?.follower_id) return true;
+        return activeFollowerIds.has(n.data.follower_id);
       })
       .map(n => {
         let data = { ...n.data };

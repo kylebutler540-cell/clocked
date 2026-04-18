@@ -155,6 +155,15 @@ router.delete('/:userId', requireAuth, async (req, res) => {
       }),
     ]);
 
+    // Remove the follow notification silently — no unfollow notification
+    await prisma.notification.deleteMany({
+      where: {
+        user_id: followingId,
+        type: 'follow',
+        data: { path: ['follower_id'], equals: req.user.id },
+      },
+    }).catch(() => {});
+
     res.json({ following: false, follower_count: updatedTarget.follower_count });
   } catch (err) {
     console.error(err);
