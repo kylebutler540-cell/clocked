@@ -30,6 +30,7 @@ export default function SwitchAccount() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // When signed out (user=null), all saved accounts are available to switch into
   const otherAccounts = savedAccounts.filter(a => a.userId !== user?.id);
 
 
@@ -71,26 +72,30 @@ export default function SwitchAccount() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Switch Account</h1>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>
+          {user?.email ? 'Switch Account' : 'Sign In'}
+        </h1>
       </div>
 
-      {/* Current account */}
-      <div style={{ marginTop: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Current Account</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 14, background: 'rgba(168,85,247,0.08)', border: '1.5px solid rgba(168,85,247,0.25)' }}>
-          <AccountAvatar url={user?.avatar_url} name={displayName} size={44} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+      {/* Current account — only show when signed in */}
+      {user?.email && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Current Account</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 14, background: 'rgba(168,85,247,0.08)', border: '1.5px solid rgba(168,85,247,0.25)' }}>
+            <AccountAvatar url={user?.avatar_url} name={displayName} size={44} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#A855F7', background: 'rgba(168,85,247,0.15)', borderRadius: 6, padding: '3px 8px', flexShrink: 0 }}>Active</span>
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#A855F7', background: 'rgba(168,85,247,0.15)', borderRadius: 6, padding: '3px 8px', flexShrink: 0 }}>Active</span>
         </div>
-      </div>
+      )}
 
       {/* Other saved accounts */}
       {otherAccounts.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Saved Accounts</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{user?.email ? 'Saved Accounts' : 'Your Accounts'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {otherAccounts.map(account => (
               <button key={account.userId} onClick={() => handleSwitch(account)} disabled={!!switching}

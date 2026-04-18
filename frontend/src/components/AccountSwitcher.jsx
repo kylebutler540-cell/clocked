@@ -38,8 +38,16 @@ export default function AccountSwitcherMenu({ onClose }) {
 
   function handleSignOut() {
     onClose();
+    // Check remaining accounts BEFORE logout removes the current one
+    const remaining = savedAccounts.filter(a => a.userId !== user?.id);
     logout();
-    navigate('/');
+    // If other accounts still exist, send to account switcher so they can pick one
+    // Otherwise go to signup
+    if (remaining.length > 0) {
+      navigate('/switch-account', { replace: true });
+    } else {
+      navigate('/signup', { replace: true });
+    }
   }
 
   return (

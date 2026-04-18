@@ -164,9 +164,11 @@ export function AuthProvider({ children }) {
 
   async function initAnonymous(retries = 3) {
     // NEVER overwrite a real account's token with an anonymous one
+    // BUT: if the user explicitly logged out, don't auto-restore — let them choose
+    const explicitLogout = localStorage.getItem('clocked-explicit-logout');
     const realAccounts = getSavedAccounts().filter(a => a.email && a.token);
-    if (realAccounts.length > 0) {
-      // Restore best real account
+    if (realAccounts.length > 0 && !explicitLogout) {
+      // Restore best real account (normal app startup)
       const best = realAccounts[0];
       localStorage.setItem('clocked-token', best.token);
       api.defaults.headers.common['Authorization'] = `Bearer ${best.token}`;
@@ -204,6 +206,8 @@ export function AuthProvider({ children }) {
   }
 
   function saveSession(newToken, newUser, persist = true) {
+    // Clear explicit-logout flag whenever a real session is saved
+    if (newUser?.email) localStorage.removeItem('clocked-explicit-logout');
     // Never overwrite a real user's token with an anon session
     // But ONLY block if we're not explicitly logging out (persist=false, no email)
     if (!persist && !newUser?.email) {
@@ -251,6 +255,8 @@ export function AuthProvider({ children }) {
   }
 
   async function switchToAccount(account) {
+    // Clear explicit-logout flag — user is actively choosing an account
+    localStorage.removeItem('clocked-explicit-logout');
     // Clear ALL caches — in-memory, feed, and localStorage (inbox/msgs/profiles/follows)
     cacheClear();
     clearFeedCache();
@@ -307,20 +313,27 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
-    // Wipe all local state so nothing stale leaks through after logout
+    // Remove ONLY the current account from the saved list — leave all other accounts intact
+    const currentUserId = user?.id;
+    if (currentUserId) removeSavedAccount(currentUserId);
+
+    // Mark as explicitly logged out so initAnonymous doesn't auto-restore another account
+    localStorage.setItem('clocked-explicit-logout', '1');
+
+    // Clear current session token and account-scoped data
     localStorage.removeItem('clocked-token');
-    localStorage.removeItem(ACCOUNTS_KEY);
     localStorage.removeItem('clocked_notifications');
     localStorage.removeItem('clocked_unread_count');
-    // Clear all in-memory and localStorage caches
     cacheClear();
     clearFeedCache();
-    lsClear(''); // clears inbox, messages, profiles, follow states
+    lsClear('');
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
-    setSavedAccounts([]);
-    initAnonymous();
+
+    // Update saved accounts list (current account removed, others stay)
+    const remaining = getSavedAccounts();
+    setSavedAccounts(remaining);
   }
 
   function setUserAndSync(newUser) {
