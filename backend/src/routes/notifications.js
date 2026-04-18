@@ -123,22 +123,24 @@ router.get('/', requireAuth, async (req, res) => {
       activeFollows.forEach(f => activeFollowerIds.add(f.follower_id));
     }
 
+    // Collect orphaned notification IDs to hard-delete from DB
+    const orphanedIds = notifications
+      .filter(n => {
+        if (n.data?.comment_id && !existingCommentIds.has(n.data.comment_id)) return true;
+        if (n.data?.post_id && !existingPostIds.has(n.data.post_id)) return true;
+        if (n.type === 'follow' && n.data?.follower_id && !activeFollowerIds.has(n.data.follower_id)) return true;
+        return false;
+      })
+      .map(n => n.id);
+
+    if (orphanedIds.length > 0) {
+      await prisma.notification.deleteMany({ where: { id: { in: orphanedIds } } }).catch(() => {});
+    }
+
+    const validIds = new Set(notifications.map(n => n.id).filter(id => !orphanedIds.includes(id)));
+
     const enriched = notifications
-      // Remove notifications whose comment has been deleted
-      .filter(n => {
-        if (!n.data?.comment_id) return true;
-        return existingCommentIds.has(n.data.comment_id);
-      })
-      // Remove notifications whose post has been deleted
-      .filter(n => {
-        if (!n.data?.post_id) return true;
-        return existingPostIds.has(n.data.post_id);
-      })
-      // Remove follow notifications where the follow no longer exists
-      .filter(n => {
-        if (n.type !== 'follow' || !n.data?.follower_id) return true;
-        return activeFollowerIds.has(n.data.follower_id);
-      })
+      .filter(n => validIds.has(n.id))
       .map(n => {
         let data = { ...n.data };
 
