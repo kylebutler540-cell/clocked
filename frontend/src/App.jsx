@@ -25,6 +25,7 @@ import Privacy from './pages/Privacy';
 import CommunityGuidelines from './pages/CommunityGuidelines';
 import Contact from './pages/Contact';
 import Messages, { AppLevelConversationView } from './pages/Messages';
+import FindFriends from './pages/FindFriends';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import CompanyProfile from './pages/CompanyProfile';
@@ -423,6 +424,7 @@ function AppInner() {
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/messages/:userId" element={<Messages />} />
+              <Route path="/find-friends" element={<FindFriends />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/post/:id" element={<PostDetail />} />

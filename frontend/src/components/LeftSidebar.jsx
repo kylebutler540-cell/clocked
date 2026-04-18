@@ -70,6 +70,9 @@ export default function LeftSidebar({ collapsed = false }) {
       <NavItem collapsed={collapsed} active={isActive('/saved')} label="Saved" onClick={() => navigate('/saved')}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
       />
+      <NavItem collapsed={collapsed} active={isActive('/find-friends')} label="Find Friends" onClick={() => navigate('/find-friends')}
+        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+      />
 
       <div className="sidebar-divider" />
 
