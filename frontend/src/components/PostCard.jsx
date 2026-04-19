@@ -1,41 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { timeAgo, ratingToEmoji, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import {
+  seedPost, subscribe, getPost, patchPost,
+  applyServerVote, revertVote, isVotePending, acquireVoteLock,
+  updateCommentCount, updateSaved,
+} from '../lib/postStore';
 
 import FlagModal from './FlagModal';
 import CommentSheet from './CommentSheet';
 import { clearFeedCache } from './Feed';
 import BusinessLogo from './BusinessLogo';
-
-// Module-level reaction cache: survives navigation within the same browser session
-// Falls back to localStorage for cross-session persistence
-const _reactionCache = new Map(); // postId -> 'like' | 'dislike' | null
-
-function getCachedReaction(postId) {
-  if (_reactionCache.has(postId)) return _reactionCache.get(postId);
-  try {
-    const v = localStorage.getItem(`clocked-reaction-${postId}`);
-    if (v) { _reactionCache.set(postId, v); return v; }
-  } catch {}
-  return null;
-}
-
-function setCachedReaction(postId, value) {
-  _reactionCache.set(postId, value);
-  try {
-    if (value) localStorage.setItem(`clocked-reaction-${postId}`, value);
-    else localStorage.removeItem(`clocked-reaction-${postId}`);
-  } catch {}
-}
-
-function clearCachedReaction(postId) {
-  _reactionCache.delete(postId);
-  try { localStorage.removeItem(`clocked-reaction-${postId}`); } catch {}
-}
 
 const RATING_EMOJIS = [
   { value: 'BAD', emoji: '😡', color: '#EF4444' },
@@ -73,20 +52,26 @@ const TRUNCATE_LIMIT_MOBILE = 400;
 const TRUNCATE_LIMIT_DESKTOP = 600;
 
 export default function PostCard({ post: initialPost, onUpdate, onDelete, closeButton }) {
-  // Apply cached reaction as fallback if server didn't return user context
-  const getInitialPost = () => {
-    if (initialPost.liked || initialPost.disliked) {
-      // Server knows — sync cache to match
-      setCachedReaction(initialPost.id, initialPost.liked ? 'like' : 'dislike');
-      return initialPost;
-    }
-    const cached = getCachedReaction(initialPost.id);
-    if (cached === 'like') return { ...initialPost, liked: true, disliked: false };
-    if (cached === 'dislike') return { ...initialPost, liked: false, disliked: true };
-    return initialPost;
-  };
+  // Seed the global store with server data on mount / when initialPost changes
+  // The store is the single source of truth — PostCard just reads from it
+  seedPost(initialPost);
 
-  const [post, setPost] = useState(getInitialPost);
+  // Local state mirrors the global store for this post
+  const [postState, setPostState] = useState(() => getPost(initialPost.id) || initialPost);
+
+  // Subscribe to global store changes — updates from ANY screen propagate here
+  useEffect(() => {
+    // Re-seed whenever initialPost changes (e.g. feed refetch)
+    seedPost(initialPost);
+    setPostState(getPost(initialPost.id) || initialPost);
+    const unsub = subscribe(initialPost.id, (newState) => {
+      if (newState) setPostState(s => ({ ...s, ...newState }));
+    });
+    return unsub;
+  }, [initialPost.id, initialPost.liked, initialPost.disliked, initialPost.likes, initialPost.dislikes]);
+
+  // Merge non-reaction fields from initialPost with store reaction state
+  const post = { ...initialPost, ...postState };
 
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -126,22 +111,6 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const isAdmin = !!(user?.is_admin || user?.email === 'kylebutler540@gmail.com');
   const isOwner = !isMock && user?.id && (post.anonymous_user_id === user.id || isAdmin);
 
-  // When the parent re-fetches and passes a fresh initialPost, re-apply cache if server has no reaction
-  useEffect(() => {
-    if (!initialPost.liked && !initialPost.disliked) {
-      const cached = getCachedReaction(initialPost.id);
-      if (cached === 'like') {
-        setPost(p => ({ ...p, liked: true, disliked: false }));
-      } else if (cached === 'dislike') {
-        setPost(p => ({ ...p, liked: false, disliked: true }));
-      }
-    } else {
-      // Server returned a real reaction — trust it and sync cache
-      setCachedReaction(initialPost.id, initialPost.liked ? 'like' : 'dislike');
-      setPost(p => ({ ...p, liked: initialPost.liked, disliked: initialPost.disliked }));
-    }
-  }, [initialPost.id, initialPost.liked, initialPost.disliked]);
-
   useEffect(() => {
     function handleOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -155,31 +124,31 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   async function handleLike() {
     if (isMock) return;
     if (!user?.email) { navigate('/signup'); return; }
-    const prev = { liked: post.liked, disliked: post.disliked, likes: post.likes, dislikes: post.dislikes };
-    const prevCached = getCachedReaction(post.id);
 
-    // Optimistic update
-    if (post.liked) {
-      setPost(p => ({ ...p, liked: false, likes: p.likes - 1 }));
-      clearCachedReaction(post.id);
-    } else if (post.disliked) {
-      setPost(p => ({ ...p, liked: true, disliked: false, likes: p.likes + 1, dislikes: p.dislikes - 1 }));
-      setCachedReaction(post.id, 'like');
+    // Lock: drop the tap if a request is already in-flight for this post
+    if (!acquireVoteLock(post.id)) return;
+
+    const current = getPost(post.id) || post;
+    const snapshot = { likes: current.likes, dislikes: current.dislikes, liked: current.liked, disliked: current.disliked };
+
+    // Optimistic update into the global store — all screens update instantly
+    if (current.liked) {
+      // Un-like
+      patchPost(post.id, { liked: false, likes: Math.max(0, current.likes - 1) });
+    } else if (current.disliked) {
+      // Switch dislike → like
+      patchPost(post.id, { liked: true, disliked: false, likes: current.likes + 1, dislikes: Math.max(0, current.dislikes - 1) });
     } else {
-      setPost(p => ({ ...p, liked: true, likes: p.likes + 1 }));
-      setCachedReaction(post.id, 'like');
+      // New like
+      patchPost(post.id, { liked: true, likes: current.likes + 1 });
     }
 
     try {
       const res = await api.post(`/posts/${post.id}/like`);
-      setPost(p => ({ ...p, likes: res.data.likes, dislikes: res.data.dislikes, liked: res.data.liked, disliked: res.data.disliked }));
-      if (res.data.liked) setCachedReaction(post.id, 'like');
-      else if (res.data.disliked) setCachedReaction(post.id, 'dislike');
-      else clearCachedReaction(post.id);
+      // Apply server truth — clears lock, broadcasts to all screens
+      applyServerVote(post.id, res.data);
     } catch (err) {
-      setPost(p => ({ ...p, ...prev }));
-      if (prevCached) setCachedReaction(post.id, prevCached);
-      else clearCachedReaction(post.id);
+      revertVote(post.id, snapshot);
       addToast(err.response?.status === 401 ? 'Sign in to like posts' : 'Failed to like post');
     }
   }
@@ -187,45 +156,45 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   async function handleDislike() {
     if (isMock) return;
     if (!user?.email) { navigate('/signup'); return; }
-    const prev = { liked: post.liked, disliked: post.disliked, likes: post.likes, dislikes: post.dislikes };
-    const prevCached = getCachedReaction(post.id);
 
-    // Optimistic update
-    if (post.disliked) {
-      setPost(p => ({ ...p, disliked: false, dislikes: p.dislikes - 1 }));
-      clearCachedReaction(post.id);
-    } else if (post.liked) {
-      setPost(p => ({ ...p, disliked: true, liked: false, dislikes: p.dislikes + 1, likes: p.likes - 1 }));
-      setCachedReaction(post.id, 'dislike');
+    // Lock: drop the tap if a request is already in-flight for this post
+    if (!acquireVoteLock(post.id)) return;
+
+    const current = getPost(post.id) || post;
+    const snapshot = { likes: current.likes, dislikes: current.dislikes, liked: current.liked, disliked: current.disliked };
+
+    // Optimistic update into the global store
+    if (current.disliked) {
+      // Un-dislike
+      patchPost(post.id, { disliked: false, dislikes: Math.max(0, current.dislikes - 1) });
+    } else if (current.liked) {
+      // Switch like → dislike
+      patchPost(post.id, { disliked: true, liked: false, dislikes: current.dislikes + 1, likes: Math.max(0, current.likes - 1) });
     } else {
-      setPost(p => ({ ...p, disliked: true, dislikes: p.dislikes + 1 }));
-      setCachedReaction(post.id, 'dislike');
+      // New dislike
+      patchPost(post.id, { disliked: true, dislikes: current.dislikes + 1 });
     }
 
     try {
       const res = await api.post(`/posts/${post.id}/dislike`);
-      setPost(p => ({ ...p, likes: res.data.likes, dislikes: res.data.dislikes, liked: res.data.liked, disliked: res.data.disliked }));
-      if (res.data.disliked) setCachedReaction(post.id, 'dislike');
-      else if (res.data.liked) setCachedReaction(post.id, 'like');
-      else clearCachedReaction(post.id);
+      applyServerVote(post.id, res.data);
     } catch (err) {
-      setPost(p => ({ ...p, ...prev }));
-      if (prevCached) setCachedReaction(post.id, prevCached);
-      else clearCachedReaction(post.id);
+      revertVote(post.id, snapshot);
       addToast(err.response?.status === 401 ? 'Sign in to dislike posts' : 'Failed to dislike post');
     }
   }
 
   async function handleSave() {
     if (!user?.email) { navigate('/signup'); return; }
-    const prevSaved = post.saved;
-    setPost(p => ({ ...p, saved: !p.saved }));
+    const current = getPost(post.id) || post;
+    const prevSaved = current.saved;
+    updateSaved(post.id, !prevSaved);
     try {
       const res = await api.post(`/posts/${post.id}/save`);
-      setPost(p => ({ ...p, saved: res.data.saved }));
+      updateSaved(post.id, res.data.saved);
       addToast(res.data.saved ? 'Post saved' : 'Post unsaved');
     } catch (err) {
-      setPost(p => ({ ...p, saved: prevSaved }));
+      updateSaved(post.id, prevSaved);
       addToast(err.response?.status === 401 ? 'Sign in to save posts' : 'Failed to save post');
     }
   }
@@ -534,8 +503,8 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         post={post}
         isOpen={showComments}
         onClose={() => setShowComments(false)}
-        onCommentAdded={() => setPost(p => ({ ...p, comment_count: (p.comment_count || 0) + 1 }))}
-        onCommentDeleted={() => setPost(p => ({ ...p, comment_count: Math.max(0, (p.comment_count || 0) - 1) }))}
+        onCommentAdded={() => updateCommentCount(post.id, 1)}
+        onCommentDeleted={() => updateCommentCount(post.id, -1)}
       />
 
       {showPostActionModal && (

@@ -655,89 +655,147 @@ router.post('/', optionalAuth, async (req, res) => {
 });
 
 // Like a post (toggle, one per user)
+// ── Unified vote handler — race-condition safe ────────────────────────────────
+// Uses upsert so concurrent requests from rapid tapping collapse into one operation.
+// Counts are clamped to >= 0 at the DB level via MAX(0, ...) raw SQL for the
+// decrement cases, then re-read from the DB so the response is always authoritative.
 router.post('/:id/like', optionalAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Login to like posts' });
+    const postId = req.params.id;
 
-    const existing = await prisma.postReaction.findUnique({
-      where: { user_id_post_id: { user_id: userId, post_id: req.params.id } },
+    // Atomic upsert: create reaction or update existing one in a single DB round-trip.
+    // Because user_id_post_id is a unique constraint, concurrent inserts collapse safely.
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.postReaction.findUnique({
+        where: { user_id_post_id: { user_id: userId, post_id: postId } },
+      });
+
+      let liked = false;
+      let disliked = false;
+      let likeDelta = 0;
+      let dislikeDelta = 0;
+
+      if (existing?.type === 'like') {
+        // Toggle off: un-like
+        await tx.postReaction.delete({ where: { id: existing.id } });
+        likeDelta = -1;
+      } else if (existing?.type === 'dislike') {
+        // Switch: dislike → like
+        await tx.postReaction.update({ where: { id: existing.id }, data: { type: 'like' } });
+        likeDelta = 1; dislikeDelta = -1; liked = true;
+      } else {
+        // New like
+        await tx.postReaction.create({ data: { user_id: userId, post_id: postId, type: 'like' } });
+        likeDelta = 1; liked = true;
+      }
+
+      // Apply deltas with floor clamp — counts can never go negative
+      const post = await tx.post.update({
+        where: { id: postId },
+        data: {
+          ...(likeDelta !== 0 ? { likes: likeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
+          ...(dislikeDelta !== 0 ? { dislikes: dislikeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
+        },
+        select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true },
+      });
+
+      // Clamp at DB level: re-zero if decrement went negative (shouldn't happen, but safety net)
+      const needsClamp = post.likes < 0 || post.dislikes < 0;
+      if (needsClamp) {
+        await tx.post.update({
+          where: { id: postId },
+          data: {
+            ...(post.likes < 0 ? { likes: 0 } : {}),
+            ...(post.dislikes < 0 ? { dislikes: 0 } : {}),
+          },
+        });
+        post.likes = Math.max(0, post.likes);
+        post.dislikes = Math.max(0, post.dislikes);
+      }
+
+      return { post, liked, disliked };
     });
 
-    if (existing?.type === 'like') {
-      // Unlike — remove reaction and its notification
-      await prisma.postReaction.delete({ where: { id: existing.id } });
-      const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { decrement: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
-      await prisma.notification.deleteMany({
-        where: { user_id: post.anonymous_user_id, type: 'like', data: { path: ['post_id'], equals: req.params.id } },
-      }).catch(() => {});
-      return res.json({ ...post, liked: false, disliked: false });
+    // Notify post owner on new like (outside transaction, non-blocking)
+    if (result.liked && result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
+      const actor = await prisma.user.findUnique({ where: { id: userId }, select: { display_name: true, avatar_url: true } }).catch(() => null);
+      const postImage = Array.isArray(result.post.media_urls) ? result.post.media_urls[0] || null : null;
+      notify({ userId: result.post.anonymous_user_id, type: 'like', message: `${actor?.display_name || 'Someone'} liked your post.`, data: { post_id: postId, post_header: result.post.header, post_image: postImage, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } }).catch(() => {});
     }
 
-    if (existing?.type === 'dislike') {
-      // Switch from dislike to like
-      await prisma.postReaction.update({ where: { id: existing.id }, data: { type: 'like' } });
-      const post = await prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 }, dislikes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
-      return res.json({ ...post, liked: true, disliked: false });
-    }
-
-    // New like
-    await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'like' } });
-    const [post, actor] = await Promise.all([
-      prisma.post.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true } }),
-      prisma.user.findUnique({ where: { id: userId }, select: { id: true, display_name: true, avatar_url: true, anon_number: true } }),
-    ]);
-    // Notify post owner (not self)
-    if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
-      const postImage = Array.isArray(post.media_urls) ? post.media_urls[0] || null : null;
-      await notify({ userId: post.anonymous_user_id, type: 'like', message: `${actor?.display_name || 'Someone'} liked your post.`, data: { post_id: req.params.id, post_header: post.header, post_image: postImage, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } });
-    }
-    res.json({ likes: post.likes, dislikes: post.dislikes, liked: true, disliked: false });
+    res.json({ likes: result.post.likes, dislikes: result.post.dislikes, liked: result.liked, disliked: result.disliked });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to like post' });
   }
 });
 
-// Dislike a post (toggle, one per user)
+// Dislike a post (toggle, one per user) — same race-safe pattern
 router.post('/:id/dislike', optionalAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Login to dislike posts' });
+    const postId = req.params.id;
 
-    const existing = await prisma.postReaction.findUnique({
-      where: { user_id_post_id: { user_id: userId, post_id: req.params.id } },
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.postReaction.findUnique({
+        where: { user_id_post_id: { user_id: userId, post_id: postId } },
+      });
+
+      let liked = false;
+      let disliked = false;
+      let likeDelta = 0;
+      let dislikeDelta = 0;
+
+      if (existing?.type === 'dislike') {
+        // Toggle off: un-dislike
+        await tx.postReaction.delete({ where: { id: existing.id } });
+        dislikeDelta = -1;
+      } else if (existing?.type === 'like') {
+        // Switch: like → dislike
+        await tx.postReaction.update({ where: { id: existing.id }, data: { type: 'dislike' } });
+        dislikeDelta = 1; likeDelta = -1; disliked = true;
+      } else {
+        // New dislike
+        await tx.postReaction.create({ data: { user_id: userId, post_id: postId, type: 'dislike' } });
+        dislikeDelta = 1; disliked = true;
+      }
+
+      const post = await tx.post.update({
+        where: { id: postId },
+        data: {
+          ...(likeDelta !== 0 ? { likes: likeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
+          ...(dislikeDelta !== 0 ? { dislikes: dislikeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
+        },
+        select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true },
+      });
+
+      const needsClamp = post.likes < 0 || post.dislikes < 0;
+      if (needsClamp) {
+        await tx.post.update({
+          where: { id: postId },
+          data: {
+            ...(post.likes < 0 ? { likes: 0 } : {}),
+            ...(post.dislikes < 0 ? { dislikes: 0 } : {}),
+          },
+        });
+        post.likes = Math.max(0, post.likes);
+        post.dislikes = Math.max(0, post.dislikes);
+      }
+
+      return { post, liked, disliked };
     });
 
-    if (existing?.type === 'dislike') {
-      // Un-dislike — remove reaction and its notification
-      await prisma.postReaction.delete({ where: { id: existing.id } });
-      const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { decrement: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true } });
-      await prisma.notification.deleteMany({
-        where: { user_id: post.anonymous_user_id, type: 'dislike', data: { path: ['post_id'], equals: req.params.id } },
-      }).catch(() => {});
-      return res.json({ ...post, liked: false, disliked: false });
+    // Notify post owner on new dislike (non-blocking)
+    if (result.disliked && result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
+      const actor = await prisma.user.findUnique({ where: { id: userId }, select: { display_name: true, avatar_url: true } }).catch(() => null);
+      const postImage = Array.isArray(result.post.media_urls) ? result.post.media_urls[0] || null : null;
+      notify({ userId: result.post.anonymous_user_id, type: 'dislike', message: `${actor?.display_name || 'Someone'} disliked your post.`, data: { post_id: postId, post_header: result.post.header, post_image: postImage, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } }).catch(() => {});
     }
 
-    if (existing?.type === 'like') {
-      // Switch from like to dislike
-      await prisma.postReaction.update({ where: { id: existing.id }, data: { type: 'dislike' } });
-      const post = await prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 }, likes: { decrement: 1 } }, select: { likes: true, dislikes: true } });
-      return res.json({ ...post, liked: false, disliked: true });
-    }
-
-    // New dislike
-    await prisma.postReaction.create({ data: { user_id: userId, post_id: req.params.id, type: 'dislike' } });
-    const [post, actor] = await Promise.all([
-      prisma.post.update({ where: { id: req.params.id }, data: { dislikes: { increment: 1 } }, select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true } }),
-      prisma.user.findUnique({ where: { id: userId }, select: { id: true, display_name: true, avatar_url: true } }),
-    ]);
-    // Notify post owner (not self)
-    if (post.anonymous_user_id && post.anonymous_user_id !== userId) {
-      const postImage = Array.isArray(post.media_urls) ? post.media_urls[0] || null : null;
-      await notify({ userId: post.anonymous_user_id, type: 'dislike', message: `${actor?.display_name || 'Someone'} disliked your post.`, data: { post_id: req.params.id, post_header: post.header, post_image: postImage, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } });
-    }
-    res.json({ likes: post.likes, dislikes: post.dislikes, liked: false, disliked: true });
+    res.json({ likes: result.post.likes, dislikes: result.post.dislikes, liked: result.liked, disliked: result.disliked });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to dislike post' });

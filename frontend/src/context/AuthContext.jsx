@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../lib/api';
 import { cacheClear, lsClear } from '../lib/cache';
 import { clearFeedCache } from '../components/Feed';
+import { clearPostStore } from '../lib/postStore';
 
 const AuthContext = createContext();
 
@@ -257,9 +258,10 @@ export function AuthProvider({ children }) {
   async function switchToAccount(account) {
     // Clear explicit-logout flag — user is actively choosing an account
     localStorage.removeItem('clocked-explicit-logout');
-    // Clear ALL caches — in-memory, feed, and localStorage (inbox/msgs/profiles/follows)
+    // Clear ALL caches — in-memory, feed, post store, and localStorage
     cacheClear();
     clearFeedCache();
+    clearPostStore();
     lsClear(''); // clears all clocked_c_ prefixed keys
     localStorage.removeItem('clocked_notifications');
     localStorage.removeItem('clocked_unread_count');
@@ -326,6 +328,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('clocked_unread_count');
     cacheClear();
     clearFeedCache();
+    clearPostStore();
     lsClear('');
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
