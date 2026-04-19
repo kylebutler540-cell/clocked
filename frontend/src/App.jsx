@@ -376,6 +376,13 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
     function onTouchStart(e) {
       // Ignore multi-touch
       if (e.touches.length > 1) { startX = null; return; }
+
+      // Never intercept gestures that start inside a text input or textarea
+      // — this would break drag-to-select and copy/paste
+      const tag = e.target?.tagName?.toLowerCase();
+      const isEditable = tag === 'input' || tag === 'textarea' || e.target?.isContentEditable;
+      if (isEditable) { startX = null; return; }
+
       const t = e.touches[0];
       startX = t.clientX;
       startY = t.clientY;

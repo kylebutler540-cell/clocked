@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import EmployerSearch from '../components/EmployerSearch';
@@ -8,19 +8,28 @@ import { useToast } from '../context/ToastContext';
 import { clearFeedCache } from '../components/Feed';
 import { useAuth } from '../context/AuthContext';
 
+const DRAFT_KEY = 'clocked_create_draft';
+function saveDraft(d) { try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch {} }
+function loadDraft() { try { return JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null'); } catch { return null; } }
+function clearDraft() { try { sessionStorage.removeItem(DRAFT_KEY); } catch {} }
+
 export default function Create() {
   const routeLocation = useLocation();
   const editPost = routeLocation.state?.editPost || null;
   const isEditMode = !!editPost;
 
-  const [employer, setEmployer] = useState(
-    editPost ? { place_id: editPost.employer_place_id, name: editPost.employer_name, address: editPost.employer_address } :
-    routeLocation.state?.employer || null
-  );
-  const [rating, setRating] = useState(editPost?.rating_emoji || '');
-  const [header, setHeader] = useState(editPost?.header || '');
-  const [body, setBody] = useState(editPost?.body || '');
-  const [mediaPreviews, setMediaPreviews] = useState(editPost?.media_urls || []);
+  // Restore draft for new posts only — edit mode always uses the post data
+  const _draft = !isEditMode ? (loadDraft() || {}) : {};
+
+  const [employer, setEmployerRaw] = useState(() => {
+    if (isEditMode) return { place_id: editPost.employer_place_id, name: editPost.employer_name, address: editPost.employer_address };
+    if (routeLocation.state?.employer) return routeLocation.state.employer;
+    return _draft.employer || null;
+  });
+  const [rating, setRatingRaw] = useState(() => isEditMode ? (editPost?.rating_emoji || '') : (_draft.rating || ''));
+  const [header, setHeaderRaw] = useState(() => isEditMode ? (editPost?.header || '') : (_draft.header || ''));
+  const [body, setBodyRaw] = useState(() => isEditMode ? (editPost?.body || '') : (_draft.body || ''));
+  const [mediaPreviews, setMediaPreviews] = useState(editPost?.media_urls || _draft.mediaPreviews || []);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -32,6 +41,18 @@ export default function Create() {
   const { addToast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Setters that auto-save draft (new posts only)
+  function setEmployer(v) { setEmployerRaw(v); if (!isEditMode) saveDraft({ employer: v, rating, header, body, mediaPreviews }); }
+  function setRating(v) { setRatingRaw(v); if (!isEditMode) saveDraft({ employer, rating: v, header, body, mediaPreviews }); }
+  function setHeader(v) { setHeaderRaw(v); if (!isEditMode) saveDraft({ employer, rating, header: v, body, mediaPreviews }); }
+  function setBody(v) { setBodyRaw(v); if (!isEditMode) saveDraft({ employer, rating, header, body: v, mediaPreviews }); }
+
+  // Save draft whenever mediaPreviews changes
+  useEffect(() => {
+    if (!isEditMode) saveDraft({ employer, rating, header, body, mediaPreviews });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaPreviews]);
 
   function handleMediaChange(e) {
     addFiles(Array.from(e.target.files));
@@ -118,6 +139,7 @@ export default function Create() {
           media_urls,
         });
         addToast('Review posted!');
+        clearDraft(); // Draft submitted — wipe it
         clearFeedCache();
         navigate('/');
       }
@@ -218,7 +240,7 @@ export default function Create() {
             placeholder="Tell other workers what it's really like — pay, management, culture, hours, safety..."
             rows={6}
             maxLength={5000}
-            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', resize: 'vertical' }}
+            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', resize: 'vertical', touchAction: 'auto', userSelect: 'text', WebkitUserSelect: 'text' }}
           />
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, textAlign: 'right' }}>
             {body.length}/5000
