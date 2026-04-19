@@ -3230,3 +3230,19 @@ body[data-comments-open] .mobile-only-header {
   .comment-sheet-post.desktop-only { display: none !important; }
   .comment-sheet-mobile-header.mobile-only { display: flex !important; }
 }
+
+/* --- Comment sheet: desktop sidebar offset --- */
+/* On desktop the sidebar shifts content right ~240px.
+   Nudge the sheet's center point to align with the feed column. */
+@media (min-width: 768px) {
+  .comment-sheet-panel {
+    margin-left: 120px;
+    height: min(88dvh, 88vh) !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+}
+@media (max-width: 767px) {
+  .comment-sheet-panel {
+    margin-left: 0 !important;
+  }
+}

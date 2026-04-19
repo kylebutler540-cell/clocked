@@ -525,6 +525,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       {/* Sheet — touch handled via native listeners (useEffect above) for non-passive preventDefault */}
       <div
         ref={sheetRef}
+        className="comment-sheet-panel"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -538,7 +539,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
           flexDirection: 'column',
           height: fullscreen ? '100dvh' : 'min(92dvh, 92vh)',
           width: '100%',
-          maxWidth: '740px', // matches feed width on desktop
+          maxWidth: '740px',
           boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
           overflow: 'hidden',
         }}

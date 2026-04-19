@@ -536,14 +536,17 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
 
       {showFlag && createPortal(<FlagModal postId={post.id} postAuthor={post.author_display_name || post.author_username || 'Anonymous'} postUrl={`${window.location.origin}/post/${post.id}`} onClose={() => setShowFlag(false)} />, document.body)}
-      <CommentSheet
-        postId={post.id}
-        post={post}
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-        onCommentAdded={() => updateCommentCount(post.id, 1)}
-        onCommentDeleted={() => updateCommentCount(post.id, -1)}
-      />
+      {showComments && createPortal(
+        <CommentSheet
+          postId={post.id}
+          post={post}
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          onCommentAdded={() => updateCommentCount(post.id, 1)}
+          onCommentDeleted={() => updateCommentCount(post.id, -1)}
+        />,
+        document.body
+      )}
 
       {showPostActionModal && (
         <div className="modal-overlay" onClick={() => setShowPostActionModal(false)}>
