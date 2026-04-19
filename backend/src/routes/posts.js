@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { generateUniqueAnonNumber } = require('../lib/anonNumber');
-const { notify } = require('../lib/notify');
+const { notify, upsertReactionNotify } = require('../lib/notify');
 const { sendReportEmail } = require('../lib/mailer');
 const { sendTelegramReport } = require('../lib/telegramNotify');
 
@@ -718,11 +718,20 @@ router.post('/:id/like', optionalAuth, async (req, res) => {
       return { post, liked, disliked };
     });
 
-    // Notify post owner on new like (outside transaction, non-blocking)
-    if (result.liked && result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
+    // Upsert/delete reaction notification — one per actor per post, never spam
+    if (result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
       const actor = await prisma.user.findUnique({ where: { id: userId }, select: { display_name: true, avatar_url: true } }).catch(() => null);
       const postImage = Array.isArray(result.post.media_urls) ? result.post.media_urls[0] || null : null;
-      notify({ userId: result.post.anonymous_user_id, type: 'like', message: `${actor?.display_name || 'Someone'} liked your post.`, data: { post_id: postId, post_header: result.post.header, post_image: postImage, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } }).catch(() => {});
+      upsertReactionNotify({
+        postOwnerId: result.post.anonymous_user_id,
+        actorId: userId,
+        postId,
+        newType: result.liked ? 'like' : null, // null = reaction removed
+        postHeader: result.post.header,
+        postImage,
+        actorName: actor?.display_name || null,
+        actorAvatar: actor?.avatar_url || null,
+      });
     }
 
     res.json({ likes: result.post.likes, dislikes: result.post.dislikes, liked: result.liked, disliked: result.disliked });
@@ -788,11 +797,20 @@ router.post('/:id/dislike', optionalAuth, async (req, res) => {
       return { post, liked, disliked };
     });
 
-    // Notify post owner on new dislike (non-blocking)
-    if (result.disliked && result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
+    // Upsert/delete reaction notification — one per actor per post, never spam
+    if (result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
       const actor = await prisma.user.findUnique({ where: { id: userId }, select: { display_name: true, avatar_url: true } }).catch(() => null);
       const postImage = Array.isArray(result.post.media_urls) ? result.post.media_urls[0] || null : null;
-      notify({ userId: result.post.anonymous_user_id, type: 'dislike', message: `${actor?.display_name || 'Someone'} disliked your post.`, data: { post_id: postId, post_header: result.post.header, post_image: postImage, actor_id: userId, actor_name: actor?.display_name || null, actor_avatar: actor?.avatar_url || null } }).catch(() => {});
+      upsertReactionNotify({
+        postOwnerId: result.post.anonymous_user_id,
+        actorId: userId,
+        postId,
+        newType: result.disliked ? 'dislike' : null,
+        postHeader: result.post.header,
+        postImage,
+        actorName: actor?.display_name || null,
+        actorAvatar: actor?.avatar_url || null,
+      });
     }
 
     res.json({ likes: result.post.likes, dislikes: result.post.dislikes, liked: result.liked, disliked: result.disliked });
