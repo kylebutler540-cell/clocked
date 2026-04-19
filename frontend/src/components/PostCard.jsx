@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
@@ -6,8 +6,8 @@ import { timeAgo, ratingToEmoji, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import {
-  seedPost, subscribe, getPost, patchPost,
-  applyServerVote, revertVote, isVotePending, acquireVoteLock,
+  seedPost, subscribe, getPost,
+  acquireVoteLock, optimisticVote, commitVote, rollbackVote,
   updateCommentCount, updateSaved,
 } from '../lib/postStore';
 
@@ -52,26 +52,58 @@ const TRUNCATE_LIMIT_MOBILE = 400;
 const TRUNCATE_LIMIT_DESKTOP = 600;
 
 export default function PostCard({ post: initialPost, onUpdate, onDelete, closeButton }) {
-  // Seed the global store with server data on mount / when initialPost changes
-  // The store is the single source of truth — PostCard just reads from it
-  seedPost(initialPost);
-
-  // Local state mirrors the global store for this post
-  const [postState, setPostState] = useState(() => getPost(initialPost.id) || initialPost);
-
-  // Subscribe to global store changes — updates from ANY screen propagate here
-  useEffect(() => {
-    // Re-seed whenever initialPost changes (e.g. feed refetch)
+  // ── Store bootstrap ──────────────────────────────────────────────────────────
+  // Seed on first render (store is empty for this post) — this is the ONLY place
+  // seedPost is called, and only when there's no vote in-flight.
+  const seededRef = useRef(false);
+  if (!seededRef.current) {
     seedPost(initialPost);
-    setPostState(getPost(initialPost.id) || initialPost);
-    const unsub = subscribe(initialPost.id, (newState) => {
-      if (newState) setPostState(s => ({ ...s, ...newState }));
+    seededRef.current = true;
+  }
+
+  // Local mirror of the store — drives all rendering
+  // Initialize from store (which was just seeded above) so first render is instant
+  const [voteState, setVoteState] = useState(() => {
+    const s = getPost(initialPost.id);
+    return s ? { likes: s.likes, dislikes: s.dislikes, liked: s.liked, disliked: s.disliked, saved: s.saved, comment_count: s.comment_count } : {
+      likes: initialPost.likes ?? 0,
+      dislikes: initialPost.dislikes ?? 0,
+      liked: !!initialPost.liked,
+      disliked: !!initialPost.disliked,
+      saved: !!initialPost.saved,
+      comment_count: initialPost.comment_count ?? 0,
+    };
+  });
+
+  useEffect(() => {
+    // When server sends fresh data for this post (e.g. feed refetch), re-seed
+    // seedPost internally skips the update if a vote is in-flight
+    seedPost(initialPost);
+    const fresh = getPost(initialPost.id);
+    if (fresh) setVoteState({ likes: fresh.likes, dislikes: fresh.dislikes, liked: fresh.liked, disliked: fresh.disliked, saved: fresh.saved, comment_count: fresh.comment_count });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPost.id, initialPost.likes, initialPost.dislikes, initialPost.liked, initialPost.disliked]);
+
+  useEffect(() => {
+    // Subscribe to store changes broadcast by ANY screen for this post
+    const unsub = subscribe(initialPost.id, (s) => {
+      if (s) setVoteState({ likes: s.likes, dislikes: s.dislikes, liked: s.liked, disliked: s.disliked, saved: s.saved, comment_count: s.comment_count });
     });
     return unsub;
-  }, [initialPost.id, initialPost.liked, initialPost.disliked, initialPost.likes, initialPost.dislikes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPost.id]);
 
-  // Merge non-reaction fields from initialPost with store reaction state
-  const post = { ...initialPost, ...postState };
+  // Merge: static fields from initialPost + live reaction state from store
+  // IMPORTANT: never pull likes/dislikes/liked/disliked from initialPost at render time
+  const post = {
+    ...initialPost,
+    likes:         voteState.likes,
+    dislikes:      voteState.dislikes,
+    liked:         voteState.liked,
+    disliked:      voteState.disliked,
+    saved:         voteState.saved,
+    comment_count: voteState.comment_count,
+  };
 
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -125,30 +157,28 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     if (isMock) return;
     if (!user?.email) { navigate('/signup'); return; }
 
-    // Lock: drop the tap if a request is already in-flight for this post
+    // Only one vote at a time per post — drop extra taps
     if (!acquireVoteLock(post.id)) return;
 
-    const current = getPost(post.id) || post;
-    const snapshot = { likes: current.likes, dislikes: current.dislikes, liked: current.liked, disliked: current.disliked };
+    // Read from store (not from `post` which is a render snapshot)
+    const cur = getPost(post.id) || { likes: post.likes, dislikes: post.dislikes, liked: post.liked, disliked: post.disliked };
+    const snap = { likes: cur.likes, dislikes: cur.dislikes, liked: cur.liked, disliked: cur.disliked };
 
-    // Optimistic update into the global store — all screens update instantly
-    if (current.liked) {
-      // Un-like
-      patchPost(post.id, { liked: false, likes: Math.max(0, current.likes - 1) });
-    } else if (current.disliked) {
-      // Switch dislike → like
-      patchPost(post.id, { liked: true, disliked: false, likes: current.likes + 1, dislikes: Math.max(0, current.dislikes - 1) });
+    // Optimistic — broadcast to all screens immediately
+    if (cur.liked) {
+      optimisticVote(post.id, { liked: false, disliked: false, likes: cur.likes - 1, dislikes: cur.dislikes });
+    } else if (cur.disliked) {
+      optimisticVote(post.id, { liked: true, disliked: false, likes: cur.likes + 1, dislikes: cur.dislikes - 1 });
     } else {
-      // New like
-      patchPost(post.id, { liked: true, likes: current.likes + 1 });
+      optimisticVote(post.id, { liked: true, disliked: false, likes: cur.likes + 1, dislikes: cur.dislikes });
     }
 
     try {
       const res = await api.post(`/posts/${post.id}/like`);
-      // Apply server truth — clears lock, broadcasts to all screens
-      applyServerVote(post.id, res.data);
+      // Server truth wins — clears lock, re-broadcasts final state
+      commitVote(post.id, res.data);
     } catch (err) {
-      revertVote(post.id, snapshot);
+      rollbackVote(post.id, snap);
       addToast(err.response?.status === 401 ? 'Sign in to like posts' : 'Failed to like post');
     }
   }
@@ -157,37 +187,31 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     if (isMock) return;
     if (!user?.email) { navigate('/signup'); return; }
 
-    // Lock: drop the tap if a request is already in-flight for this post
     if (!acquireVoteLock(post.id)) return;
 
-    const current = getPost(post.id) || post;
-    const snapshot = { likes: current.likes, dislikes: current.dislikes, liked: current.liked, disliked: current.disliked };
+    const cur = getPost(post.id) || { likes: post.likes, dislikes: post.dislikes, liked: post.liked, disliked: post.disliked };
+    const snap = { likes: cur.likes, dislikes: cur.dislikes, liked: cur.liked, disliked: cur.disliked };
 
-    // Optimistic update into the global store
-    if (current.disliked) {
-      // Un-dislike
-      patchPost(post.id, { disliked: false, dislikes: Math.max(0, current.dislikes - 1) });
-    } else if (current.liked) {
-      // Switch like → dislike
-      patchPost(post.id, { disliked: true, liked: false, dislikes: current.dislikes + 1, likes: Math.max(0, current.likes - 1) });
+    if (cur.disliked) {
+      optimisticVote(post.id, { liked: false, disliked: false, likes: cur.likes, dislikes: cur.dislikes - 1 });
+    } else if (cur.liked) {
+      optimisticVote(post.id, { liked: false, disliked: true, likes: cur.likes - 1, dislikes: cur.dislikes + 1 });
     } else {
-      // New dislike
-      patchPost(post.id, { disliked: true, dislikes: current.dislikes + 1 });
+      optimisticVote(post.id, { liked: false, disliked: true, likes: cur.likes, dislikes: cur.dislikes + 1 });
     }
 
     try {
       const res = await api.post(`/posts/${post.id}/dislike`);
-      applyServerVote(post.id, res.data);
+      commitVote(post.id, res.data);
     } catch (err) {
-      revertVote(post.id, snapshot);
+      rollbackVote(post.id, snap);
       addToast(err.response?.status === 401 ? 'Sign in to dislike posts' : 'Failed to dislike post');
     }
   }
 
   async function handleSave() {
     if (!user?.email) { navigate('/signup'); return; }
-    const current = getPost(post.id) || post;
-    const prevSaved = current.saved;
+    const prevSaved = post.saved;
     updateSaved(post.id, !prevSaved);
     try {
       const res = await api.post(`/posts/${post.id}/save`);
@@ -217,8 +241,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     if (e?.stopPropagation) e.stopPropagation();
     if (!editText.trim()) return;
     try {
-      const res = await api.put(`/posts/${post.id}`, { body: editText.trim() });
-      setPost(p => ({ ...p, body: res.data.body, body_truncated: res.data.body_truncated }));
+      await api.put(`/posts/${post.id}`, { body: editText.trim() });
       setEditing(false);
     } catch {
       addToast('Failed to update post');
