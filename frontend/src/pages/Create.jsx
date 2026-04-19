@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import EmployerSearch from '../components/EmployerSearch';
+import BusinessLogo from '../components/BusinessLogo';
 import RatingSelector from '../components/RatingSelector';
 import { useToast } from '../context/ToastContext';
 import { clearFeedCache } from '../components/Feed';
@@ -161,6 +162,9 @@ export default function Create() {
           </label>
           {employer ? (
             <div className="employer-selected">
+              {employer.place_id && (
+                <BusinessLogo placeId={employer.place_id} name={employer.name} size={36} borderRadius={8} />
+              )}
               <div className="employer-selected-info">
                 <div className="employer-selected-name">{employer.name}</div>
                 <div className="employer-selected-address">{employer.address || employer.description}</div>
