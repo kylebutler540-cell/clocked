@@ -20,6 +20,10 @@ const _listeners = new Map();
 // postId → true while a vote request is in-flight
 const _voting = new Set();
 
+// postId → 'like'|'dislike'|null — queued next action while a request is in-flight
+// null means "toggle off whatever is current"
+const _queue = new Map();
+
 // ── Internal ──────────────────────────────────────────────────────────────────
 
 function _notify(postId) {
@@ -83,29 +87,51 @@ export function getPost(postId) {
 }
 
 /**
- * Attempt to acquire the vote lock for a post.
- * Returns true if acquired (caller should proceed), false if already locked (drop the tap).
+ * Returns true if a vote request is currently in-flight for this post.
  */
-export function acquireVoteLock(postId) {
-  if (_voting.has(postId)) return false;
-  _voting.add(postId);
-  return true;
+export function isVoting(postId) {
+  return _voting.has(postId);
 }
 
 /**
- * Apply an optimistic update during a vote.
- * Only called AFTER the lock is acquired.
+ * Mark a vote as in-flight. Called before firing the API request.
+ */
+export function markVoting(postId) {
+  _voting.add(postId);
+}
+
+/**
+ * Queue an action to run after the current in-flight request settles.
+ * 'like', 'dislike', or 'toggle' (same button tapped again).
+ * Only the latest queued action is kept — intermediate ones are discarded.
+ */
+export function queueVote(postId, action) {
+  _queue.set(postId, action);
+}
+
+/**
+ * Drain the queue for a post. Returns the queued action (or null if none).
+ * Clears the queue and the in-flight flag.
+ */
+export function drainQueue(postId) {
+  _voting.delete(postId);
+  const next = _queue.get(postId) ?? null;
+  _queue.delete(postId);
+  return next;
+}
+
+/**
+ * Apply an optimistic update to the store and notify all screens.
  */
 export function optimisticVote(postId, patch) {
   _set(postId, patch);
 }
 
 /**
- * Apply server response after a successful vote. Releases lock.
- * Server data is always the final word on counts and reaction state.
+ * Apply server response after a successful vote.
+ * Server data is authoritative — always trust it for final counts.
  */
 export function commitVote(postId, serverData) {
-  _voting.delete(postId);
   _set(postId, {
     likes:    _clamp(serverData.likes),
     dislikes: _clamp(serverData.dislikes),
@@ -115,10 +141,9 @@ export function commitVote(postId, serverData) {
 }
 
 /**
- * Revert to a snapshot after a failed vote. Releases lock.
+ * Revert to a snapshot after a failed vote.
  */
 export function rollbackVote(postId, snapshot) {
-  _voting.delete(postId);
   _set(postId, snapshot);
 }
 
@@ -140,5 +165,6 @@ export function updateSaved(postId, saved) {
 export function clearPostStore() {
   _store.clear();
   _voting.clear();
+  _queue.clear();
   // Keep listeners — components will re-seed on next render
 }

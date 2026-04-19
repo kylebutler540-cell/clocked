@@ -7,7 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import {
   seedPost, subscribe, getPost,
-  acquireVoteLock, optimisticVote, commitVote, rollbackVote,
+  isVoting, markVoting, queueVote, drainQueue,
+  optimisticVote, commitVote, rollbackVote,
   updateCommentCount, updateSaved,
 } from '../lib/postStore';
 
@@ -76,13 +77,14 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   });
 
   useEffect(() => {
-    // When server sends fresh data for this post (e.g. feed refetch), re-seed
-    // seedPost internally skips the update if a vote is in-flight
+    // Re-seed only when the post ID changes (navigating to a different post)
+    // NOT on every likes/dislikes change — those come from the store via subscription
     seedPost(initialPost);
     const fresh = getPost(initialPost.id);
     if (fresh) setVoteState({ likes: fresh.likes, dislikes: fresh.dislikes, liked: fresh.liked, disliked: fresh.disliked, saved: fresh.saved, comment_count: fresh.comment_count });
+    seededRef.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPost.id, initialPost.likes, initialPost.dislikes, initialPost.liked, initialPost.disliked]);
+  }, [initialPost.id]);
 
   useEffect(() => {
     // Subscribe to store changes broadcast by ANY screen for this post
@@ -153,59 +155,72 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [showMenu]);
 
-  async function handleLike() {
-    if (isMock) return;
-    if (!user?.email) { navigate('/signup'); return; }
-
-    // Only one vote at a time per post — drop extra taps
-    if (!acquireVoteLock(post.id)) return;
-
-    // Read from store (not from `post` which is a render snapshot)
-    const cur = getPost(post.id) || { likes: post.likes, dislikes: post.dislikes, liked: post.liked, disliked: post.disliked };
-    const snap = { likes: cur.likes, dislikes: cur.dislikes, liked: cur.liked, disliked: cur.disliked };
-
-    // Optimistic — broadcast to all screens immediately
-    if (cur.liked) {
-      optimisticVote(post.id, { liked: false, disliked: false, likes: cur.likes - 1, dislikes: cur.dislikes });
-    } else if (cur.disliked) {
-      optimisticVote(post.id, { liked: true, disliked: false, likes: cur.likes + 1, dislikes: cur.dislikes - 1 });
+  // applyOptimistic: update store counts/state immediately for instant feel
+  function applyOptimistic(postId, action) {
+    const cur = getPost(postId) || { likes: 0, dislikes: 0, liked: false, disliked: false };
+    if (action === 'like') {
+      if (cur.liked) {
+        optimisticVote(postId, { liked: false, disliked: false, likes: cur.likes - 1, dislikes: cur.dislikes });
+      } else if (cur.disliked) {
+        optimisticVote(postId, { liked: true, disliked: false, likes: cur.likes + 1, dislikes: cur.dislikes - 1 });
+      } else {
+        optimisticVote(postId, { liked: true, disliked: false, likes: cur.likes + 1, dislikes: cur.dislikes });
+      }
     } else {
-      optimisticVote(post.id, { liked: true, disliked: false, likes: cur.likes + 1, dislikes: cur.dislikes });
-    }
-
-    try {
-      const res = await api.post(`/posts/${post.id}/like`);
-      // Server truth wins — clears lock, re-broadcasts final state
-      commitVote(post.id, res.data);
-    } catch (err) {
-      rollbackVote(post.id, snap);
-      addToast(err.response?.status === 401 ? 'Sign in to like posts' : 'Failed to like post');
+      if (cur.disliked) {
+        optimisticVote(postId, { liked: false, disliked: false, likes: cur.likes, dislikes: cur.dislikes - 1 });
+      } else if (cur.liked) {
+        optimisticVote(postId, { liked: false, disliked: true, likes: cur.likes - 1, dislikes: cur.dislikes + 1 });
+      } else {
+        optimisticVote(postId, { liked: false, disliked: true, likes: cur.likes, dislikes: cur.dislikes + 1 });
+      }
     }
   }
 
-  async function handleDislike() {
+  // sendVote: fire the API request for the given action, then drain queue
+  async function sendVote(postId, action) {
+    const snap = (() => { const s = getPost(postId); return s ? { likes: s.likes, dislikes: s.dislikes, liked: s.liked, disliked: s.disliked } : null; })();
+    try {
+      const res = await api.post(`/posts/${postId}/${action}`);
+      // Server truth — always wins on counts
+      commitVote(postId, res.data);
+    } catch (err) {
+      if (snap) rollbackVote(postId, snap);
+      addToast(err.response?.status === 401 ? 'Sign in to react to posts' : 'Failed to save reaction');
+    } finally {
+      // Drain queue: if another tap arrived while this was in-flight, fire it now
+      const next = drainQueue(postId);
+      if (next) {
+        applyOptimistic(postId, next);
+        markVoting(postId);
+        sendVote(postId, next);
+      }
+    }
+  }
+
+  function handleLike() {
     if (isMock) return;
     if (!user?.email) { navigate('/signup'); return; }
-
-    if (!acquireVoteLock(post.id)) return;
-
-    const cur = getPost(post.id) || { likes: post.likes, dislikes: post.dislikes, liked: post.liked, disliked: post.disliked };
-    const snap = { likes: cur.likes, dislikes: cur.dislikes, liked: cur.liked, disliked: cur.disliked };
-
-    if (cur.disliked) {
-      optimisticVote(post.id, { liked: false, disliked: false, likes: cur.likes, dislikes: cur.dislikes - 1 });
-    } else if (cur.liked) {
-      optimisticVote(post.id, { liked: false, disliked: true, likes: cur.likes - 1, dislikes: cur.dislikes + 1 });
+    // Always apply optimistic immediately — instant feel
+    applyOptimistic(post.id, 'like');
+    if (isVoting(post.id)) {
+      // A request is already in-flight: queue this action, it will run after
+      queueVote(post.id, 'like');
     } else {
-      optimisticVote(post.id, { liked: false, disliked: true, likes: cur.likes, dislikes: cur.dislikes + 1 });
+      markVoting(post.id);
+      sendVote(post.id, 'like');
     }
+  }
 
-    try {
-      const res = await api.post(`/posts/${post.id}/dislike`);
-      commitVote(post.id, res.data);
-    } catch (err) {
-      rollbackVote(post.id, snap);
-      addToast(err.response?.status === 401 ? 'Sign in to dislike posts' : 'Failed to dislike post');
+  function handleDislike() {
+    if (isMock) return;
+    if (!user?.email) { navigate('/signup'); return; }
+    applyOptimistic(post.id, 'dislike');
+    if (isVoting(post.id)) {
+      queueVote(post.id, 'dislike');
+    } else {
+      markVoting(post.id);
+      sendVote(post.id, 'dislike');
     }
   }
 

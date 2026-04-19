@@ -655,68 +655,58 @@ router.post('/', optionalAuth, async (req, res) => {
 });
 
 // Like a post (toggle, one per user)
-// ── Unified vote handler — race-condition safe ────────────────────────────────
-// Uses upsert so concurrent requests from rapid tapping collapse into one operation.
-// Counts are clamped to >= 0 at the DB level via MAX(0, ...) raw SQL for the
-// decrement cases, then re-read from the DB so the response is always authoritative.
+// ── Shared vote logic ───────────────────────────────────────────────────────────────
+// Both /like and /dislike routes delegate to this function.
+// It runs inside a DB transaction, recalculates counts from the actual
+// postReaction table (so counts are always correct regardless of drift),
+// and returns the authoritative final state.
+async function applyVote(tx, userId, postId, action) {
+  // action: 'like' | 'dislike'
+  const existing = await tx.postReaction.findUnique({
+    where: { user_id_post_id: { user_id: userId, post_id: postId } },
+  });
+
+  let liked = false;
+  let disliked = false;
+
+  if (existing?.type === action) {
+    // Toggle off — remove reaction
+    await tx.postReaction.delete({ where: { id: existing.id } });
+  } else if (existing) {
+    // Switch reaction type
+    await tx.postReaction.update({ where: { id: existing.id }, data: { type: action } });
+    if (action === 'like') liked = true;
+    else disliked = true;
+  } else {
+    // New reaction
+    await tx.postReaction.create({ data: { user_id: userId, post_id: postId, type: action } });
+    if (action === 'like') liked = true;
+    else disliked = true;
+  }
+
+  // Recalculate counts from the source of truth (postReaction table)
+  // This is safe inside the transaction and prevents any count drift
+  const [likeCount, dislikeCount] = await Promise.all([
+    tx.postReaction.count({ where: { post_id: postId, type: 'like' } }),
+    tx.postReaction.count({ where: { post_id: postId, type: 'dislike' } }),
+  ]);
+
+  const post = await tx.post.update({
+    where: { id: postId },
+    data: { likes: likeCount, dislikes: dislikeCount },
+    select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true },
+  });
+
+  return { post, liked, disliked };
+}
+
 router.post('/:id/like', optionalAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Login to like posts' });
     const postId = req.params.id;
 
-    // Atomic upsert: create reaction or update existing one in a single DB round-trip.
-    // Because user_id_post_id is a unique constraint, concurrent inserts collapse safely.
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.postReaction.findUnique({
-        where: { user_id_post_id: { user_id: userId, post_id: postId } },
-      });
-
-      let liked = false;
-      let disliked = false;
-      let likeDelta = 0;
-      let dislikeDelta = 0;
-
-      if (existing?.type === 'like') {
-        // Toggle off: un-like
-        await tx.postReaction.delete({ where: { id: existing.id } });
-        likeDelta = -1;
-      } else if (existing?.type === 'dislike') {
-        // Switch: dislike → like
-        await tx.postReaction.update({ where: { id: existing.id }, data: { type: 'like' } });
-        likeDelta = 1; dislikeDelta = -1; liked = true;
-      } else {
-        // New like
-        await tx.postReaction.create({ data: { user_id: userId, post_id: postId, type: 'like' } });
-        likeDelta = 1; liked = true;
-      }
-
-      // Apply deltas with floor clamp — counts can never go negative
-      const post = await tx.post.update({
-        where: { id: postId },
-        data: {
-          ...(likeDelta !== 0 ? { likes: likeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
-          ...(dislikeDelta !== 0 ? { dislikes: dislikeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
-        },
-        select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true },
-      });
-
-      // Clamp at DB level: re-zero if decrement went negative (shouldn't happen, but safety net)
-      const needsClamp = post.likes < 0 || post.dislikes < 0;
-      if (needsClamp) {
-        await tx.post.update({
-          where: { id: postId },
-          data: {
-            ...(post.likes < 0 ? { likes: 0 } : {}),
-            ...(post.dislikes < 0 ? { dislikes: 0 } : {}),
-          },
-        });
-        post.likes = Math.max(0, post.likes);
-        post.dislikes = Math.max(0, post.dislikes);
-      }
-
-      return { post, liked, disliked };
-    });
+    const result = await prisma.$transaction(tx => applyVote(tx, userId, postId, 'like'));
 
     // Upsert/delete reaction notification — one per actor per post, never spam
     if (result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
@@ -726,7 +716,7 @@ router.post('/:id/like', optionalAuth, async (req, res) => {
         postOwnerId: result.post.anonymous_user_id,
         actorId: userId,
         postId,
-        newType: result.liked ? 'like' : null, // null = reaction removed
+        newType: result.liked ? 'like' : null,
         postHeader: result.post.header,
         postImage,
         actorName: actor?.display_name || null,
@@ -741,61 +731,13 @@ router.post('/:id/like', optionalAuth, async (req, res) => {
   }
 });
 
-// Dislike a post (toggle, one per user) — same race-safe pattern
 router.post('/:id/dislike', optionalAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Login to dislike posts' });
     const postId = req.params.id;
 
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.postReaction.findUnique({
-        where: { user_id_post_id: { user_id: userId, post_id: postId } },
-      });
-
-      let liked = false;
-      let disliked = false;
-      let likeDelta = 0;
-      let dislikeDelta = 0;
-
-      if (existing?.type === 'dislike') {
-        // Toggle off: un-dislike
-        await tx.postReaction.delete({ where: { id: existing.id } });
-        dislikeDelta = -1;
-      } else if (existing?.type === 'like') {
-        // Switch: like → dislike
-        await tx.postReaction.update({ where: { id: existing.id }, data: { type: 'dislike' } });
-        dislikeDelta = 1; likeDelta = -1; disliked = true;
-      } else {
-        // New dislike
-        await tx.postReaction.create({ data: { user_id: userId, post_id: postId, type: 'dislike' } });
-        dislikeDelta = 1; disliked = true;
-      }
-
-      const post = await tx.post.update({
-        where: { id: postId },
-        data: {
-          ...(likeDelta !== 0 ? { likes: likeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
-          ...(dislikeDelta !== 0 ? { dislikes: dislikeDelta > 0 ? { increment: 1 } : { decrement: 1 } } : {}),
-        },
-        select: { likes: true, dislikes: true, anonymous_user_id: true, header: true, media_urls: true },
-      });
-
-      const needsClamp = post.likes < 0 || post.dislikes < 0;
-      if (needsClamp) {
-        await tx.post.update({
-          where: { id: postId },
-          data: {
-            ...(post.likes < 0 ? { likes: 0 } : {}),
-            ...(post.dislikes < 0 ? { dislikes: 0 } : {}),
-          },
-        });
-        post.likes = Math.max(0, post.likes);
-        post.dislikes = Math.max(0, post.dislikes);
-      }
-
-      return { post, liked, disliked };
-    });
+    const result = await prisma.$transaction(tx => applyVote(tx, userId, postId, 'dislike'));
 
     // Upsert/delete reaction notification — one per actor per post, never spam
     if (result.post.anonymous_user_id && result.post.anonymous_user_id !== userId) {
