@@ -3232,13 +3232,10 @@ body[data-comments-open] .mobile-only-header {
 }
 
 /* --- Comment sheet: desktop sidebar offset --- */
-/* On desktop the sidebar shifts content right ~240px.
-   Nudge the sheet's center point to align with the feed column. */
+/* Shift center right by half the sidebar width so sheet aligns with feed column */
 @media (min-width: 768px) {
   .comment-sheet-panel {
     margin-left: 120px;
-    height: min(88dvh, 88vh) !important;
-    border-radius: 20px 20px 0 0 !important;
   }
 }
 @media (max-width: 767px) {

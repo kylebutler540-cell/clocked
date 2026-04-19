@@ -6,7 +6,6 @@ import { timeAgo, generateAnonName } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { cacheGet, cacheSet } from '../lib/cache';
-import PostCard from './PostCard';
 
 
 function CommentAvatar({ avatarUrl, displayName, size = 32 }) {
@@ -555,21 +554,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Post pinned at top — desktop only. On mobile, post stays behind the overlay. */}
-          {post && (
-            <div className="comment-sheet-post desktop-only">
-              <PostCard post={post} closeButton={
-                <button onClick={handleClose} style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--text-muted)', fontSize: 20, lineHeight: 1,
-                  padding: '0 4px', display: 'flex', alignItems: 'center', flexShrink: 0,
-                }}>×</button>
-              } />
-            </div>
-          )}
-
-          {/* Mobile-only header: centered title, no X button */}
-          <div className="comment-sheet-mobile-header mobile-only" style={{ display: 'none', alignItems: 'center', justifyContent: 'center', padding: '0 16px 12px' }}>
+          {/* Instagram-style: just "Comments" title on all screen sizes, no post pinned */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px 12px' }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Comments</span>
           </div>
 
