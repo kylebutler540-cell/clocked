@@ -554,8 +554,8 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
 
-          {/* Instagram-style: just "Comments" title on all screen sizes, no post pinned */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px 12px' }}>
+          {/* Instagram-style: just "Comments" title on all screen sizes */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 16px 14px', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Comments</span>
           </div>
 
@@ -570,9 +570,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
           }}
         >
           {loading ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center' }}><div className="spinner" /></div>
+            <div style={{ padding: '60px 16px', textAlign: 'center' }}><div className="spinner" /></div>
           ) : comments.length === 0 ? (
-            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
+            <div style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
               Be the first to comment!
             </div>
           ) : (

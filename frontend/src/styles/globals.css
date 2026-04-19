@@ -3057,12 +3057,7 @@ body[data-comments-open] .mobile-only-header {
   pointer-events: none !important;
 }
 
-/* Hide drag handle bar on desktop */
-@media (min-width: 768px) {
-  .comment-sheet-handle {
-    display: none !important;
-  }
-}
+/* Show drag handle on all sizes — it provides visual top spacing and affordance */
 
 /* Inside comment sheet: no override needed — X is inline */
 
