@@ -3231,15 +3231,18 @@ body[data-comments-open] .mobile-only-header {
   .comment-sheet-mobile-header.mobile-only { display: flex !important; }
 }
 
-/* --- Comment sheet: desktop sidebar offset --- */
-/* Shift center right by half the sidebar width so sheet aligns with feed column */
+/* --- Comment sheet: desktop centering --- */
+/* Sidebar is ~240px. Content column center = 240 + (100vw-240)/2.
+   We apply left via CSS so the sheet centers over the feed, not the sidebar. */
 @media (min-width: 768px) {
   .comment-sheet-panel {
-    margin-left: 120px;
+    left: calc(240px + (100vw - 240px) / 2) !important;
+    max-width: 680px !important;
   }
 }
 @media (max-width: 767px) {
   .comment-sheet-panel {
-    margin-left: 0 !important;
+    left: 50% !important;
+    max-width: 100% !important;
   }
 }
