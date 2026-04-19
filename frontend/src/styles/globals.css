@@ -1464,6 +1464,10 @@ textarea.form-input {
   color: var(--text-secondary);
 }
 
+.rating-option.selected .label {
+  color: #000000;
+}
+
 /* ========== Search ========== */
 .search-input-wrapper {
   position: relative;
