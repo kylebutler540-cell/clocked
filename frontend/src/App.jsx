@@ -305,8 +305,8 @@ function PageHeader({ onOpenDrawer }) {
       {/* Back button: only on sub-pages, never on main tabs */}
       {!isMainTab && <BackButton />}
       {title && <h2 style={{ margin: 0, fontSize: location.pathname === '/messages' ? 22 : 18, fontWeight: location.pathname === '/messages' ? 700 : 600, flex: 1, paddingLeft: isMainTab ? 8 : 0 }}>{title}</h2>}
-      {/* Three-dot on sub-pages only — profile has its own inline menu in the hero */}
-      {!isMainTab && <MobileProfileMenu />}
+      {/* Three-dot menu: Profile tab only — never on other tabs or sub-pages */}
+      {location.pathname === '/profile' && <MobileProfileMenu />}
     </header>
   );
 }
