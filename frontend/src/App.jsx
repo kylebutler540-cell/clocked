@@ -17,29 +17,30 @@ import AccountSwitcherMenu from './components/AccountSwitcher';
 import EmployerSearch from './components/EmployerSearch';
 import LocationModal from './components/LocationModal';
 
-import Home from './pages/Home';
-import Create from './pages/Create';
-import Notifications from './pages/Notifications';
-import Terms from './pages/Terms';
-import Privacy from './pages/Privacy';
-import CommunityGuidelines from './pages/CommunityGuidelines';
-import Contact from './pages/Contact';
+// Lazy-load all pages — only the home feed loads on first visit
+// Everything else (Notifications, Messages, Profile, etc.) loads on demand
+const Home = React.lazy(() => import('./pages/Home'));
+const Create = React.lazy(() => import('./pages/Create'));
+const Notifications = React.lazy(() => import('./pages/Notifications'));
+const Terms = React.lazy(() => import('./pages/Terms'));
+const Privacy = React.lazy(() => import('./pages/Privacy'));
+const CommunityGuidelines = React.lazy(() => import('./pages/CommunityGuidelines'));
+const Contact = React.lazy(() => import('./pages/Contact'));
+const FindFriends = React.lazy(() => import('./pages/FindFriends'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const PostDetail = React.lazy(() => import('./pages/PostDetail'));
+const CompanyProfile = React.lazy(() => import('./pages/CompanyProfile'));
+const Saved = React.lazy(() => import('./pages/Saved'));
+const Onboarding = React.lazy(() => import('./pages/Onboarding'));
+const Signup = React.lazy(() => import('./pages/Signup'));
+const SwitchAccount = React.lazy(() => import('./pages/SwitchAccount'));
+const ProfileSetup = React.lazy(() => import('./pages/ProfileSetup'));
+// Messages exports two things — need special handling
 import Messages, { AppLevelConversationView } from './pages/Messages';
-import FindFriends from './pages/FindFriends';
-import Profile from './pages/Profile';
-import PostDetail from './pages/PostDetail';
-import CompanyProfile from './pages/CompanyProfile';
-import Saved from './pages/Saved';
-import Onboarding from './pages/Onboarding';
-import Signup from './pages/Signup';
-import SwitchAccount from './pages/SwitchAccount';
-import ProfileSetup from './pages/ProfileSetup';
 
 const PAGE_TITLES = {
-  '/create': 'Create Post',
   '/notifications': 'Alerts',
   '/messages': 'Messages',
-  '/profile': 'Profile',
 };
 
 // Desktop top bar — full width, Reddit-style
@@ -235,6 +236,12 @@ function BackButton() {
 function MobileProfileMenu() {
   const [open, setOpen] = useState(false);
   const ref = React.useRef(null);
+  const location = useLocation();
+  const { user } = useAuth();
+
+  // Detect if we're on someone else's profile (/profile/:userId where userId !== mine)
+  const profileMatch = location.pathname.match(/^\/profile\/(.+)$/);
+  const isOtherProfile = profileMatch && profileMatch[1] !== user?.id;
 
   React.useEffect(() => {
     function handleOutside(e) {
@@ -243,6 +250,9 @@ function MobileProfileMenu() {
     if (open) document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [open]);
+
+  // Hide the menu entirely when viewing someone else's profile (after hooks)
+  if (isOtherProfile) return null;
 
   return (
     <div style={{ position: 'relative' }} ref={ref}>
@@ -274,19 +284,29 @@ function MobileProfileMenu() {
   );
 }
 
+// Main tabs — back button and three-dot suppressed here
+const MAIN_TABS = new Set(['/create', '/notifications', '/messages', '/profile']);
+
+// Tabs with no top bar content on mobile — hide the header entirely to reclaim space
+const NO_HEADER_TABS = new Set(['/create', '/profile']);
+
 function PageHeader({ onOpenDrawer }) {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/search';
   const title = PAGE_TITLES[location.pathname];
+  const isMainTab = MAIN_TABS.has(location.pathname);
 
   if (isHome) return <MobileHeader onOpenDrawer={onOpenDrawer} />;
+  // Create and Profile have nothing useful in the top bar — skip it entirely
+  if (NO_HEADER_TABS.has(location.pathname)) return null;
 
   return (
     <header className="app-header" style={{ justifyContent: 'flex-start', gap: 12 }}>
-      <BackButton />
-      {title && <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, flex: 1 }}>{title}</h2>}
-      {/* Three-dot menu on all non-home pages */}
-      <MobileProfileMenu />
+      {/* Back button: only on sub-pages, never on main tabs */}
+      {!isMainTab && <BackButton />}
+      {title && <h2 style={{ margin: 0, fontSize: location.pathname === '/messages' ? 22 : 18, fontWeight: location.pathname === '/messages' ? 700 : 600, flex: 1, paddingLeft: isMainTab ? 8 : 0 }}>{title}</h2>}
+      {/* Three-dot on sub-pages only — profile has its own inline menu in the hero */}
+      {!isMainTab && <MobileProfileMenu />}
     </header>
   );
 }
@@ -323,7 +343,15 @@ function AppMainWrapper({ children }) {
   );
 }
 
-// Route-aware swipe handler for left-edge gestures
+// Tab order matches BottomNav exactly
+const TAB_PATHS = ['/', '/create', '/notifications', '/messages', '/profile'];
+
+// Swipe handler:
+// - Home left-edge swipe right → open sidebar (blocks browser back)
+// - Sidebar open → swipe left closes it, no tab switch allowed
+// - Horizontal swipe on any main tab → move ONE adjacent tab only
+// - Hard stop at Home (left) and Profile (right)
+// - Sub-pages (DM thread, post detail, etc.) → not intercepted
 function SwipeHandler({ drawerOpen, setDrawerOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -331,15 +359,72 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
   React.useEffect(() => {
     let startX = null;
     let startY = null;
-    const EDGE_ZONE = 30;
-    const MIN_SWIPE = 50;
+    let captured = false;
+    let gestureType = null; // 'drawer' | 'tab' | null
 
-    const isHome = location.pathname === '/' || location.pathname === '/search';
+    const EDGE_ZONE = 28;
+    const MIN_SWIPE = 52;
+    const MAX_VERT = 75;
+
+    // Current tab index (-1 if on a sub-page)
+    const currentTabIdx = TAB_PATHS.indexOf(
+      TAB_PATHS.find(p => p === '/' ? location.pathname === '/' || location.pathname === '/search' : location.pathname === p) ?? ''
+    );
+    const isMainTab = currentTabIdx >= 0;
+    const isHome = currentTabIdx === 0;
 
     function onTouchStart(e) {
+      // Ignore multi-touch
+      if (e.touches.length > 1) { startX = null; return; }
       const t = e.touches[0];
       startX = t.clientX;
       startY = t.clientY;
+      captured = false;
+      gestureType = null;
+
+      // Pre-claim left-edge gesture on Home to block iOS back swipe
+      if (isHome && !drawerOpen && startX <= EDGE_ZONE) {
+        captured = true;
+        gestureType = 'drawer';
+      }
+    }
+
+    function onTouchMove(e) {
+      if (startX === null) return;
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = Math.abs(t.clientY - startY);
+
+      // Abort if too vertical
+      if (dy > MAX_VERT && dy > Math.abs(dx)) {
+        captured = false;
+        gestureType = null;
+        return;
+      }
+
+      if (captured && gestureType === 'drawer') {
+        // Prevent browser from treating this as back navigation
+        if (dx > 0) e.preventDefault();
+        return;
+      }
+
+      // Don't capture tab swipes on sub-pages
+      if (!isMainTab) return;
+
+      // Sidebar open: swipe left to close, block everything else
+      if (drawerOpen) {
+        e.preventDefault();
+        return;
+      }
+
+      // Capture horizontal tab swipe once we know direction
+      if (!captured && Math.abs(dx) > 12 && dy < MAX_VERT) {
+        captured = true;
+        gestureType = 'tab';
+        e.preventDefault();
+      } else if (captured && gestureType === 'tab') {
+        e.preventDefault();
+      }
     }
 
     function onTouchEnd(e) {
@@ -347,29 +432,66 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
       const t = e.changedTouches[0];
       const dx = t.clientX - startX;
       const dy = Math.abs(t.clientY - startY);
-      const isLeftEdgeSwipe = startX <= EDGE_ZONE && dx >= MIN_SWIPE && dy < 80;
+      const absDx = Math.abs(dx);
 
-      if (isLeftEdgeSwipe) {
-        if (isHome && !drawerOpen) {
-          // Home: open sidebar drawer
-          setDrawerOpen(true);
+      if (captured && dy < MAX_VERT && absDx >= MIN_SWIPE) {
+        if (gestureType === 'drawer') {
+          // Left-edge on Home → open sidebar
+          if (!drawerOpen && dx > 0) setDrawerOpen(true);
+        } else if (gestureType === 'tab') {
+          if (drawerOpen) {
+            // Close sidebar on leftward swipe
+            if (dx < 0) setDrawerOpen(false);
+          } else if (isMainTab) {
+            // Adjacent tab only, with hard stops
+            const swipeLeft = dx < 0;  // user swiped left → go to next (higher index)
+            const nextIdx = swipeLeft ? currentTabIdx + 1 : currentTabIdx - 1;
+            if (nextIdx >= 0 && nextIdx < TAB_PATHS.length) {
+              navigate(TAB_PATHS[nextIdx]);
+            }
+            // else: hard stop (already at first or last tab)
+          }
         }
-        // All other routes (including /messages/:userId): let the browser handle back naturally
       }
 
       startX = null;
       startY = null;
+      captured = false;
+      gestureType = null;
     }
 
     document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd, { passive: true });
     return () => {
       document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
     };
   }, [location.pathname, drawerOpen, setDrawerOpen, navigate]);
 
   return null;
+}
+
+// Rendered inside BrowserRouter — safe to call useLocation here
+function MobileHeaderWrapper({ onOpenDrawer }) {
+  const location = useLocation();
+  const noHeader = NO_HEADER_TABS.has(location.pathname);
+
+  // Sync a data attribute on page-content so CSS can zero the padding-top
+  React.useEffect(() => {
+    const el = document.querySelector('.page-content');
+    if (!el) return;
+    if (noHeader) el.setAttribute('data-no-header', 'true');
+    else el.removeAttribute('data-no-header');
+  }, [noHeader]);
+
+  if (noHeader) return null;
+  return (
+    <div className="mobile-only-header">
+      <PageHeader onOpenDrawer={onOpenDrawer} />
+    </div>
+  );
 }
 
 function AppInner() {
@@ -395,7 +517,9 @@ function AppInner() {
   if (showOnboarding) {
     return (
       <BrowserRouter>
-        <Onboarding onDone={() => setShowOnboarding(false)} />
+        <React.Suspense fallback={null}>
+          <Onboarding onDone={() => setShowOnboarding(false)} />
+        </React.Suspense>
       </BrowserRouter>
     );
   }
@@ -410,13 +534,12 @@ function AppInner() {
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}${fullscreen ? ' messaging-fullscreen' : ''}`}>
         {!fullscreen && <LeftSidebar collapsed={sidebarCollapsed} />}
         <AppMainWrapper>
-          {/* Mobile header only */}
-          {!fullscreen && <div className="mobile-only-header">
-            <PageHeader onOpenDrawer={() => setDrawerOpen(true)} />
-          </div>}
+          {/* Mobile header only — hide entirely on tabs with no header content */}
+          {!fullscreen && <MobileHeaderWrapper onOpenDrawer={() => setDrawerOpen(true)} />}
           <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
           {!fullscreen && <DesktopBackButton />}
           <main className="page-content" style={fullscreen ? { padding: 0, margin: 0, height: '100dvh', overflow: 'hidden' } : {}}>
+            <React.Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><div className="spinner" /></div>}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/search" element={<Home />} />
@@ -441,6 +564,7 @@ function AppInner() {
               <Route path="/contact" element={<Contact />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </React.Suspense>
           </main>
           {!fullscreen && <BottomNav />}
         </AppMainWrapper>

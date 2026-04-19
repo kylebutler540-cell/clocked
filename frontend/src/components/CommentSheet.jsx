@@ -274,30 +274,52 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
     }
   }, [openReplyToId, comments]);
 
-  // Touch drag-to-close — ONLY from the handle area, never from the comments list
-  function onHandleTouchStart(e) {
-    dragStartY.current = e.touches[0].clientY;
-    dragCurrentY.current = 0;
-    if (sheetRef.current) sheetRef.current.style.transition = 'none';
-  }
+  // Touch drag-to-close — registered as non-passive native listeners so preventDefault works
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
 
-  function onHandleTouchMove(e) {
-    const dy = e.touches[0].clientY - dragStartY.current;
-    if (dy < 0) return;
-    dragCurrentY.current = dy;
-    if (sheetRef.current) sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px)`;
-  }
-
-  function onHandleTouchEnd() {
-    if (sheetRef.current) sheetRef.current.style.transition = 'transform 300ms ease';
-    if (dragCurrentY.current > 80) {
-      handleClose();
-    } else {
-      if (sheetRef.current) sheetRef.current.style.transform = 'translateX(-50%) translateY(0)';
+    function onTouchStart(e) {
+      dragStartY.current = e.touches[0].clientY;
+      dragCurrentY.current = 0;
     }
-    dragStartY.current = null;
-    dragCurrentY.current = 0;
-  }
+
+    function onTouchMove(e) {
+      const dy = e.touches[0].clientY - dragStartY.current;
+      if (dy <= 0) return;
+      const atTop = !listRef.current || listRef.current.scrollTop <= 0;
+      if (!atTop) return;
+      e.preventDefault(); // stop list from scrolling while dragging sheet
+      dragCurrentY.current = dy;
+      sheet.style.transition = 'none';
+      sheet.style.transform = `translateX(-50%) translateY(${dy}px)`;
+    }
+
+    function onTouchEnd() {
+      sheet.style.transition = 'transform 300ms ease';
+      if (dragCurrentY.current > 80) {
+        handleClose();
+      } else {
+        sheet.style.transform = 'translateX(-50%) translateY(0)';
+      }
+      dragStartY.current = null;
+      dragCurrentY.current = 0;
+    }
+
+    sheet.addEventListener('touchstart', onTouchStart, { passive: true });
+    sheet.addEventListener('touchmove', onTouchMove, { passive: false });
+    sheet.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      sheet.removeEventListener('touchstart', onTouchStart);
+      sheet.removeEventListener('touchmove', onTouchMove);
+      sheet.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isOpen]); // re-attach when sheet opens
+
+  // No-op handlers (sheet gestures handled by native listeners above)
+  function onHandleTouchStart(e) {}
+  function onHandleTouchMove(e) {}
+  function onHandleTouchEnd() {}
 
   function handleImageSelect(e) {
     const file = e.target.files?.[0];
@@ -500,7 +522,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         }}
       />
 
-      {/* Sheet */}
+      {/* Sheet — touch handled via native listeners (useEffect above) for non-passive preventDefault */}
       <div
         ref={sheetRef}
         style={{
@@ -524,13 +546,10 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       >
         {/* Drag handle + pinned post header — never scrolls */}
         <div style={{ flexShrink: 0 }}>
-          {/* Drag handle — full-width, tall hit target, only this triggers close-on-swipe */}
+          {/* Drag handle pill — visual affordance only, gestures now handled at sheet level */}
           <div
-            onTouchStart={onHandleTouchStart}
-            onTouchMove={onHandleTouchMove}
-            onTouchEnd={onHandleTouchEnd}
             className="comment-sheet-handle"
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 0 12px', cursor: 'grab', minHeight: 44, touchAction: 'none' }}
+            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 0 12px', minHeight: 44 }}
           >
             <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
           </div>
@@ -548,10 +567,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
             </div>
           )}
 
-          {/* Mobile-only header: title + close button (replaces the pinned post) */}
-          <div className="comment-sheet-mobile-header mobile-only" style={{ display: 'none', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 12px' }}>
+          {/* Mobile-only header: centered title, no X button */}
+          <div className="comment-sheet-mobile-header mobile-only" style={{ display: 'none', alignItems: 'center', justifyContent: 'center', padding: '0 16px 12px' }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Comments</span>
-            <button onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, padding: '0 2px' }}>×</button>
           </div>
 
           {/* Separator removed */}

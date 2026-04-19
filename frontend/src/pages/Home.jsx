@@ -46,7 +46,7 @@ function RightSidebar() {
 
 export default function Home() {
   const [searchParams] = useSearchParams();
-  const sort = searchParams.get('sort') || 'latest';
+  const sort = searchParams.get('sort') || 'feed';
 
   const [location, setLocation] = useState(() => localStorage.getItem('userLocation') || '');
 

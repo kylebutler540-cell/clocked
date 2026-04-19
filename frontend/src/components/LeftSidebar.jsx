@@ -37,12 +37,12 @@ export default function LeftSidebar({ collapsed = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const activeSort = searchParams.get('sort') || 'latest';
+  const activeSort = searchParams.get('sort') || null;
   const { theme, toggle } = useTheme();
   const { user, logout } = useAuth();
 
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/' || location.pathname === '/search';
+    if (path === '/') return (location.pathname === '/' || location.pathname === '/search') && !activeSort;
     return location.pathname.startsWith(path);
   };
 
@@ -50,6 +50,7 @@ export default function LeftSidebar({ collapsed = false }) {
     <div className={`left-sidebar${collapsed ? ' collapsed' : ''}`}>
 
       {/* Main nav */}
+      {/* Primary section */}
       <NavItem collapsed={collapsed} active={isActive('/')} label="Home" onClick={() => navigate('/')}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>}
       />
@@ -60,25 +61,22 @@ export default function LeftSidebar({ collapsed = false }) {
         badge={unreadCount}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>}
       />
-      <NavItem collapsed={collapsed} active={isActive('/profile')} label="Profile" onClick={() => navigate('/profile')}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-      />
       <NavItem collapsed={collapsed} active={isActive('/messages')} label="Messages" onClick={() => navigate('/messages')}
         badge={unreadMessages}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>}
       />
-      <NavItem collapsed={collapsed} active={isActive('/saved')} label="Saved" onClick={() => navigate('/saved')}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
-      />
-      <NavItem collapsed={collapsed} active={isActive('/find-friends')} label="Find Friends" onClick={() => navigate('/find-friends')}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+      <NavItem collapsed={collapsed} active={isActive('/profile')} label="Profile" onClick={() => navigate('/profile')}
+        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
       />
 
       <div className="sidebar-divider" />
 
-      {/* Feed filters */}
-      <NavItem collapsed={collapsed} active={activeSort === 'latest' && isActive('/')} label="Latest" onClick={() => navigate('/')}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>}
+      {/* Secondary section */}
+      <NavItem collapsed={collapsed} active={isActive('/find-friends')} label="Find Friends" onClick={() => navigate('/find-friends')}
+        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+      />
+      <NavItem collapsed={collapsed} active={isActive('/saved')} label="Saved" onClick={() => navigate('/saved')}
+        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
       />
       <NavItem collapsed={collapsed} active={activeSort === 'top'} label="Top Rated" onClick={() => navigate('/?sort=top')}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>}

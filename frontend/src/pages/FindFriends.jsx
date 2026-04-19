@@ -4,6 +4,28 @@ import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { lsGet, lsSet } from '../lib/cache';
 
+// sessionStorage: active search state (only kept when navigating INTO a profile)
+const FF_ACTIVE_KEY = 'ff_search_state';
+// localStorage: recent search history (persists across sessions)
+const FF_HISTORY_KEY = 'ff_search_history';
+const MAX_HISTORY = 10;
+
+function readHistory() {
+  try { return JSON.parse(localStorage.getItem(FF_HISTORY_KEY)) || []; } catch { return []; }
+}
+function saveHistory(items) {
+  try { localStorage.setItem(FF_HISTORY_KEY, JSON.stringify(items)); } catch {}
+}
+function addToHistory(user) {
+  const history = readHistory();
+  const filtered = history.filter(h => h.id !== user.id);
+  const updated = [{ id: user.id, display_name: user.display_name, username: user.username, avatar_url: user.avatar_url, anon_number: user.anon_number }, ...filtered].slice(0, MAX_HISTORY);
+  saveHistory(updated);
+}
+function removeFromHistory(userId) {
+  saveHistory(readHistory().filter(h => h.id !== userId));
+}
+
 function UserAvatar({ url, name, size = 44 }) {
   const letter = (name || '?')[0].toUpperCase();
   return (
@@ -24,7 +46,6 @@ function FollowButton({ userId, isFollowing: initialFollowing, onToggle }) {
   const [following, setFollowing] = useState(initialFollowing);
   const [loading, setLoading] = useState(false);
 
-  // Sync if parent changes (e.g. on re-search)
   useEffect(() => { setFollowing(initialFollowing); }, [initialFollowing]);
 
   async function toggle(e) {
@@ -34,15 +55,12 @@ function FollowButton({ userId, isFollowing: initialFollowing, onToggle }) {
     const was = following;
     setFollowing(!was);
     try {
-      if (was) {
-        await api.delete(`/follows/${userId}`);
-      } else {
-        await api.post(`/follows/${userId}`);
-      }
+      if (was) { await api.delete(`/follows/${userId}`); }
+      else { await api.post(`/follows/${userId}`); }
       lsSet(`follow_state_${userId}`, { following: !was });
       onToggle?.(!was);
     } catch {
-      setFollowing(was); // revert
+      setFollowing(was);
     } finally {
       setLoading(false);
     }
@@ -60,18 +78,15 @@ function FollowButton({ userId, isFollowing: initialFollowing, onToggle }) {
   );
 }
 
-function UserRow({ user: u, onFollowToggle }) {
-  const navigate = useNavigate();
+function UserRow({ user: u, onFollowToggle, onNavigate }) {
   const { user: me } = useAuth();
   const name = u.display_name || u.username || `User #${u.anon_number}`;
-
-  // Seed follow state from ls cache for instant correct button
   const cached = lsGet(`follow_state_${u.id}`);
   const initFollowing = cached?.following ?? u.is_following ?? false;
 
   return (
     <div
-      onClick={() => navigate(`/profile/${u.id}`)}
+      onClick={() => onNavigate(u)}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 20px', cursor: 'pointer',
@@ -107,14 +122,70 @@ function UserRow({ user: u, onFollowToggle }) {
   );
 }
 
+function RecentRow({ user: u, onNavigate, onRemove }) {
+  const name = u.display_name || u.username || `User #${u.anon_number}`;
+  return (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '11px 20px',
+        borderBottom: '1px solid var(--border)',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <div
+        onClick={() => onNavigate(u)}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer' }}
+      >
+        <UserAvatar url={u.avatar_url} name={name} size={40} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {name}
+          </div>
+          {u.username && (
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>@{u.username}</div>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={e => { e.stopPropagation(); onRemove(u.id); }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1, padding: '4px 6px', flexShrink: 0 }}
+        aria-label="Remove from recent"
+      >×</button>
+    </div>
+  );
+}
+
 export default function FindFriends() {
-  const [query, setQuery] = useState('');
-  const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // On mount: restore active search only if we just came back from a profile
+  const savedActive = (() => { try { return JSON.parse(sessionStorage.getItem(FF_ACTIVE_KEY)) || null; } catch { return null; } })();
+
+  const [query, setQuery] = useState(savedActive?.query || '');
+  const [users, setUsers] = useState(savedActive?.users || []);
   const [loading, setLoading] = useState(false);
-  const [nextCursor, setNextCursor] = useState(null);
+  const [nextCursor, setNextCursor] = useState(savedActive?.nextCursor || null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [recentHistory, setRecentHistory] = useState(readHistory);
+
   const debounceRef = useRef(null);
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // Flag: only true when we're navigating INTO a profile (not leaving the tab)
+  const navigatingToProfileRef = useRef(false);
+
+  // On unmount: clear active search cache unless we're going into a profile
+  useEffect(() => {
+    return () => {
+      if (!navigatingToProfileRef.current) {
+        try { sessionStorage.removeItem(FF_ACTIVE_KEY); } catch {}
+      }
+      navigatingToProfileRef.current = false;
+    };
+  }, []);
 
   const search = useCallback(async (q, cursor = null) => {
     if (!q.trim()) { setUsers([]); setNextCursor(null); return; }
@@ -138,15 +209,66 @@ export default function FindFriends() {
     setQuery(q);
     clearTimeout(debounceRef.current);
     if (!q.trim()) { setUsers([]); setNextCursor(null); return; }
-    debounceRef.current = setTimeout(() => search(q), 280);
+    debounceRef.current = setTimeout(() => search(q), 220);
   }
 
   function handleFollowToggle(userId, nowFollowing) {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_following: nowFollowing } : u));
   }
 
+  function handleNavigateToProfile(u) {
+    // Mark that we're going into a profile so unmount keeps the active search
+    navigatingToProfileRef.current = true;
+    try { sessionStorage.setItem(FF_ACTIVE_KEY, JSON.stringify({ query, users, nextCursor })); } catch {}
+    // Add to recent history
+    addToHistory(u);
+    setRecentHistory(readHistory());
+    navigate(`/profile/${u.id}`);
+  }
+
+  function handleRemoveRecent(userId) {
+    removeFromHistory(userId);
+    setRecentHistory(readHistory());
+  }
+
+  function handleRecentTap(u) {
+    // Tapping a recent = open their profile directly (also re-adds to top of history)
+    handleNavigateToProfile(u);
+  }
+
+  function clearSearch() {
+    setQuery('');
+    setUsers([]);
+    setNextCursor(null);
+    try { sessionStorage.removeItem(FF_ACTIVE_KEY); } catch {}
+    inputRef.current?.focus();
+  }
+
+  if (!user?.email) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+            <path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <h3>Sign in to find friends</h3>
+        <p>Create an account to search for friends and coworkers.</p>
+        <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/signup')}>
+          Sign In / Sign Up
+        </button>
+      </div>
+    );
+  }
+
+  const showResults = query.trim().length > 0;
+  const showRecent = !showResults && recentHistory.length > 0;
+
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', width: '100%' }}>
+    <div ref={containerRef} style={{ maxWidth: 680, margin: '0 auto', width: '100%' }}>
       {/* Header */}
       <div style={{ padding: '20px 20px 16px' }}>
         <h1 style={{ margin: '0 0 16px', fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
@@ -185,46 +307,69 @@ export default function FindFriends() {
           />
           {query && (
             <button
-              onClick={() => { setQuery(''); setUsers([]); setNextCursor(null); inputRef.current?.focus(); }}
+              onClick={clearSearch}
               style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1, padding: '2px 4px' }}
             >×</button>
           )}
         </div>
       </div>
 
-      {/* Results */}
+      {/* Content */}
       <div>
-        {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}>
-            <div className="spinner" style={{ margin: '0 auto' }} />
-          </div>
-        ) : users.length > 0 ? (
+        {showResults ? (
+          // ── Active search results ──
+          loading ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <div className="spinner" style={{ margin: '0 auto' }} />
+            </div>
+          ) : users.length > 0 ? (
+            <>
+              {users.map(u => (
+                <UserRow key={u.id} user={u} onFollowToggle={handleFollowToggle} onNavigate={handleNavigateToProfile} />
+              ))}
+              {nextCursor && (
+                <div style={{ padding: '16px', textAlign: 'center' }}>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '8px 24px', fontSize: 13 }}
+                    onClick={() => search(query, nextCursor)}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading…' : 'Load more'}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ padding: '60px 24px', textAlign: 'center' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>No users found</h3>
+              <p style={{ margin: 0, fontSize: 14, color: 'var(--text-muted)' }}>Try a different name or @username</p>
+            </div>
+          )
+        ) : showRecent ? (
+          // ── Recent searches ──
           <>
-            {users.map(u => (
-              <UserRow key={u.id} user={u} onFollowToggle={handleFollowToggle} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 4px' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recent</span>
+              <button
+                onClick={() => { saveHistory([]); setRecentHistory([]); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--purple)', fontWeight: 600, padding: '2px 4px' }}
+              >Clear all</button>
+            </div>
+            {recentHistory.map(u => (
+              <RecentRow
+                key={u.id}
+                user={u}
+                onNavigate={handleRecentTap}
+                onRemove={handleRemoveRecent}
+              />
             ))}
-            {nextCursor && (
-              <div style={{ padding: '16px', textAlign: 'center' }}>
-                <button
-                  className="btn btn-secondary"
-                  style={{ padding: '8px 24px', fontSize: 13 }}
-                  onClick={() => search(query, nextCursor)}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </button>
-              </div>
-            )}
           </>
-        ) : query.trim() ? (
-          <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>No users found</h3>
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--text-muted)' }}>Try a different name or @username</p>
-          </div>
         ) : (
+          // ── Empty default state ──
           <div style={{ padding: '60px 24px', textAlign: 'center' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 16 }}>
               <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>

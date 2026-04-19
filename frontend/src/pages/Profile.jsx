@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import AccountSwitcherMenu from '../components/AccountSwitcher';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -9,6 +10,48 @@ import Feed from '../components/Feed';
 import PostCard from '../components/PostCard';
 
 const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
+
+// Inline three-dot menu for own profile hero — mobile only
+function ProfileDotsMenu() {
+  const [open, setOpen] = React.useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, color: 'var(--text-primary)', borderRadius: 8 }}
+        aria-label="Menu"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+        </svg>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 40, right: 0,
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          minWidth: 230,
+          zIndex: 500,
+          overflow: 'hidden',
+        }}>
+          <AccountSwitcherMenu onClose={() => setOpen(false)} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function formatCount(n) {
   if (n == null) return '0';
@@ -524,7 +567,7 @@ export default function Profile() {
             <button
               className="btn btn-secondary"
               style={{ flex: 1, padding: '8px 0', fontSize: 14, fontWeight: 600, height: 36 }}
-              onClick={() => navigate('/messages?user=' + viewingUserId)}
+              onClick={() => user?.email ? navigate('/messages?user=' + viewingUserId) : navigate('/signup')}
             >
               Message
             </button>
@@ -569,10 +612,14 @@ export default function Profile() {
           </button>
         </div>
       ) : (
-        <div className="profile-hero">
+        <div className="profile-hero" style={{ position: 'relative' }}>
           <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
-          <div className="profile-hero-info">
-            <div className="profile-username-large">{ownDisplayName}</div>
+          <div className="profile-hero-info" style={{ flex: 1, minWidth: 0 }}>
+            {/* Name row with inline three-dot menu */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="profile-username-large" style={{ flex: 1, minWidth: 0 }}>{ownDisplayName}</div>
+              <ProfileDotsMenu />
+            </div>
             {user?.username && (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
             )}

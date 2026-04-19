@@ -332,7 +332,7 @@ function ImageViewer({ src, onClose }) {
 
 // ─── Conversation View ────────────────────────────────────────────────────────
 
-function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
+function ConversationView({ userId, initialUser, onBack, onMessageSent, onNavigateToProfile }) {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   // Seed from cache synchronously at init — zero loading flash on back-navigation
@@ -353,9 +353,19 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
   const isInputFocusedRef = useRef(false);
   const outerRef = useRef(null);
   const hasLoadedRef = useRef(!!_cached?.messages?.length);
+  const hasScrolledOnOpenRef = useRef(false);
 
   const otherUserRef = useRef(otherUser);
   useEffect(() => { otherUserRef.current = otherUser; }, [otherUser]);
+
+  // Callback ref: pin scroll to bottom the instant the container enters the DOM,
+  // before any paint, so the top of the thread is never visible.
+  const scrollContainerCallbackRef = useCallback((el) => {
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+      scrollContainerRef.current = el;
+    }
+  }, []);
 
   const scrollToBottom = useCallback((behavior = 'auto') => {
     requestAnimationFrame(() => {
@@ -434,9 +444,16 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
     }
   }, [userId, scrollToBottom]);
 
+  // Scroll to bottom once messages are actually in the DOM on open
   useEffect(() => {
-    // Scroll to bottom immediately (cache data already in state)
-    setTimeout(() => scrollToBottom(), 30);
+    if (messages.length > 0 && !hasScrolledOnOpenRef.current) {
+      hasScrolledOnOpenRef.current = true;
+      // Double rAF ensures the list has fully painted before scrolling
+      requestAnimationFrame(() => requestAnimationFrame(() => scrollToBottom()));
+    }
+  }, [messages]); // eslint-disable-line
+
+  useEffect(() => {
     // Always fetch silently on mount — cache is already rendered, only update if new messages
     fetchMessages({ silent: true });
     pollRef.current = setInterval(() => fetchMessages({ silent: true }), 10000);
@@ -620,7 +637,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <button onClick={() => userId && navigate(`/profile/${userId}`, { state: { fromDM: userId } })} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, flex: 1, WebkitTapHighlightColor: 'transparent' }}>
+        <button onClick={() => userId && (onNavigateToProfile ? onNavigateToProfile(userId) : navigate(`/profile/${userId}`))} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, flex: 1, WebkitTapHighlightColor: 'transparent' }}>
           {otherName === null ? <AvatarSkeleton size={36} /> : <Avatar url={otherUser?.avatar_url} name={otherName} size={36} />}
           <div style={{ fontWeight: 700, fontSize: 16, color: otherName ? 'var(--text-primary)' : 'var(--border)' }}>
             {otherName || <div style={{ width: 100, height: 16, borderRadius: 8, background: 'var(--border)' }} />}
@@ -629,7 +646,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollContainerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2, WebkitOverflowScrolling: 'touch' }}>
+      <div ref={scrollContainerCallbackRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 2, WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 0' }}>
             {[55, 38, 75, 45, 65].map((w, i) => (
@@ -645,7 +662,7 @@ function ConversationView({ userId, initialUser, onBack, onMessageSent }) {
           <>
             {/* Profile header — always shown at top of thread, new or existing */}
             <div
-              onClick={() => userId && navigate(`/profile/${userId}`, { state: { fromDM: userId } })}
+              onClick={() => userId && (onNavigateToProfile ? onNavigateToProfile(userId) : navigate(`/profile/${userId}`))}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 28, paddingBottom: 20, gap: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
             >
               {otherUser
@@ -790,6 +807,13 @@ export function AppLevelConversationView() {
     navigate('/messages');
   }, [closeThread, navigate]);
 
+  // Close overlay first so the profile page is visible, then navigate.
+  // On browser back, /messages/:userId re-opens the thread via the Messages useEffect.
+  const handleNavigateToProfile = useCallback((uid) => {
+    closeThread();
+    navigate(`/profile/${uid}`, { state: { fromDM: activeThreadUserId } });
+  }, [closeThread, navigate, activeThreadUserId]);
+
   // Always in DOM; CSS hides it when no active thread
   return (
     <div style={{
@@ -797,6 +821,8 @@ export function AppLevelConversationView() {
       position: 'fixed', inset: 0, zIndex: 200,
       flexDirection: 'column',
       background: 'var(--bg-primary)',
+      overscrollBehavior: 'none',
+      overflow: 'hidden',
     }}>
       {activeThreadUserId && (
         <ConversationView
@@ -805,6 +831,7 @@ export function AppLevelConversationView() {
           initialUser={null}
           onBack={handleBack}
           onMessageSent={() => {}}
+          onNavigateToProfile={handleNavigateToProfile}
         />
       )}
     </div>
@@ -897,8 +924,8 @@ export default function Messages() {
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh', maxWidth: 680, width: '100%', margin: '0 auto' }}>
-        {/* Title — matches Home/Alerts style */}
-        <div style={{ padding: '20px 20px 12px', background: 'transparent' }}>
+        {/* Title — desktop only; mobile shows it in the top bar already */}
+        <div className="desktop-only" style={{ padding: '20px 20px 12px', background: 'transparent' }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Messages</h1>
         </div>
 

@@ -15,13 +15,18 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Let Vite use pure content hashes — no manual version suffix
-    // so every changed file gets a unique hash automatically
+    // Code splitting: vendor chunk separate from app code
+    // This means React/router loads once and gets cached forever
     rollupOptions: {
       output: {
         entryFileNames: `assets/[name]-[hash].js`,
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`,
+        manualChunks: {
+          // Split vendor libs into their own cached chunk
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          axios: ['axios'],
+        },
       },
     },
   },

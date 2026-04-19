@@ -224,18 +224,32 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
             )}
             {(isCompanyFeed || isTopRated || filters.userId) && (
               <div className="feed-first-cta">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                </svg>
-                <h3>{(isCompanyFeed && filters.rating) ? 'Write a review' : isCompanyFeed ? 'Be the first to review this workplace' : 'Be the first to review a workplace near you'}</h3>
-                <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
-                <button
-                  className="btn btn-primary"
-                  style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}
-                  onClick={() => navigate('/create', employerInfo ? { state: { employer: employerInfo } } : {})}
-                >
-                  Write a Review
-                </button>
+                {(isCompanyFeed && filters.search) ? (
+                  // Keyword search with no matches
+                  <>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <h3>No posts match your search</h3>
+                    <p>Try a different keyword or clear the search to see all reviews.</p>
+                  </>
+                ) : (
+                  // Genuinely empty feed
+                  <>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:12}}>
+                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                    <h3>No reviews yet</h3>
+                    <p>No one has posted here yet. Share your experience — anonymously — and help others make better decisions.</p>
+                    <button
+                      className="btn btn-primary"
+                      style={{ marginTop: 16, display: 'inline-block', padding: '12px 24px' }}
+                      onClick={() => navigate('/create', employerInfo ? { state: { employer: employerInfo } } : {})}
+                    >
+                      Write a Review
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </>

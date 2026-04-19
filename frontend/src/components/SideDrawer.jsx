@@ -7,13 +7,13 @@ import { useTheme } from '../context/ThemeContext';
 export default function SideDrawer({ isOpen, onClose }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const activeSort = searchParams.get('sort') || 'latest';
+  const activeSort = searchParams.get('sort') || null;
   const [location, setLocation] = useState(() => localStorage.getItem('userLocation') || '');
   const [showLocation, setShowLocation] = useState(false);
   const { theme, toggle } = useTheme();
 
   function handleSort(sort) {
-    navigate(sort === 'latest' ? '/' : `/?sort=${sort}`);
+    navigate(`/?sort=${sort}`);
     onClose();
   }
 
@@ -43,17 +43,6 @@ export default function SideDrawer({ isOpen, onClose }) {
         </div>
 
         <nav className="drawer-nav">
-          <button
-            className={`drawer-nav-item${activeSort === 'latest' ? ' active' : ''}`}
-            onClick={() => handleSort('latest')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12,6 12,12 16,14" />
-            </svg>
-            Latest
-          </button>
-
           <button
             className={`drawer-nav-item${activeSort === 'top' ? ' active' : ''}`}
             onClick={() => handleSort('top')}

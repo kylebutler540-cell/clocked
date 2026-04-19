@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 // socket.io temporarily disabled — using polling fallback
 // const http = require('http');
@@ -26,6 +27,9 @@ const PORT = process.env.PORT || 3001;
 
 // Trust Railway's proxy so rate limiter can read real IPs
 app.set('trust proxy', 1);
+
+// Gzip compression — reduces response size ~70% for JSON/text
+app.use(compression());
 
 // Security middleware
 app.use(helmet());
@@ -67,11 +71,10 @@ const postLimiter = rateLimit({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Health check
+// Health check — also used as keep-alive ping (no DB hit needed)
 app.get('/health', (req, res) => {
-  const employerRoutes = require('./routes/employers');
-  const logoRoute = employerRoutes.stack?.filter(r => r.route).map(r => r.route.path) || [];
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: 'v3-admin-fix', employerRoutes: logoRoute });
+  res.set('Cache-Control', 'no-store');
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: 'v4-perf' });
 });
 
 // Routes

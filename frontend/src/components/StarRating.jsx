@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { cacheGet, cacheSet, cacheDelete } from '../lib/cache';
+import { useAuth } from '../context/AuthContext';
 
 export default function StarRating({ placeId, employerName, employerAddress }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [rating, setRating] = useState(0);
   const [average, setAverage] = useState(0);
   const [totalRatings, setTotalRatings] = useState(0);
@@ -32,6 +36,7 @@ export default function StarRating({ placeId, employerName, employerAddress }) {
   }, [placeId]);
 
   function handleRate(star) {
+    if (!user?.email) { navigate('/signup'); return; }
     if (saving) return;
     setClearArmed(false); // reset clear arm if they tap a star
     // Debounce rapid star taps — only commit after 400ms of no changes
