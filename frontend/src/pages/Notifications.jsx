@@ -7,7 +7,7 @@ import { cacheGet, cacheSet, isFresh } from '../lib/cache';
 import { useNotif } from '../context/NotifContext';
 
 function Avatar({ url, name, size = 40 }) {
-  const letter = name ? name[0].toUpperCase() : '?';
+  const letter = name ? name[0].toUpperCase() : null;
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
@@ -17,7 +17,10 @@ function Avatar({ url, name, size = 40 }) {
     }}>
       {url
         ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : letter}
+        : letter
+          ? letter
+          : <svg width={size * 0.52} height={size * 0.52} viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.85 }}><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.33 0-10 1.673-10 5v2h20v-2c0-3.327-6.67-5-10-5z"/></svg>
+      }
     </div>
   );
 }
@@ -31,15 +34,35 @@ function NotificationItem({ n, onCommentLike }) {
   const actorAvatar = data.actor_avatar || null;
   const actorId = data.actor_id || null;
   const isComment = n.type === 'comment' || n.type === 'reply';
-  const isSimple = n.type === 'like' || n.type === 'dislike' || n.type === 'follow';
+  const isSimple = n.type === 'like' || n.type === 'dislike';
+  const isFollow = n.type === 'follow';
   const isMessageRequest = n.type === 'message_request';
   const hasPost = !!data.post_id;
   const postImage = data.post_image || null;
+
+  const [isFollowingBack, setIsFollowingBack] = useState(data.is_following_back ?? false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  async function handleFollowBack(e) {
+    e.stopPropagation();
+    if (followLoading || isFollowingBack) return;
+    setFollowLoading(true);
+    try {
+      await api.post(`/follows/${actorId}`);
+      setIsFollowingBack(true);
+    } catch { /* ignore */ }
+    finally { setFollowLoading(false); }
+  }
 
   function handleCardClick() {
     // Message request — navigate to messages
     if (isMessageRequest && actorId) {
       navigate(`/messages?user=${actorId}`);
+      return;
+    }
+    // Follow — navigate to profile
+    if (isFollow && actorId) {
+      navigate(`/profile/${actorId}`);
       return;
     }
     if (!hasPost) return;
@@ -99,14 +122,14 @@ function NotificationItem({ n, onCommentLike }) {
 
   return (
     <div
-      onClick={(hasPost || isMessageRequest) ? handleCardClick : undefined}
+      onClick={(hasPost || isMessageRequest || isFollow) ? handleCardClick : undefined}
       style={{
         display: 'flex',
         alignItems: (isSimple || isMessageRequest) ? 'center' : 'flex-start',
         gap: 12,
         padding: '14px 16px',
         background: n.read ? 'transparent' : 'var(--purple-glow)',
-        cursor: (hasPost || isMessageRequest) ? 'pointer' : 'default',
+        cursor: (hasPost || isMessageRequest || isFollow) ? 'pointer' : 'default',
       }}
     >
       {/* Avatar — separate tap target for profile */}
@@ -114,7 +137,7 @@ function NotificationItem({ n, onCommentLike }) {
         onClick={handleProfileClick}
         style={{ flexShrink: 0, cursor: actorId ? 'pointer' : 'default' }}
       >
-        <Avatar url={actorAvatar} name={actorName || '?'} size={44} />
+        <Avatar url={actorAvatar} name={actorName} size={44} />
       </div>
 
       {/* Content */}
@@ -165,6 +188,27 @@ function NotificationItem({ n, onCommentLike }) {
             </span>
           </div>
         </div>
+
+        {/* Follow back button */}
+        {isFollow && actorId && (
+          <div style={{ marginTop: 8 }}>
+            <button
+              onClick={handleFollowBack}
+              disabled={followLoading || isFollowingBack}
+              style={{
+                display: 'inline-flex', alignItems: 'center',
+                background: isFollowingBack ? 'var(--bg-elevated)' : 'var(--purple)',
+                border: isFollowingBack ? '1px solid var(--border)' : 'none',
+                color: isFollowingBack ? 'var(--text-muted)' : '#fff',
+                borderRadius: 20, padding: '4px 14px', fontSize: 13, fontWeight: 600,
+                cursor: (followLoading || isFollowingBack) ? 'default' : 'pointer',
+                opacity: followLoading ? 0.7 : 1,
+              }}
+            >
+              {isFollowingBack ? 'Following' : followLoading ? '…' : 'Follow Back'}
+            </button>
+          </div>
+        )}
 
         {/* Comment action buttons */}
         {isComment && data.comment_id && (

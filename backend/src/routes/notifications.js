@@ -16,13 +16,12 @@ router.get('/', requireAuth, async (req, res) => {
     });
 
     // 1. Batch-fetch by actor_id (new-style notifications)
-    // Fetch ALL actor IDs (even ones with actor_name stored) to ensure fresh data
+    // Also include follower_id from follow notifications (they predate actor_id convention)
     const allActorIds = [
-      ...new Set(
-        notifications
-          .filter(n => n.data?.actor_id)
-          .map(n => n.data.actor_id)
-      ),
+      ...new Set([
+        ...notifications.filter(n => n.data?.actor_id).map(n => n.data.actor_id),
+        ...notifications.filter(n => n.type === 'follow' && n.data?.follower_id).map(n => n.data.follower_id),
+      ])
     ];
     let actorMap = {};
     if (allActorIds.length > 0) {
@@ -123,6 +122,16 @@ router.get('/', requireAuth, async (req, res) => {
       activeFollows.forEach(f => activeFollowerIds.add(f.follower_id));
     }
 
+    // Check which followers the current user follows back (for "Follow Back" button)
+    let followingBackIds = new Set();
+    if (followActorIds.length > 0) {
+      const followsBack = await prisma.follow.findMany({
+        where: { follower_id: req.user.id, following_id: { in: followActorIds } },
+        select: { following_id: true },
+      });
+      followsBack.forEach(f => followingBackIds.add(f.following_id));
+    }
+
     // Collect orphaned notification IDs to hard-delete from DB
     const orphanedIds = notifications
       .filter(n => {
@@ -144,6 +153,11 @@ router.get('/', requireAuth, async (req, res) => {
       .map(n => {
         let data = { ...n.data };
 
+        // Normalize follow notifications: set actor_id from follower_id so enrichment works
+        if (n.type === 'follow' && !data.actor_id && data.follower_id) {
+          data.actor_id = data.follower_id;
+        }
+
         // Always re-enrich via actor_id (picks up name changes + null display_name)
         if (data.actor_id && actorMap[data.actor_id]) {
           const a = actorMap[data.actor_id];
@@ -163,6 +177,11 @@ router.get('/', requireAuth, async (req, res) => {
         if ((n.type === 'comment' || n.type === 'reply') && data.comment_id && !data.comment_body) {
           const cd = commentDataMap[data.comment_id];
           if (cd?.body) data.comment_body = cd.body;
+        }
+
+        // Include follow-back status so the frontend can render a "Follow Back" button
+        if (n.type === 'follow' && data.follower_id) {
+          data.is_following_back = followingBackIds.has(data.follower_id);
         }
 
         return { ...n, data };
