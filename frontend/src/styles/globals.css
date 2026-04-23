@@ -3226,18 +3226,22 @@ body[data-comments-open] .mobile-only-header {
   .comment-sheet-mobile-header.mobile-only { display: flex !important; }
 }
 
-/* --- Comment sheet: desktop centering --- */
-/* Sidebar is ~240px. Content column center = 240 + (100vw-240)/2.
-   We apply left via CSS so the sheet centers over the feed, not the sidebar. */
-@media (min-width: 768px) {
-  .comment-sheet-panel {
-    left: calc(240px + (100vw - 240px) / 2) !important;
-    max-width: 680px !important;
-  }
-}
+/* --- Comment sheet: centering --- */
+/* Mobile: span full viewport width — left:0/right:0 already set inline, just enforce max-width */
 @media (max-width: 767px) {
   .comment-sheet-panel {
-    left: 50% !important;
+    left: 0 !important;
+    right: 0 !important;
     max-width: 100% !important;
+  }
+}
+/* Desktop: offset past the 240px sidebar, then auto-margins center the constrained width */
+@media (min-width: 768px) {
+  .comment-sheet-panel {
+    left: 240px !important;
+    right: 0 !important;
+    max-width: 680px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }
