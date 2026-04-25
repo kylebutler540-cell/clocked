@@ -84,7 +84,7 @@ router.get('/', optionalAuth, async (req, res) => {
     }
     // Polls-only filter
     if (has_poll === 'true') {
-      where.poll = { isNot: null };
+      where.poll = { is: {} };
     }
 
     const orderBy = isTopRated
