@@ -258,10 +258,10 @@ function BackButton() {
 }
 
 // Main tabs — back button suppressed here
-const MAIN_TABS = new Set(['/create', '/messages', '/profile']);
+const MAIN_TABS = new Set(['/messages', '/profile']);
 
 // Tabs with no top bar content on mobile — hide the header entirely to reclaim space
-const NO_HEADER_TABS = new Set(['/create', '/profile']);
+const NO_HEADER_TABS = new Set(['/profile']);
 
 function PageHeader() {
   const location = useLocation();
