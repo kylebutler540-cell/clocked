@@ -213,7 +213,7 @@ function MobileHeader() {
           <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
-      <ClockedLogo height={26} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+      <ClockedLogo height={30} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
       <button
         className="mobile-top-bar-btn"
         onClick={() => navigate('/notifications')}

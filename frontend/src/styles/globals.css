@@ -736,7 +736,7 @@ img, video {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 0 20px;
 }
 
 .mobile-top-bar-btn {
@@ -1558,6 +1558,7 @@ textarea.form-input {
 
 .search-input-wrapper .form-input {
   padding-left: 40px;
+  border-radius: 999px !important;
 }
 
 .search-results {
