@@ -207,7 +207,7 @@ function MobileHeader() {
   return (
     <header className="app-header mobile-top-bar">
       <button
-        className="mobile-top-bar-btn"
+        className="mobile-top-bar-btn mobile-top-bar-create"
         onClick={() => navigate('/create')}
         aria-label="Create post"
       >

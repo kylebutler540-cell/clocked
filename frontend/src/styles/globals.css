@@ -758,6 +758,12 @@ img, video {
   background: var(--bg-elevated);
 }
 
+.mobile-top-bar-create {
+  border: 1.5px solid var(--border) !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
 /* Mobile search bar — shown below top bar on Home, hidden on desktop */
 .mobile-home-search {
   display: block;
