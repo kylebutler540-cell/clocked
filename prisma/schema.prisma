@@ -37,6 +37,7 @@ model User {
   commentLikes      CommentLike[]
   sent_messages     Message[] @relation("sent_messages")
   received_messages Message[] @relation("received_messages")
+  poll_votes        PollVote[]
 
   @@map("users")
 }
@@ -76,6 +77,7 @@ model Post {
   saves    Save[]
   flags    Flag[]
   reactions PostReaction[]
+  poll      Poll?
 
   @@index([employer_place_id])
   @@index([created_at(sort: Desc)])
@@ -249,6 +251,47 @@ model Message {
   @@index([sender_id])
   @@index([conversation_id])
   @@map("messages")
+}
+
+model Poll {
+  id         String       @id @default(cuid())
+  post_id    String       @unique
+  question   String
+  created_at DateTime     @default(now())
+
+  post    Post         @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  id         String     @id @default(cuid())
+  poll_id    String
+  text       String
+  position   Int
+  vote_count Int        @default(0)
+
+  poll  Poll       @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@map("poll_options")
+}
+
+model PollVote {
+  id             String   @id @default(cuid())
+  poll_id        String
+  poll_option_id String
+  user_id        String
+  created_at     DateTime @default(now())
+
+  poll   Poll       @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [poll_option_id], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [user_id], references: [id])
+
+  @@unique([poll_id, user_id])
+  @@map("poll_votes")
 }
 
 enum RatingEmoji {

@@ -32,6 +32,9 @@ export default function Create() {
   const [submitting, setSubmitting] = useState(false);
   const [truthAgreed, setTruthAgreed] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
   const employerRef = useRef(null);
   const ratingRef = useRef(null);
   const headerRef = useRef(null);
@@ -50,7 +53,13 @@ export default function Create() {
     if (!employer) return addToast('Please select an employer');
     if (!rating) return addToast('Please choose a rating');
     if (!header.trim()) return addToast('Please add a headline');
-    if (body.trim().length > 0 && body.trim().length < 10) return addToast('Review must be at least 10 characters');
+    if (!pollEnabled && body.trim().length > 0 && body.trim().length < 10) return addToast('Review must be at least 10 characters');
+
+    if (pollEnabled) {
+      if (!pollQuestion.trim()) return addToast('Please add a poll question');
+      const filledOptions = pollOptions.filter(o => o.trim());
+      if (filledOptions.length < 2) return addToast('Poll needs at least 2 options');
+    }
 
     setSubmitting(true);
     try {
@@ -67,16 +76,23 @@ export default function Create() {
         clearFeedCache();
         navigate(-1);
       } else {
-        await api.post('/posts', {
+        const payload = {
           employer_place_id: employer.place_id,
           employer_name: employer.name,
           employer_address: employer.address || employer.description || '',
           rating_emoji: rating,
           header: header.trim(),
           body: body.trim(),
-        });
+        };
+        if (pollEnabled) {
+          payload.poll = {
+            question: pollQuestion.trim(),
+            options: pollOptions.filter(o => o.trim()).map(o => o.trim()),
+          };
+        }
+        await api.post('/posts', payload);
         addToast('Review posted!');
-        clearDraft(); // Draft submitted — wipe it
+        clearDraft();
         clearFeedCache();
         navigate('/');
       }
@@ -85,6 +101,25 @@ export default function Create() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function addPollOption() {
+    if (pollOptions.length < 4) setPollOptions(prev => [...prev, '']);
+  }
+
+  function removePollOption(idx) {
+    if (pollOptions.length <= 2) return;
+    setPollOptions(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function setPollOption(idx, val) {
+    setPollOptions(prev => prev.map((o, i) => i === idx ? val : o));
+  }
+
+  function removePoll() {
+    setPollEnabled(false);
+    setPollQuestion('');
+    setPollOptions(['', '']);
   }
 
   if (!user?.email) {
@@ -183,6 +218,72 @@ export default function Create() {
             {body.length}/5000
           </div>
         </div>
+
+        {/* Poll composer */}
+        {!isEditMode && (
+          pollEnabled ? (
+            <div className="poll-add-section">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>Poll</span>
+                <button type="button" onClick={removePoll} style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove Poll</button>
+              </div>
+              <input
+                className="form-input"
+                type="text"
+                value={pollQuestion}
+                onChange={e => setPollQuestion(e.target.value)}
+                placeholder="Ask a question..."
+                maxLength={200}
+                style={{ marginBottom: 8 }}
+              />
+              {pollOptions.map((opt, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                  <input
+                    className="form-input"
+                    type="text"
+                    value={opt}
+                    onChange={e => setPollOption(idx, e.target.value)}
+                    placeholder={`Option ${idx + 1}`}
+                    maxLength={80}
+                    style={{ flex: 1 }}
+                  />
+                  {pollOptions.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removePollOption(idx)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', padding: '0 4px', flexShrink: 0 }}
+                      aria-label="Remove option"
+                    >×</button>
+                  )}
+                </div>
+              ))}
+              {pollOptions.length < 4 && (
+                <button
+                  type="button"
+                  onClick={addPollOption}
+                  style={{ fontSize: 13, color: 'var(--purple)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', fontWeight: 600 }}
+                >
+                  + Add option
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setPollEnabled(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 13, color: 'var(--purple)', fontWeight: 600,
+                background: 'none', border: '1.5px dashed var(--purple)',
+                borderRadius: 'var(--radius-md)', padding: '10px 14px',
+                cursor: 'pointer', width: '100%', marginBottom: 12,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Poll
+            </button>
+          )
+        )}
 
         {/* Anonymous notice */}
         <div style={{

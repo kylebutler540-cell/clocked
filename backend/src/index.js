@@ -21,6 +21,7 @@ const followRoutes = require('./routes/follows');
 const searchRoutes = require('./routes/search');
 const messageRoutes = require('./routes/messages');
 const userRoutes = require('./routes/users');
+const pollRoutes = require('./routes/polls');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -91,6 +92,7 @@ app.use('/api/follows', followRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/polls', pollRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -17,6 +17,7 @@ import CommentSheet from './CommentSheet';
 import ShareSheet from './ShareSheet';
 import { clearFeedCache } from './Feed';
 import BusinessLogo from './BusinessLogo';
+import PollCard from './PollCard';
 
 const RATING_EMOJIS = [
   { value: 'BAD', emoji: '😡', color: '#EF4444' },
@@ -463,6 +464,11 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
               )}
             </div>
           </>
+        )}
+
+        {/* Poll */}
+        {post.has_poll && post.poll && (
+          <PollCard poll={post.poll} />
         )}
 
         {/* Actions row */}
