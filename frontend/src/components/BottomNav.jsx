@@ -1,33 +1,13 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useNotif } from '../context/NotifContext';
 import { useMessaging } from '../context/MessagingContext';
+import { useNotif } from '../context/NotifContext';
 
 function HomeIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
       <polyline points="9,22 9,12 15,12 15,22" />
-    </svg>
-  );
-}
-
-function CreateIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
-  );
-}
-
-function AlertsIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 01-3.46 0" />
     </svg>
   );
 }
@@ -51,8 +31,6 @@ function MessagesIcon() {
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', Icon: HomeIcon },
-  { path: '/create', label: 'Create', Icon: CreateIcon },
-  { path: '/notifications', label: 'Alerts', Icon: AlertsIcon },
   { path: '/messages', label: 'Messages', Icon: MessagesIcon },
   { path: '/profile', label: 'Profile', Icon: ProfileIcon },
 ];
@@ -60,9 +38,8 @@ const NAV_ITEMS = [
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { unreadCount, unreadMessages } = useNotif();
-  const { fullscreen, setFullscreen } = useMessaging();
+  const { unreadMessages } = useNotif();
+  const { fullscreen } = useMessaging();
 
   return (
     <nav className="bottom-nav">
@@ -70,20 +47,15 @@ export default function BottomNav() {
         const isActive = item.path === '/'
           ? location.pathname === '/'
           : location.pathname.startsWith(item.path);
-        const showBadge = (item.path === '/notifications' && unreadCount > 0) || (item.path === '/messages' && unreadMessages > 0);
-        const badgeCount = item.path === '/messages' ? unreadMessages : unreadCount;
+        const showBadge = item.path === '/messages' && unreadMessages > 0;
 
         return (
           <button
             key={item.path}
             className={`nav-item${isActive ? ' active' : ''}`}
             onClick={() => {
-              if (item.path === '/create' && !user?.email) {
-                navigate('/signup');
-              } else if (item.path === '/messages' && location.pathname.startsWith('/messages/')) {
-                // In a DM thread — tap Messages tab to go back to inbox
+              if (item.path === '/messages' && location.pathname.startsWith('/messages/')) {
                 navigate('/messages');
-                // closeThread is handled by route effect in Messages component
               } else {
                 navigate(item.path);
               }
@@ -100,7 +72,7 @@ export default function BottomNav() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '0 3px',
                 }}>
-                  {badgeCount > 99 ? '99+' : badgeCount}
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
                 </span>
               )}
             </span>

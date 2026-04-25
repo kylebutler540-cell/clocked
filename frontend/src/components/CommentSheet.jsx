@@ -80,10 +80,7 @@ function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onRepl
             {comment.body && (
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 4px', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap', minWidth: 0 }}>{comment.body}</p>
             )}
-            {comment.image_url && (
-              <img src={comment.image_url} alt="Comment attachment"
-                style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, marginBottom: 4, display: 'block', objectFit: 'contain' }} />
-            )}
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
               <button style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                 onClick={() => onReply(comment)}>
@@ -144,7 +141,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [commentActionModal, setCommentActionModal] = useState(null);
@@ -155,7 +151,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
   const [inputHeight, setInputHeight] = useState(36);
   const [visible, setVisible] = useState(false); // for animation
 
-  const imageInputRef = useRef(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const sheetRef = useRef(null);
@@ -291,7 +286,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       e.preventDefault(); // stop list from scrolling while dragging sheet
       dragCurrentY.current = dy;
       sheet.style.transition = 'none';
-      sheet.style.transform = `translateX(-50%) translateY(${dy}px)`;
+      sheet.style.transform = `translateY(${dy}px)`;
     }
 
     function onTouchEnd() {
@@ -299,7 +294,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       if (dragCurrentY.current > 80) {
         handleClose();
       } else {
-        sheet.style.transform = 'translateX(-50%) translateY(0)';
+        sheet.style.transform = 'translateY(0)';
       }
       dragStartY.current = null;
       dragCurrentY.current = 0;
@@ -320,18 +315,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
   function onHandleTouchMove(e) {}
   function onHandleTouchEnd() {}
 
-  function handleImageSelect(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => setSelectedImage({ file, dataUrl: ev.target.result });
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!commentText.trim() && !selectedImage) return;
+    if (!commentText.trim()) return;
 
     // Optimistic comment — show instantly with current user's display info
     const optimisticComment = {
@@ -342,7 +328,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
       author_display_name: user?.display_name ?? user?.displayName ?? null,
       author_avatar_url: user?.avatar_url ?? user?.avatarUrl ?? null,
       body: commentText.trim() || '',
-      image_url: selectedImage?.dataUrl || null,
+      image_url: null,
       created_at: new Date().toISOString(),
       likes: 0,
       liked: false,
@@ -351,11 +337,9 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
     };
 
     const capturedText = commentText.trim();
-    const capturedImage = selectedImage;
     const capturedReplyingTo = replyingTo;
 
     setCommentText('');
-    setSelectedImage(null);
     setReplyingTo(null);
     setInputHeight(36);
     inputRef.current?.blur(); // dismiss keyboard on mobile so sheet is scrollable immediately
@@ -373,7 +357,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
     listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const payload = { body: capturedText || '', image_url: capturedImage?.dataUrl || null };
+      const payload = { body: capturedText || '' };
       if (capturedReplyingTo) payload.parent_id = capturedReplyingTo.id;
       const res = await api.post(`/posts/${postId}/comments`, payload);
       const newComment = res.data;
@@ -397,7 +381,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         .map(c => c.replies ? { ...c, replies: remove(c.replies) } : c);
       setComments(prev => remove(prev));
       setCommentText(capturedText);
-      setSelectedImage(capturedImage);
       addToast(err.response?.status === 401 ? 'Sign in to comment' : 'Failed to post comment');
     }
   }
@@ -528,8 +511,11 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
         style={{
           position: 'fixed',
           bottom: 0,
-          left: '50%',
-          transform: visible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(100%)',
+          left: 0,
+          right: 0,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          transform: visible ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 300ms ease',
           zIndex: 1001,
           background: 'var(--bg-card)',
@@ -612,21 +598,6 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageSelect} style={{ display: 'none' }} />
-            <button type="button" onClick={() => imageInputRef.current?.click()}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: selectedImage ? 'var(--purple)' : 'var(--text-muted)', flexShrink: 0 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-            </button>
-            {selectedImage && (
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img src={selectedImage.dataUrl} alt="Preview" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
-                <button onClick={() => setSelectedImage(null)}
-                  style={{ position: 'absolute', top: -4, right: -4, background: '#EF4444', color: '#fff', border: 'none', borderRadius: '50%', width: 14, height: 14, fontSize: 10, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
-              </div>
-            )}
             <textarea ref={inputRef} className="form-input" value={commentText}
               onChange={e => {
                 setCommentText(e.target.value);
@@ -641,15 +612,15 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
               maxLength={1600} rows={1}
               style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14, resize: 'none', overflowY: inputHeight >= 120 ? 'auto' : 'hidden', height: inputHeight, minHeight: 36, maxHeight: 120, lineHeight: '1.4', display: 'block', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }} />
             <button onClick={handleSubmit}
-              disabled={submitting || (!commentText.trim() && !selectedImage)}
+              disabled={submitting || !commentText.trim()}
               style={{
                 width: 36, height: 36, borderRadius: '50%', flexShrink: 0, border: 'none',
-                background: (commentText.trim() || selectedImage) ? '#A855F7' : 'var(--bg-elevated)',
-                cursor: (commentText.trim() || selectedImage) ? 'pointer' : 'default',
+                background: commentText.trim() ? '#A855F7' : 'var(--bg-elevated)',
+                cursor: commentText.trim() ? 'pointer' : 'default',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke={commentText.trim() || selectedImage ? '#fff' : 'var(--text-muted)'}
+                stroke={commentText.trim() ? '#fff' : 'var(--text-muted)'}
                 strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
               </svg>

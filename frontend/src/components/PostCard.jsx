@@ -14,6 +14,7 @@ import {
 
 import FlagModal from './FlagModal';
 import CommentSheet from './CommentSheet';
+import ShareSheet from './ShareSheet';
 import { clearFeedCache } from './Feed';
 import BusinessLogo from './BusinessLogo';
 
@@ -109,37 +110,25 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
 
   const [showFlag, setShowFlag] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showSharePopup, setShowSharePopup] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [sharePopupPos, setSharePopupPos] = useState({ bottom: 0, right: 0 });
   const [showPostActionModal, setShowPostActionModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
-  const [lightboxUrl, setLightboxUrl] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
   const TRUNCATE_LIMIT = isDesktop ? TRUNCATE_LIMIT_DESKTOP : TRUNCATE_LIMIT_MOBILE;
 
-  // Lock body scroll when lightbox is open
-  useEffect(() => {
-    if (lightboxUrl) {
-      const scrollY = window.scrollY;
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      return () => {
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        window.scrollTo(0, scrollY);
-      };
-    }
-  }, [lightboxUrl]);
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const menuRef = useRef(null);
+  const shareRef = useRef(null);
+  const sharePopupRef = useRef(null);
 
   const isMock = post.id?.startsWith('mock-');
   const isAdmin = !!(user?.is_admin || user?.email === 'kylebutler540@gmail.com');
@@ -154,6 +143,19 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     if (showMenu) document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [showMenu]);
+
+  useEffect(() => {
+    function handleOutsideShare(e) {
+      if (
+        shareRef.current && !shareRef.current.contains(e.target) &&
+        sharePopupRef.current && !sharePopupRef.current.contains(e.target)
+      ) {
+        setShowSharePopup(false);
+      }
+    }
+    if (showSharePopup) document.addEventListener('mousedown', handleOutsideShare);
+    return () => document.removeEventListener('mousedown', handleOutsideShare);
+  }, [showSharePopup]);
 
   // applyOptimistic: update store counts/state immediately for instant feel
   function applyOptimistic(postId, action) {
@@ -275,7 +277,46 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
     }
   }
 
-  const mediaUrls = post.media_urls || [];
+  async function handleShare(e) {
+    e.stopPropagation();
+    if (isMock) return;
+
+    // Mobile (≤ 767px): open custom in-app share sheet
+    if (window.innerWidth < 768) {
+      setShowShareSheet(true);
+      return;
+    }
+
+    // Desktop: toggle small popup above the button
+    const url = `${window.location.origin}/post/${post.id}`;
+    const rect = shareRef.current?.getBoundingClientRect();
+    if (rect) {
+      setSharePopupPos({
+        bottom: window.innerHeight - rect.top + 6,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setShowSharePopup(v => !v);
+  }
+
+  async function handleCopyLink(e) {
+    e.stopPropagation();
+    const url = `${window.location.origin}/post/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Fallback for older browsers
+      const el = document.createElement('input');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setShareCopied(true);
+    setTimeout(() => { setShareCopied(false); setShowSharePopup(false); }, 1600);
+  }
+
   const previewText = post.body;
 
   return (
@@ -287,7 +328,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           {/* Avatar */}
           <button
             style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
+            onClick={e => { e.stopPropagation(); if (!isMock) navigate('/profile/' + post.anonymous_user_id); }}
           >
             <span style={{
               width: 34, height: 34, borderRadius: '50%', overflow: 'hidden',
@@ -307,7 +348,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             <button
               className="post-byline-user"
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', fontWeight: 600, fontSize: 14, textAlign: 'left', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline', width: 'fit-content', maxWidth: '100%' }}
-              onClick={e => { e.stopPropagation(); if (!isMock) navigate(`/profile/${post.anonymous_user_id}`); }}
+              onClick={e => { e.stopPropagation(); if (!isMock) navigate('/profile/' + post.anonymous_user_id); }}
             >
               {post.author_display_name || 'Anonymous'}
             </button>
@@ -346,7 +387,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
               type="button"
               onClick={handleEmployerClick}
               style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', flexShrink: 0, display: 'flex' }}
-              aria-label={`${post.employer_name} profile`}
+              aria-label={post.employer_name + ' profile'}
             >
               <BusinessLogo placeId={post.employer_place_id} name={post.employer_name} size={26} borderRadius={6} />
             </button>
@@ -424,26 +465,6 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           </>
         )}
 
-        {/* Media */}
-        {mediaUrls.length > 0 && (
-          <div className="post-media">
-            {mediaUrls.length === 1 ? (
-              <div className="media-wrapper" style={{ cursor: 'zoom-in' }} onClick={e => { e.stopPropagation(); setLightboxUrl(mediaUrls[0]); }}>
-                <div className="media-blur-bg" style={{ backgroundImage: `url(${mediaUrls[0]})` }} />
-                <img src={mediaUrls[0]} alt="Review media" loading="lazy" />
-              </div>
-            ) : (
-              <div className={`media-grid ${mediaUrls.length === 2 ? 'cols-2' : 'cols-3'}`}>
-                {mediaUrls.slice(0, 4).map((url, i) => (
-                  <div key={i} className="media-item" style={{ cursor: 'zoom-in' }} onClick={e => { e.stopPropagation(); setLightboxUrl(url); }}>
-                    <img src={url} alt={`Media ${i + 1}`} loading="lazy" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Actions row */}
         <div className="post-actions" onClick={e => e.stopPropagation()}>
           {/* Like pill */}
@@ -512,14 +533,29 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
           </button>
 
           {/* Spacer */}
-          <div style={{ flex: 1 }} />
+          <div style={{ flex: 1 }}></div>
 
           {/* Save */}
-          <button className={`action-btn${post.saved ? ' saved' : ''}`} onClick={handleSave} aria-label="Save" style={{ flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={post.saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          <button className={'action-btn' + (post.saved ? ' saved' : '')} onClick={handleSave} aria-label="Save" style={{ flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={post.saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{post.saved ? 'Saved' : 'Save'}</span>
+          </button>
+
+          {/* Share */}
+          <button
+            ref={shareRef}
+            className="action-btn"
+            onClick={handleShare}
+            aria-label="Share"
+            style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Share</span>
           </button>
 
           {/* Flag */}
@@ -529,13 +565,65 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             aria-label="Flag"
             style={{ color: 'var(--text-muted)', flexShrink: 0 }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
           </button>
         </div>
       </article>
 
 
-      {showFlag && createPortal(<FlagModal postId={post.id} postAuthor={post.author_display_name || post.author_username || 'Anonymous'} postUrl={`${window.location.origin}/post/${post.id}`} onClose={() => setShowFlag(false)} />, document.body)}
+      {showFlag && createPortal(<FlagModal postId={post.id} postAuthor={post.author_display_name || post.author_username || 'Anonymous'} postUrl={window.location.origin + '/post/' + post.id} onClose={() => setShowFlag(false)} />, document.body)}
+      <ShareSheet post={post} isOpen={showShareSheet} onClose={() => setShowShareSheet(false)} />
+      {showSharePopup && createPortal(
+        <div
+          ref={sharePopupRef}
+          style={{
+            position: 'fixed',
+            bottom: sharePopupPos.bottom,
+            right: sharePopupPos.right,
+            zIndex: 9999,
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+            minWidth: 148,
+            overflow: 'hidden',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            style={{
+              width: '100%', padding: '11px 16px', background: 'none', border: 'none',
+              display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+              fontSize: 14, fontWeight: 500,
+              color: shareCopied ? '#22C55E' : 'var(--text-primary)',
+              transition: 'color 0.15s',
+              whiteSpace: 'nowrap',
+            }}
+            onClick={handleCopyLink}
+          >
+            {shareCopied ? (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Link copied!
+              </>
+            ) : (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                Copy link
+              </>
+            )}
+          </button>
+        </div>,
+        document.body
+      )}
       {showComments && createPortal(
         <CommentSheet
           postId={post.id}
@@ -583,46 +671,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         </div>
       )}
 
-      {lightboxUrl && createPortal(
-        <div
-          onClick={() => setLightboxUrl(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.92)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'zoom-out',
-            padding: '16px',
-            touchAction: 'pinch-zoom',
-          }}
-        >
-          <img
-            src={lightboxUrl}
-            alt="Full size"
-            onClick={e => e.stopPropagation()}
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-              borderRadius: 12,
-              boxShadow: '0 8px 48px rgba(0,0,0,0.6)',
-              touchAction: 'pinch-zoom',
-              userSelect: 'none',
-            }}
-          />
-          <button
-            onClick={() => setLightboxUrl(null)}
-            style={{
-              position: 'absolute', top: 16, right: 16,
-              background: 'rgba(255,255,255,0.15)', border: 'none',
-              borderRadius: '50%', width: 36, height: 36,
-              color: '#fff', fontSize: 20, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backdropFilter: 'blur(4px)',
-            }}
-          >×</button>
-        </div>,
-        document.body
-      )}
+
     </>
   );
 }

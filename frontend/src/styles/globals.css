@@ -731,6 +731,76 @@ img, video {
   font-size: 0;
 }
 
+/* ========== Mobile Top Bar (Home — +, Logo, Bell) ========== */
+.mobile-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.mobile-top-bar-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  border-radius: 50%;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.mobile-top-bar-btn:hover {
+  background: var(--bg-elevated);
+}
+
+/* Mobile search bar — shown below top bar on Home, hidden on desktop */
+.mobile-home-search {
+  display: block;
+  padding: 8px 12px 4px;
+}
+
+@media (min-width: 768px) {
+  .mobile-home-search {
+    display: none !important;
+  }
+}
+
+/* Profile bottom sheet items */
+.profile-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.profile-sheet-item:hover {
+  background: var(--bg-elevated);
+}
+
+.profile-sheet-item-danger {
+  color: #EF4444;
+}
+
+.profile-sheet-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
 /* ========== Hamburger Button ========== */
 .hamburger-btn {
   width: 40px;

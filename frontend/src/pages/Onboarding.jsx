@@ -71,16 +71,6 @@ const FEATURES = [
   {
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-      </svg>
-    ),
-    title: 'Create an Anonymous Account',
-    desc: 'Choose your own username and stay anonymous while sharing and viewing real workplace experiences.',
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
       </svg>
     ),
@@ -95,6 +85,16 @@ const FEATURES = [
     ),
     title: 'Search Any Employer',
     desc: "Look up any company before you apply. Know what you're walking into.",
+  },
+  {
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+    ),
+    title: 'Create an Anonymous Account',
+    desc: 'Choose your own username and stay anonymous while sharing and viewing real workplace experiences.',
   },
 ];
 
@@ -355,13 +355,22 @@ function SignupScreen({ onSuccess, onGuest, onBack, onForward, email, setEmail, 
             </form>
 
             {!isLogin && (
-              <button
-                className="btn btn-ghost btn-full"
-                style={{ marginTop: 10, maxWidth: 400, fontSize: 14 }}
-                onClick={() => setMode('login')}
-              >
-                Already have an account? Sign in
-              </button>
+              <>
+                <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginTop: 14, maxWidth: 400, lineHeight: 1.6 }}>
+                  By signing up, you agree to our{' '}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#A855F7' }}>Terms of Service</a>
+                  {' '}and{' '}
+                  <a href="/community-guidelines" target="_blank" rel="noopener noreferrer" style={{ color: '#A855F7' }}>Community Guidelines</a>.
+                  {' '}You must be at least 16 years old to use Clocked.
+                </p>
+                <button
+                  className="btn btn-ghost btn-full"
+                  style={{ marginTop: 10, maxWidth: 400, fontSize: 14 }}
+                  onClick={() => setMode('login')}
+                >
+                  Already have an account? Sign in
+                </button>
+              </>
             )}
             {isLogin && (
               <button

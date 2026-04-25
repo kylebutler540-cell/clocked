@@ -75,9 +75,19 @@ export default function Signup() {
 
       <GoogleSignInButton
         label={mode === 'signup' ? 'Sign up with Google' : 'Sign in with Google'}
-        style={{ marginBottom: 20 }}
+        style={{ marginBottom: mode === 'signup' ? 10 : 20 }}
         onCredential={handleGoogleCredential}
       />
+
+      {mode === 'signup' && (
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', margin: '0 0 16px', lineHeight: 1.6 }}>
+          By signing up, you agree to our{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--purple)' }}>Terms of Service</a>
+          {' '}and{' '}
+          <a href="/community-guidelines" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--purple)' }}>Community Guidelines</a>.
+          You must be at least 16 years old to use Clocked.
+        </p>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

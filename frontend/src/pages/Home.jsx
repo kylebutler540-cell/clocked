@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Feed, { clearFeedCache } from '../components/Feed';
 import EmployerLeaderboard from '../components/EmployerLeaderboard';
+import EmployerSearch from '../components/EmployerSearch';
 
 function RightSidebar() {
   const navigate = useNavigate();
@@ -78,6 +79,13 @@ export default function Home() {
   return (
     <div className="home-layout">
       <div className="home-feed-column">
+        {/* Mobile-only search bar — sits directly below the top bar */}
+        <div className="mobile-home-search">
+          <EmployerSearch
+            onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })}
+            placeholder="Search employers..."
+          />
+        </div>
         {sort === 'top' ? (
           <EmployerLeaderboard location={location} />
         ) : (

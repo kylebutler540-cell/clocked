@@ -3,12 +3,13 @@ import api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 
 const REASONS = [
-  "I Don't Like It",
-  'Spam / Fake Review',
-  'Harassment or Hate Speech',
-  'Personal Information Exposed',
-  'Irrelevant Content',
-  'Explicit Material',
+  'Defamatory or False Information',
+  'Spam or Fake Review',
+  'Harassment or Threats',
+  'Hate Speech',
+  'Personal Information Exposed (Doxxing)',
+  'Unverified Criminal Allegations',
+  'Explicit or Inappropriate Content',
   'Other',
 ];
 

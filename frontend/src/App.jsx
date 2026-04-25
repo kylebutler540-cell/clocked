@@ -8,10 +8,10 @@ import { NotifProvider } from './context/NotifContext';
 import { MessagingProvider, useMessaging } from './context/MessagingContext';
 import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
+import { useNotif } from './context/NotifContext';
 
 import BottomNav from './components/BottomNav';
 import ClockedLogo from './components/ClockedLogo';
-import SideDrawer from './components/SideDrawer';
 import LeftSidebar from './components/LeftSidebar';
 import AccountSwitcherMenu from './components/AccountSwitcher';
 import EmployerSearch from './components/EmployerSearch';
@@ -197,23 +197,47 @@ function DesktopTopBar({ sidebarCollapsed, onToggleSidebar }) {
   );
 }
 
-// Mobile header
-function MobileHeader({ onOpenDrawer }) {
+// Mobile top bar — Home page only. +, logo, bell.
+function MobileHeader() {
   const navigate = useNavigate();
+  const { unreadCount } = useNotif();
 
   return (
-    <header className="app-header">
-      <button className="hamburger-btn" onClick={onOpenDrawer} aria-label="Open menu">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+    <header className="app-header mobile-top-bar">
+      <button
+        className="mobile-top-bar-btn"
+        onClick={() => navigate('/create')}
+        aria-label="Create post"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
-      <ClockedLogo height={24} onClick={() => navigate('/')} />
-      <div className="header-right">
-        <div className="header-search-wrapper">
-          <EmployerSearch onSelect={place => navigate(`/company/${place.place_id}`, { state: { name: place.name, address: place.address } })} placeholder="Search employers..." />
-        </div>
-      </div>
+      <ClockedLogo height={26} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+      <button
+        className="mobile-top-bar-btn"
+        onClick={() => navigate('/notifications')}
+        aria-label="Notifications"
+      >
+        <span style={{ position: 'relative', display: 'inline-flex' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 01-3.46 0" />
+          </svg>
+          {unreadCount > 0 && (
+            <span style={{
+              position: 'absolute', top: -4, right: -6,
+              background: '#ef4444', color: '#fff',
+              fontSize: 10, fontWeight: 700, lineHeight: 1,
+              minWidth: 16, height: 16, borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 3px',
+            }}>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </span>
+      </button>
     </header>
   );
 }
@@ -233,80 +257,25 @@ function BackButton() {
   );
 }
 
-function MobileProfileMenu() {
-  const [open, setOpen] = useState(false);
-  const ref = React.useRef(null);
-  const location = useLocation();
-  const { user } = useAuth();
-
-  // Detect if we're on someone else's profile (/profile/:userId where userId !== mine)
-  const profileMatch = location.pathname.match(/^\/profile\/(.+)$/);
-  const isOtherProfile = profileMatch && profileMatch[1] !== user?.id;
-
-  React.useEffect(() => {
-    function handleOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    if (open) document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [open]);
-
-  // Hide the menu entirely when viewing someone else's profile (after hooks)
-  if (isOtherProfile) return null;
-
-  return (
-    <div style={{ position: 'relative' }} ref={ref}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, color: 'var(--text-primary)' }}
-        aria-label="Menu"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
-        </svg>
-      </button>
-      {open && (
-        <div
-          className="topbar-dropdown"
-          style={{
-            position: 'fixed',
-            top: 52, // below the app header
-            right: 8,
-            left: 'auto',
-            minWidth: 230,
-            zIndex: 500,
-          }}
-        >
-          <AccountSwitcherMenu onClose={() => setOpen(false)} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Main tabs — back button and three-dot suppressed here
-const MAIN_TABS = new Set(['/create', '/notifications', '/messages', '/profile']);
+// Main tabs — back button suppressed here
+const MAIN_TABS = new Set(['/create', '/messages', '/profile']);
 
 // Tabs with no top bar content on mobile — hide the header entirely to reclaim space
 const NO_HEADER_TABS = new Set(['/create', '/profile']);
 
-function PageHeader({ onOpenDrawer }) {
+function PageHeader() {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/search';
   const title = PAGE_TITLES[location.pathname];
   const isMainTab = MAIN_TABS.has(location.pathname);
 
-  if (isHome) return <MobileHeader onOpenDrawer={onOpenDrawer} />;
-  // Create and Profile have nothing useful in the top bar — skip it entirely
+  if (isHome) return <MobileHeader />;
   if (NO_HEADER_TABS.has(location.pathname)) return null;
 
   return (
     <header className="app-header" style={{ justifyContent: 'flex-start', gap: 12 }}>
-      {/* Back button: only on sub-pages, never on main tabs */}
       {!isMainTab && <BackButton />}
       {title && <h2 style={{ margin: 0, fontSize: location.pathname === '/messages' ? 22 : 18, fontWeight: location.pathname === '/messages' ? 700 : 600, flex: 1, paddingLeft: isMainTab ? 8 : 0 }}>{title}</h2>}
-      {/* Three-dot menu: Profile tab only — never on other tabs or sub-pages */}
-      {location.pathname === '/profile' && <MobileProfileMenu />}
     </header>
   );
 }
@@ -344,15 +313,10 @@ function AppMainWrapper({ children }) {
 }
 
 // Tab order matches BottomNav exactly
-const TAB_PATHS = ['/', '/create', '/notifications', '/messages', '/profile'];
+const TAB_PATHS = ['/', '/messages', '/profile'];
 
-// Swipe handler:
-// - Home left-edge swipe right → open sidebar (blocks browser back)
-// - Sidebar open → swipe left closes it, no tab switch allowed
-// - Horizontal swipe on any main tab → move ONE adjacent tab only
-// - Hard stop at Home (left) and Profile (right)
-// - Sub-pages (DM thread, post detail, etc.) → not intercepted
-function SwipeHandler({ drawerOpen, setDrawerOpen }) {
+// Swipe handler: horizontal swipe on a main tab → move one adjacent tab
+function SwipeHandler() {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -360,111 +324,46 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
     let startX = null;
     let startY = null;
     let captured = false;
-    let gestureType = null; // 'drawer' | 'tab' | null
 
-    const EDGE_ZONE = 28;
     const MIN_SWIPE = 52;
     const MAX_VERT = 75;
 
-    // Current tab index (-1 if on a sub-page)
-    const currentTabIdx = TAB_PATHS.indexOf(
-      TAB_PATHS.find(p => p === '/' ? location.pathname === '/' || location.pathname === '/search' : location.pathname === p) ?? ''
+    const currentTabIdx = TAB_PATHS.findIndex(p =>
+      p === '/' ? location.pathname === '/' || location.pathname === '/search' : location.pathname === p
     );
     const isMainTab = currentTabIdx >= 0;
-    const isHome = currentTabIdx === 0;
 
     function onTouchStart(e) {
-      // Ignore multi-touch
       if (e.touches.length > 1) { startX = null; return; }
-
-      // Never intercept gestures that start inside a text input or textarea
-      // — this would break drag-to-select and copy/paste
       const tag = e.target?.tagName?.toLowerCase();
-      const isEditable = tag === 'input' || tag === 'textarea' || e.target?.isContentEditable;
-      if (isEditable) { startX = null; return; }
-
-      const t = e.touches[0];
-      startX = t.clientX;
-      startY = t.clientY;
+      if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) { startX = null; return; }
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
       captured = false;
-      gestureType = null;
-
-      // Pre-claim left-edge gesture on Home to block iOS back swipe
-      if (isHome && !drawerOpen && startX <= EDGE_ZONE) {
-        captured = true;
-        gestureType = 'drawer';
-      }
     }
 
     function onTouchMove(e) {
-      if (startX === null) return;
-      const t = e.touches[0];
-      const dx = t.clientX - startX;
-      const dy = Math.abs(t.clientY - startY);
-
-      // Abort if too vertical
-      if (dy > MAX_VERT && dy > Math.abs(dx)) {
-        captured = false;
-        gestureType = null;
-        return;
-      }
-
-      if (captured && gestureType === 'drawer') {
-        // Prevent browser from treating this as back navigation
-        if (dx > 0) e.preventDefault();
-        return;
-      }
-
-      // Don't capture tab swipes on sub-pages
-      if (!isMainTab) return;
-
-      // Sidebar open: swipe left to close, block everything else
-      if (drawerOpen) {
-        e.preventDefault();
-        return;
-      }
-
-      // Capture horizontal tab swipe once we know direction
+      if (startX === null || !isMainTab) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dy > MAX_VERT && dy > Math.abs(dx)) { captured = false; return; }
       if (!captured && Math.abs(dx) > 12 && dy < MAX_VERT) {
         captured = true;
-        gestureType = 'tab';
         e.preventDefault();
-      } else if (captured && gestureType === 'tab') {
+      } else if (captured) {
         e.preventDefault();
       }
     }
 
     function onTouchEnd(e) {
-      if (startX === null) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - startX;
-      const dy = Math.abs(t.clientY - startY);
-      const absDx = Math.abs(dx);
-
-      if (captured && dy < MAX_VERT && absDx >= MIN_SWIPE) {
-        if (gestureType === 'drawer') {
-          // Left-edge on Home → open sidebar
-          if (!drawerOpen && dx > 0) setDrawerOpen(true);
-        } else if (gestureType === 'tab') {
-          if (drawerOpen) {
-            // Close sidebar on leftward swipe
-            if (dx < 0) setDrawerOpen(false);
-          } else if (isMainTab) {
-            // Adjacent tab only, with hard stops
-            const swipeLeft = dx < 0;  // user swiped left → go to next (higher index)
-            const nextIdx = swipeLeft ? currentTabIdx + 1 : currentTabIdx - 1;
-            if (nextIdx >= 0 && nextIdx < TAB_PATHS.length) {
-              navigate(TAB_PATHS[nextIdx]);
-            }
-            // else: hard stop (already at first or last tab)
-          }
-        }
+      if (startX === null || !captured) { startX = null; captured = false; return; }
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = Math.abs(e.changedTouches[0].clientY - startY);
+      if (isMainTab && dy < MAX_VERT && Math.abs(dx) >= MIN_SWIPE) {
+        const nextIdx = dx < 0 ? currentTabIdx + 1 : currentTabIdx - 1;
+        if (nextIdx >= 0 && nextIdx < TAB_PATHS.length) navigate(TAB_PATHS[nextIdx]);
       }
-
-      startX = null;
-      startY = null;
-      captured = false;
-      gestureType = null;
+      startX = null; startY = null; captured = false;
     }
 
     document.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -475,17 +374,16 @@ function SwipeHandler({ drawerOpen, setDrawerOpen }) {
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
     };
-  }, [location.pathname, drawerOpen, setDrawerOpen, navigate]);
+  }, [location.pathname, navigate]);
 
   return null;
 }
 
 // Rendered inside BrowserRouter — safe to call useLocation here
-function MobileHeaderWrapper({ onOpenDrawer }) {
+function MobileHeaderWrapper() {
   const location = useLocation();
   const noHeader = NO_HEADER_TABS.has(location.pathname);
 
-  // Sync a data attribute on page-content so CSS can zero the padding-top
   React.useEffect(() => {
     const el = document.querySelector('.page-content');
     if (!el) return;
@@ -496,26 +394,13 @@ function MobileHeaderWrapper({ onOpenDrawer }) {
   if (noHeader) return null;
   return (
     <div className="mobile-only-header">
-      <PageHeader onOpenDrawer={onOpenDrawer} />
+      <PageHeader />
     </div>
   );
 }
 
 function AppInner() {
-  const { fullscreen, activeThreadUserId } = useMessaging();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  // Lock body scroll when sidebar is open
-  React.useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [drawerOpen]);
-
-  // Left-edge swipe — route-aware (must be inside BrowserRouter, handled below via SwipeHandler)
+  const { fullscreen } = useMessaging();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem('hasSeenOnboarding')
@@ -534,16 +419,13 @@ function AppInner() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <SwipeHandler drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
-      {/* ConversationView lives HERE — outside routes, never unmounts, just hidden/shown */}
+      <SwipeHandler />
       <AppLevelConversationView />
       {!fullscreen && <DesktopTopBarWrapper sidebarCollapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed(v => !v)} />}
       <div className={`app-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}${fullscreen ? ' messaging-fullscreen' : ''}`}>
         {!fullscreen && <LeftSidebar collapsed={sidebarCollapsed} />}
         <AppMainWrapper>
-          {/* Mobile header only — hide entirely on tabs with no header content */}
-          {!fullscreen && <MobileHeaderWrapper onOpenDrawer={() => setDrawerOpen(true)} />}
-          <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+          {!fullscreen && <MobileHeaderWrapper />}
           {!fullscreen && <DesktopBackButton />}
           <main className="page-content" style={fullscreen ? { padding: 0, margin: 0, height: '100dvh', overflow: 'hidden' } : {}}>
             <React.Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><div className="spinner" /></div>}>

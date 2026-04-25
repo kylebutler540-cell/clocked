@@ -29,12 +29,9 @@ export default function Create() {
   const [rating, setRatingRaw] = useState(() => isEditMode ? (editPost?.rating_emoji || '') : (_draft.rating || ''));
   const [header, setHeaderRaw] = useState(() => isEditMode ? (editPost?.header || '') : (_draft.header || ''));
   const [body, setBodyRaw] = useState(() => isEditMode ? (editPost?.body || '') : (_draft.body || ''));
-  const [mediaPreviews, setMediaPreviews] = useState(editPost?.media_urls || _draft.mediaPreviews || []);
-  const [mediaFiles, setMediaFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [truthAgreed, setTruthAgreed] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
-  const fileInputRef = useRef(null);
   const employerRef = useRef(null);
   const ratingRef = useRef(null);
   const headerRef = useRef(null);
@@ -43,66 +40,10 @@ export default function Create() {
   const navigate = useNavigate();
 
   // Setters that auto-save draft (new posts only)
-  function setEmployer(v) { setEmployerRaw(v); if (!isEditMode) saveDraft({ employer: v, rating, header, body, mediaPreviews }); }
-  function setRating(v) { setRatingRaw(v); if (!isEditMode) saveDraft({ employer, rating: v, header, body, mediaPreviews }); }
-  function setHeader(v) { setHeaderRaw(v); if (!isEditMode) saveDraft({ employer, rating, header: v, body, mediaPreviews }); }
-  function setBody(v) { setBodyRaw(v); if (!isEditMode) saveDraft({ employer, rating, header, body: v, mediaPreviews }); }
-
-  // Save draft whenever mediaPreviews changes
-  useEffect(() => {
-    if (!isEditMode) saveDraft({ employer, rating, header, body, mediaPreviews });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaPreviews]);
-
-  function handleMediaChange(e) {
-    addFiles(Array.from(e.target.files));
-  }
-
-  function removeMedia(index) {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
-  }
-
-  function addFiles(files) {
-    const valid = files.filter(f => f.type.startsWith('image/') || f.type === 'video/mp4');
-    const remaining = 10 - mediaFiles.length;
-    const toAdd = valid.slice(0, remaining);
-    toAdd.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => setMediaPreviews(prev => [...prev, ev.target.result]);
-      reader.readAsDataURL(file);
-    });
-    setMediaFiles(prev => [...prev, ...toAdd]);
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  }
-
-  function handleDragEnter(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  }
-
-  function handleDragLeave(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.currentTarget.contains(e.relatedTarget)) return;
-    setIsDragOver(false);
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      addFiles(files);
-    }
-  }
+  function setEmployer(v) { setEmployerRaw(v); if (!isEditMode) saveDraft({ employer: v, rating, header, body }); }
+  function setRating(v) { setRatingRaw(v); if (!isEditMode) saveDraft({ employer, rating: v, header, body }); }
+  function setHeader(v) { setHeaderRaw(v); if (!isEditMode) saveDraft({ employer, rating, header: v, body }); }
+  function setBody(v) { setBodyRaw(v); if (!isEditMode) saveDraft({ employer, rating, header, body: v }); }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -113,8 +54,6 @@ export default function Create() {
 
     setSubmitting(true);
     try {
-      const media_urls = mediaPreviews.slice(0, 10);
-
       if (isEditMode) {
         await api.put(`/posts/${editPost.id}`, {
           employer_place_id: employer.place_id,
@@ -123,7 +62,6 @@ export default function Create() {
           rating_emoji: rating,
           header: header.trim(),
           body: body.trim(),
-          media_urls,
         });
         addToast('Changes saved!');
         clearFeedCache();
@@ -136,7 +74,6 @@ export default function Create() {
           rating_emoji: rating,
           header: header.trim(),
           body: body.trim(),
-          media_urls,
         });
         addToast('Review posted!');
         clearDraft(); // Draft submitted — wipe it
@@ -247,60 +184,6 @@ export default function Create() {
           </div>
         </div>
 
-        {/* Media */}
-        <div className="form-group">
-          <label className="form-label">Photos/Videos (up to 10)</label>
-
-          {mediaPreviews.length > 0 && (
-            <div className="media-preview-list">
-              {mediaPreviews.map((preview, i) => (
-                <div key={i} className="media-preview-item">
-                  <img src={preview} alt={`Preview ${i + 1}`} />
-                  <button
-                    type="button"
-                    className="media-preview-remove"
-                    onClick={() => removeMedia(i)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {mediaFiles.length < 10 && (
-            <div
-              className="media-upload-area"
-              style={{
-                marginTop: mediaPreviews.length > 0 ? 10 : 0,
-                borderColor: isDragOver ? 'var(--purple)' : undefined,
-                background: isDragOver ? 'rgba(168,85,247,0.08)' : undefined,
-                transform: isDragOver ? 'scale(1.01)' : undefined,
-                transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={handleDragOver}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <div className="media-upload-icon">{isDragOver ? '⬇️' : '📷'}</div>
-              <div className="media-upload-text">
-                {isDragOver ? 'Drop to upload' : `Tap or drag to add photos/videos (${10 - mediaFiles.length} remaining)`}
-              </div>
-            </div>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/mp4"
-            multiple
-            onChange={handleMediaChange}
-            style={{ display: 'none' }}
-          />
-        </div>
-
         {/* Anonymous notice */}
         <div style={{
           display: 'flex',
@@ -309,7 +192,7 @@ export default function Create() {
           padding: '12px 14px',
           background: 'var(--bg-elevated)',
           borderRadius: 'var(--radius-md)',
-          marginBottom: 20,
+          marginBottom: 12,
           fontSize: 13,
           color: 'var(--text-muted)',
         }}>
@@ -317,10 +200,34 @@ export default function Create() {
           <span>Your review is completely anonymous.</span>
         </div>
 
+        {/* Truthfulness acknowledgment — required for new posts */}
+        {!isEditMode && (
+          <label style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 14px',
+            background: 'var(--bg-elevated)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 20,
+            cursor: 'pointer',
+          }}>
+            <input
+              type="checkbox"
+              checked={truthAgreed}
+              onChange={e => setTruthAgreed(e.target.checked)}
+              style={{ marginTop: 2, accentColor: '#A855F7', width: 16, height: 16, flexShrink: 0, cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              I confirm this review is based on my real, firsthand experience and does not contain false or defamatory statements.
+            </span>
+          </label>
+        )}
+
         <button
           type="submit"
           className="btn btn-primary btn-full"
-          disabled={submitting}
+          disabled={submitting || (!isEditMode && !truthAgreed)}
         >
           {submitting ? (isEditMode ? 'Saving...' : 'Posting...') : (isEditMode ? 'Save Changes' : 'Post Anonymously')}
         </button>
