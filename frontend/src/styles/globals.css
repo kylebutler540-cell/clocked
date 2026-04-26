@@ -11,6 +11,7 @@
   --bg-card: #FFFFFF;
   --bg-elevated: #F0F0F0;
   --bg-pill: #FFFFFF;
+  --bg-fill-gray: rgba(0,0,0,0.08);
   --separator-color: #E0E0E0;
   --bg-input: #F5F5F5;
 
@@ -46,6 +47,7 @@
   --bg-card: #FFFFFF;
   --bg-elevated: #F0F0F0;
   --bg-pill: #FFFFFF;
+  --bg-fill-gray: rgba(0,0,0,0.08);
   --bg-input: #F5F5F5;
 
   --text-primary: #111111;
@@ -65,6 +67,7 @@
   --bg-card: #1A1A1A;
   --bg-elevated: #222222;
   --bg-pill: #222222;
+  --bg-fill-gray: rgba(255,255,255,0.09);
   --bg-input: #1A1A1A;
   --separator-color: #000000;
 
@@ -3459,7 +3462,7 @@ body[data-comments-open] .mobile-only-header {
   top: 0;
   left: 0;
   bottom: 0;
-  background: var(--bg-elevated); /* unselected: neutral gray fill */
+  background: var(--bg-fill-gray); /* unselected: gray fill, visible against button bg */
   border-radius: 10px;
   transition: width 0.4s ease;
   pointer-events: none;
