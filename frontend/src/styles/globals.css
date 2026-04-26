@@ -10,6 +10,7 @@
   --bg-secondary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #F0F0F0;
+  --bg-pill: #FFFFFF;
   --separator-color: #E0E0E0;
   --bg-input: #F5F5F5;
 
@@ -44,6 +45,7 @@
   --bg-secondary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #F0F0F0;
+  --bg-pill: #FFFFFF;
   --bg-input: #F5F5F5;
 
   --text-primary: #111111;
@@ -62,6 +64,7 @@
   --bg-secondary: #000000;
   --bg-card: #1A1A1A;
   --bg-elevated: #222222;
+  --bg-pill: #222222;
   --bg-input: #1A1A1A;
   --separator-color: #000000;
 
@@ -3346,7 +3349,7 @@ body[data-comments-open] .mobile-only-header {
 .poll-card {
   margin: 10px 0 6px;
   padding: 14px;
-  background: var(--bg-primary); /* white in light mode, black in dark mode */
+  background: var(--bg-card); /* white in light / dark-gray (#1A1A1A) in dark — never pure black */
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }

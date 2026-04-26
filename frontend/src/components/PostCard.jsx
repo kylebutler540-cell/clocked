@@ -479,7 +479,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             aria-label="Like"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              background: post.liked ? 'rgba(34,197,94,0.12)' : 'var(--bg-elevated)',
+              background: post.liked ? 'rgba(34,197,94,0.12)' : 'var(--bg-pill)',
               borderRadius: 20, padding: '6px 12px',
               border: `1px solid ${post.liked ? '#22C55E' : 'var(--border)'}`,
               flexShrink: 0, color: post.liked ? '#22C55E' : 'var(--text-muted)',
@@ -500,7 +500,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             aria-label="Dislike"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              background: post.disliked ? 'rgba(239,68,68,0.12)' : 'var(--bg-elevated)',
+              background: post.disliked ? 'rgba(239,68,68,0.12)' : 'var(--bg-pill)',
               borderRadius: 20, padding: '6px 12px',
               border: `1px solid ${post.disliked ? '#EF4444' : 'var(--border)'}`,
               flexShrink: 0, color: post.disliked ? '#EF4444' : 'var(--text-muted)',
@@ -522,7 +522,7 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
             onBlur={e => e.currentTarget.blur()}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              background: 'var(--bg-elevated)', borderRadius: 20,
+              background: 'var(--bg-pill)', borderRadius: 20,
               padding: '6px 12px', border: '1px solid var(--border)',
               flexShrink: 0, color: showComments ? 'var(--purple)' : 'var(--text-muted)',
               opacity: showComments ? 0.6 : 1,
