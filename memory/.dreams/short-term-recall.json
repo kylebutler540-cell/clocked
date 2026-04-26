@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-12T17:24:01.414Z",
+  "updatedAt": "2026-04-22T22:45:06.402Z",
   "entries": {
     "memory:memory/2026-04-12.md:1:34": {
       "key": "memory:memory/2026-04-12.md:1:34",
@@ -93,6 +93,413 @@
         "no-cach",
         "task",
         "say"
+      ]
+    },
+    "memory:memory/2026-04-12.md:79:96": {
+      "key": "memory:memory/2026-04-12.md:79:96",
+      "path": "memory/2026-04-12.md",
+      "startLine": 79,
+      "endLine": 96,
+      "source": "memory",
+      "snippet": "- Filter system added to Top Rated: Highest Rated / Lowest Rated / Nearest to Me - Filter button uses equalizer/sliders icon - Full-screen overlay closes dropdown on tap-outside (mobile fix) - History tab removed from sidebar and drawer - ScrollToTop component added — every page starts at top on navigation - Mobile search bar: logo smaller, bar bigger, shifted left - Side drawer width set to 50vw (max 280px), dividers removed - `overscroll-behavior-x: none` added to kill horizontal page swipe on mobile ### Distance Feature - `employer_lat` and `employer_lng` columns added to Post table (Prisma schema + db push) - Posts geocoded on creation (non-blocking, Google Maps API) - All 17 existing p",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.8138459371381185,
+      "maxScore": 0.8138459371381185,
+      "firstRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "queryHashes": [
+        "b350580d9e81"
+      ],
+      "recallDays": [
+        "2026-04-15"
+      ],
+      "conceptTags": [
+        "equalizer/sliders",
+        "full-screen",
+        "tap-outside",
+        "overscroll-behavior-x",
+        "employer-lat",
+        "employer-lng",
+        "non-blocking",
+        "filter"
+      ]
+    },
+    "memory:memory/2026-03-20.md:113:149": {
+      "key": "memory:memory/2026-03-20.md:113:149",
+      "path": "memory/2026-03-20.md",
+      "startLine": 113,
+      "endLine": 149,
+      "source": "memory",
+      "snippet": "- Below header: their full review text (in-depth, their real words) - Media: text only, or add up to 10 photos, or a video (cap: ~2 min max) - Text is most common expected format ### Monetization — Blur Paywall (revised) - First 1-2 sentences of every review are fully visible to everyone - Rest of the review (~3/4 of the text) blurs out - Users pay to unlock full review reading - This is the core paywall — simple, visible, obvious value ### Monetization — FINAL (Q11) - **$2.99/month subscription** — locked in - Paywall: header + first 1-2 sentences visible free, rest blurs out - \"See More\" button → subscription purchase page - Without sub: you can browse, see posts exist, read teasers — bu",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7955076026920482,
+      "maxScore": 0.7955076026920482,
+      "firstRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "queryHashes": [
+        "b350580d9e81"
+      ],
+      "recallDays": [
+        "2026-04-15"
+      ],
+      "conceptTags": [
+        "in-depth",
+        "1-2",
+        "3/4",
+        "2.99/month",
+        "below",
+        "header",
+        "full",
+        "review"
+      ]
+    },
+    "memory:memory/2026-03-20.md:90:120": {
+      "key": "memory:memory/2026-03-20.md:90:120",
+      "path": "memory/2026-03-20.md",
+      "startLine": 90,
+      "endLine": 120,
+      "source": "memory",
+      "snippet": "### Company Profile Page / Filtering (Q6) - Tap a company → opens company profile page - Shows all reviews for that location - Filter by emoji: 😞 / 😐 / 😊 - Search bar to find keywords (pay, management, culture, etc.) - Topic filter tags (pay, management, culture, etc.) — add more as reviews grow or auto-generate from content ### Visibility (Q7) - Everything visible to everyone — no paywall on seeing posts - Paywall is on reading the FULL review text (see monetization below) ### Social / Follow System (Q8) - Users can follow each other to prioritize their posts in feed - All accounts anonymous — you only know them by their anonymous username/number - Follow requests — like Instagram priv",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7331835130043309,
+      "maxScore": 0.7331835130043309,
+      "firstRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "queryHashes": [
+        "b350580d9e81"
+      ],
+      "recallDays": [
+        "2026-04-15"
+      ],
+      "conceptTags": [
+        "auto-generate",
+        "username/number",
+        "company",
+        "profile",
+        "page",
+        "filtering",
+        "tap",
+        "opens"
+      ]
+    },
+    "memory:memory/2026-03-20.md:173:217": {
+      "key": "memory:memory/2026-03-20.md:173:217",
+      "path": "memory/2026-03-20.md",
+      "startLine": 173,
+      "endLine": 217,
+      "source": "memory",
+      "snippet": "- clocked.com is taken (owned until 2028, broker fee $99 just to inquire — not worth it) ### Where We Left Off (end of March 20 session) - Domain purchased, GoDaddy still finishing initial setup (normal, give it time) - Next session: logo design, more UI mockups, then start the build - Everything spec'd out and ready to go ### Still Need From Lukas - App name - Color scheme / vibe / dark or light mode - Feature decisions (see questions asked in chat) - LLC status - Ownership split between Lukas, buddy, and dad - Mockups / layout sketches incoming --- ## Business — Track & Clip Product Design ### Concept - Modular wall-mounted track system with sliding clips - Track has cut-outs (female",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.731770787443101,
+      "maxScore": 0.731770787443101,
+      "firstRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "queryHashes": [
+        "b350580d9e81"
+      ],
+      "recallDays": [
+        "2026-04-15"
+      ],
+      "conceptTags": [
+        "clocked.com",
+        "wall-mounted",
+        "cut-outs",
+        "taken",
+        "owned",
+        "until",
+        "broker",
+        "fee"
+      ]
+    },
+    "memory:memory/2026-03-23.md:38:59": {
+      "key": "memory:memory/2026-03-23.md:38:59",
+      "path": "memory/2026-03-23.md",
+      "startLine": 38,
+      "endLine": 59,
+      "source": "memory",
+      "snippet": "- **Account merge on Google login:** When user signs in with Google, anonymous posts/comments get reassigned to Google user ID so ownership checks work. - **Mobile sidebar:** Added Saved link + location button to SideDrawer.jsx. Removed location pill from Home.jsx mobile. - **Onboarding:** Location prompt added if no location set. ## Lukas Preferences Learned Today - Wants a proactive Telegram ping (via message tool) when tasks complete — not just a reply in the thread - Always screenshot the browser to verify changes before sending the link - Keep replies short — no walls of explanation, just fix it and confirm - Every time something is deployed, open it in browser AND send the link in Tel",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7129641582878199,
+      "maxScore": 0.7129641582878199,
+      "firstRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "queryHashes": [
+        "b350580d9e81"
+      ],
+      "recallDays": [
+        "2026-04-15"
+      ],
+      "conceptTags": [
+        "posts/comments",
+        "sidedrawer.jsx",
+        "home.jsx",
+        "account",
+        "merge",
+        "google",
+        "login",
+        "when"
+      ]
+    },
+    "memory:memory/2026-03-22.md:39:82": {
+      "key": "memory:memory/2026-03-22.md:39:82",
+      "path": "memory/2026-03-22.md",
+      "startLine": 39,
+      "endLine": 82,
+      "source": "memory",
+      "snippet": "6. Point theclocked.com DNS → Railway ## GitHub Account Info - Username: `kylebutler540-cell` - Email: `kylebutler540@gmail.com` ## Railway Account Info - Workspace ID: `b6b50510-101d-436f-8ad3-65d79cbdaaad` - Plan: Hobby ($5/mo) - Project: vivacious-upliftment - PostgreSQL service ID: `994c7b1e-2860-4fdf-bd09-9a5d0c606ebe` ## Chrome Remote Debugging - To connect browser tool to Chrome, must launch with: `--remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug-profile` - Then manually write port file: `echo \"9222\\n/devtools/browser/<id>\" > ~/Library/Application Support/Google/Chrome/DevToolsActivePort` - Port 9222 confirmed working when Chrome launched this way --- ## Evening Ses",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.7087666229027991,
+      "maxScore": 0.7087666229027991,
+      "firstRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "queryHashes": [
+        "b350580d9e81"
+      ],
+      "recallDays": [
+        "2026-04-15"
+      ],
+      "conceptTags": [
+        "theclocked.com",
+        "kylebutler540-cell",
+        "gmail.com",
+        "5/mo",
+        "vivacious-upliftment",
+        "remote-debugging-port",
+        "user-data-dir",
+        "tmp/chrome-debug-profile"
+      ]
+    },
+    "memory:memory/2026-03-23.md:1:33": {
+      "key": "memory:memory/2026-03-23.md:1:33",
+      "path": "memory/2026-03-23.md",
+      "startLine": 1,
+      "endLine": 33,
+      "source": "memory",
+      "snippet": "# Memory — 2026-03-23 ## ⚠️ CRITICAL: Railway Deployment Fix (DO THIS FIRST if changes aren't showing) **The problem:** Railway frontend service is NOT connected to GitHub. It deploys via CLI only. Pushing to GitHub does nothing for the frontend. Old CLI builds get cached and served forever. **The fix — run this whenever changes aren't showing up:** ```bash cd /Users/kylebutler/.openclaw/workspace/clocked/app/frontend && railway up --service frontend ``` **How to verify it worked:** ```bash curl -s https://frontend-production-d4bd.up.railway.app | grep -o 'assets/index-[^\"]*' ``` If the filename hash changed, it's a fresh build. Then verify the content: ```bash curl -s \"https://frontend-",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 2,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T15:01:15.840Z",
+      "lastRecalledAt": "2026-04-22T22:45:06.402Z",
+      "queryHashes": [
+        "741f9fcac4cc",
+        "0404f87bc458"
+      ],
+      "recallDays": [
+        "2026-04-19",
+        "2026-04-22"
+      ],
+      "conceptTags": [
+        "users/kylebutler",
+        "assets/index",
+        "critical",
+        "railway",
+        "deployment",
+        "fix",
+        "first",
+        "changes"
+      ]
+    },
+    "memory:memory/2026-04-04.md:1:26": {
+      "key": "memory:memory/2026-04-04.md:1:26",
+      "path": "memory/2026-04-04.md",
+      "startLine": 1,
+      "endLine": 26,
+      "source": "memory",
+      "snippet": "# Memory — 2026-04-04 ## Clocked App — Major Work Session ### Cursor Setup - Introduced Lukas to Cursor (AI code editor) as a faster alternative to telling me changes - Cursor installed at /Applications/Cursor.app, Clocked project opened at /Users/kylebutler/.openclaw/workspace/clocked - Cmd+L opens chat sidebar, Cmd+K for inline edits ### Company Logos — Overhaul - Clearbit logo API is DEAD (acquired by HubSpot, no longer reliable) - Switched to Google Favicon service: `https://www.google.com/s2/favicons?sz=64&domain={domain}` - Built `brandLogo.js` — brand normalizer with 60+ hardcoded brand→domain mappings - Handles variants: \"Amazon Distribution Center\" → amazon.com, \"Culver's\" → cu",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 2,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T15:01:15.840Z",
+      "lastRecalledAt": "2026-04-22T22:45:06.402Z",
+      "queryHashes": [
+        "741f9fcac4cc",
+        "0404f87bc458"
+      ],
+      "recallDays": [
+        "2026-04-19",
+        "2026-04-22"
+      ],
+      "conceptTags": [
+        "applications/cursor.app",
+        "users/kylebutler",
+        "openclaw/workspace/clocked",
+        "www.google.com/s2/favicons",
+        "brandlogo.js",
+        "amazon.com",
+        "clocked",
+        "app"
+      ]
+    },
+    "memory:memory/2026-03-29.md:1:34": {
+      "key": "memory:memory/2026-03-29.md:1:34",
+      "path": "memory/2026-03-29.md",
+      "startLine": 1,
+      "endLine": 34,
+      "source": "memory",
+      "snippet": "# Memory — 2026-03-29 (Clocked App Sprint) ## Clocked App — Major Changes Today ### Frontend Deployment Issue (IMPORTANT) - Railway caches frontend builds aggressively — changing code alone doesn't bust the cache - To force a fresh build: update `package.json` `_buildTs` field with `Date.now()` - To force new filename hash: bump version suffix in `vite.config.js` (v3→v4→v5→v6) - Both techniques needed together for guaranteed fresh deploy - Current vite config uses `v5` suffix (as of end of day) ### Profile System - Added `display_name`, `username`, `avatar_url`, `follower_count`, `following_count` to User model - New `follows` table with FK constraints - Migration done via `migrate.js` us",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T15:01:15.840Z",
+      "lastRecalledAt": "2026-04-19T15:01:15.840Z",
+      "queryHashes": [
+        "741f9fcac4cc"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "package.json",
+        "date.now",
+        "vite.config.js",
+        "display-name",
+        "avatar-url",
+        "follower-count",
+        "following-count",
+        "migrate.js"
+      ]
+    },
+    "memory:memory/2026-03-27.md:53:71": {
+      "key": "memory:memory/2026-03-27.md:53:71",
+      "path": "memory/2026-03-27.md",
+      "startLine": 53,
+      "endLine": 71,
+      "source": "memory",
+      "snippet": "- OpenClaw browser tool requires Chrome launched with `--remote-debugging-port=9222` - Chrome needs to be killed first (`pkill -f \"Google Chrome\"`) then relaunched with the flag - macOS Accessibility permissions needed for Terminal and node to control apps - Lukas enabled both in System Preferences during session ### SanDisk Extreme SSD - Lukas has a SanDisk Extreme 2TB plugged into Mac mini - Shows as `/Volumes/Extreme SSD` — 1.8TB available, 23GB used - Works fine, plug-and-play ## Domain Renewal Reminder - GoDaddy cron job set: `godaddy-domain-renewal` fires March 10, 2027 - Domain: theclocked.com, account: kylebutler540@gmail.com ## Deploy Notes - Frontend: always deploy via `cd clock",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T15:01:15.840Z",
+      "lastRecalledAt": "2026-04-19T15:01:15.840Z",
+      "queryHashes": [
+        "741f9fcac4cc"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "remote-debugging-port",
+        "volumes/extreme",
+        "1.8tb",
+        "plug-and-play",
+        "godaddy-domain-renewal",
+        "theclocked.com",
+        "gmail.com",
+        "openclaw"
+      ]
+    },
+    "memory:memory/2026-03-21.md:23:56": {
+      "key": "memory:memory/2026-03-21.md:23:56",
+      "path": "memory/2026-03-21.md",
+      "startLine": 23,
+      "endLine": 56,
+      "source": "memory",
+      "snippet": "- Logo file: `/Users/kylebutler/.openclaw/workspace/clocked/logos/logo-purple.svg` - Logo is locked in — can be changed later anytime ## Clocked Build Status - Logo: ✅ locked in (purple \"clocked\" text only, no icon) - Ownership: ✅ 50/50 Lukas + buddy - Google Maps API: ✅ key = AIzaSyDVTt1iv8oqd9ziIMyqs_jCo6et5iucc2s - Hosting: ✅ Railway - Build: ✅ MVP built, UI iterating - App running locally at http://localhost:3000 ## Clocked — iOS App Plan - Primary target: iOS App Store - Secondary: Android (React Native covers both from one codebase) - Apple Developer account: $99/year needed when ready to submit - Google Play: $25 one-time when ready - Web app first → validate → then native app build",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-22T22:45:06.402Z",
+      "lastRecalledAt": "2026-04-22T22:45:06.402Z",
+      "queryHashes": [
+        "0404f87bc458"
+      ],
+      "recallDays": [
+        "2026-04-22"
+      ],
+      "conceptTags": [
+        "users/kylebutler",
+        "50/50",
+        "99/year",
+        "one-time",
+        "logo",
+        "users",
+        "kylebutler",
+        "openclaw"
+      ]
+    },
+    "memory:memory/2026-04-13.md:49:71": {
+      "key": "memory:memory/2026-04-13.md:49:71",
+      "path": "memory/2026-04-13.md",
+      "startLine": 49,
+      "endLine": 71,
+      "source": "memory",
+      "snippet": "3. Top Rated: star-only companies show with \"No emoji reviews yet\" 4. Post submit validation: always clickable, red field highlights, auto-scroll 5. DM Enter = new line (textarea) 6. Date label once per cluster ## NDA — Clocked App (April 13) - Lukas and Tyler Dickinson are the Information Providers - Michael Brown is the Recipient - Full NDA drafted and saved to: `/Users/kylebutler/.openclaw/workspace/NDA-Clocked-2026.md` - Based on LawDepot template, Michigan law, 2-year term - Signed date: April 19, 2026 - Michael Brown's address is still blank — needs to be filled in before signing - No witness section (Lukas requested removal) - Clean version ready to paste into Google Docs ## Telegra",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-22T22:45:06.402Z",
+      "lastRecalledAt": "2026-04-22T22:45:06.402Z",
+      "queryHashes": [
+        "0404f87bc458"
+      ],
+      "recallDays": [
+        "2026-04-22"
+      ],
+      "conceptTags": [
+        "star-only",
+        "auto-scroll",
+        "users/kylebutler",
+        "2-year",
+        "top",
+        "rated",
+        "star",
+        "only"
+      ]
+    },
+    "memory:memory/2026-03-21.md:1:31": {
+      "key": "memory:memory/2026-03-21.md:1:31",
+      "path": "memory/2026-03-21.md",
+      "startLine": 1,
+      "endLine": 31,
+      "source": "memory",
+      "snippet": "# 2026-03-21 ## Trading Bot Status (as of 9:30 AM) - Bot running at PID 32200, file: `/Users/kylebutler/.openclaw/workspace/trading/bot.py` - Log: `/Users/kylebutler/.openclaw/workspace/trading/trade_log.txt` - Started with $100.49 USDC - Current balance: $98.12 USDC - 3 trades fired, all profitable (+0.40%, +0.42%, +0.22%) but Coinbase fees ate the gains - Root problem: trading with ~$45 chunks — gains too small to beat fees ## Lukas's Trading Preferences (set 2026-03-21) - **Slow and steady** approach overall — not trying to churn trades constantly - **High-confidence signals = go bigger** — if RSI is really deep oversold or a clear strong signal, put a meaningful chunk of the balance",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-22T22:45:06.402Z",
+      "lastRecalledAt": "2026-04-22T22:45:06.402Z",
+      "queryHashes": [
+        "0404f87bc458"
+      ],
+      "recallDays": [
+        "2026-04-22"
+      ],
+      "conceptTags": [
+        "users/kylebutler",
+        "100.49",
+        "98.12",
+        "0.40",
+        "0.42",
+        "0.22",
+        "high-confidence",
+        "trading"
       ]
     }
   }

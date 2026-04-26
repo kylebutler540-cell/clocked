@@ -5,6 +5,7 @@
 | Name | Schedule | Model | Purpose |
 |------|----------|-------|---------|
 | morning-reminder | 7 AM daily | — | "Good morning 🌅 Turn your ringer on and say good morning to your girlfriend 💜" |
+| clocked-keepalive | every 9 min | — | Pings backend /health so Railway never cold-starts |
 
 ## Coding Agent Defaults
 
