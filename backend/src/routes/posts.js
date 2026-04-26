@@ -1013,7 +1013,8 @@ function formatPost(post, savedPostIds, isSubscribed, likedPostIds = new Set(), 
     const p = post.poll;
     const votedOptionId = userPollVotes.get(p.id) ?? null;
     const hasVoted = !!votedOptionId;
-    const totalVotes = hasVoted ? p.options.reduce((sum, o) => sum + o.vote_count, 0) : null;
+    // Always expose total vote count (for the 'Poll · N votes' label); hide per-option counts until user votes
+    const totalVotes = p.options.reduce((sum, o) => sum + o.vote_count, 0);
     pollData = {
       id: p.id,
       question: p.question,
