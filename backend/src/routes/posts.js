@@ -666,7 +666,7 @@ router.post('/', optionalAuth, async (req, res) => {
       userId = anonUser.id;
     }
 
-    // Atomic transaction — post + poll created together or not at all
+    // Atomic transaction — post + poll created together or not at all (15s timeout)
     const postWithPoll = await prisma.$transaction(async (tx) => {
       const created = await tx.post.create({
         data: {
@@ -701,7 +701,7 @@ router.post('/', optionalAuth, async (req, res) => {
           poll: { include: { options: { orderBy: { position: 'asc' } } } },
         },
       });
-    });
+    }, { timeout: 15000 });
 
     // Non-blocking side effects
     const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
