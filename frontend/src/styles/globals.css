@@ -3459,14 +3459,14 @@ body[data-comments-open] .mobile-only-header {
   top: 0;
   left: 0;
   bottom: 0;
-  background: rgba(168, 85, 247, 0.1);
+  background: var(--bg-elevated); /* unselected: neutral gray fill */
   border-radius: 10px;
   transition: width 0.4s ease;
   pointer-events: none;
 }
 
 .poll-option-selected .poll-option-fill {
-  background: rgba(168, 85, 247, 0.15);
+  background: rgba(168, 85, 247, 0.18); /* selected: purple fill */
 }
 
 .poll-signin-hint {
