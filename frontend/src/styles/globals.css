@@ -3352,14 +3352,13 @@ body[data-comments-open] .mobile-only-header {
     max-width: 100% !important;
   }
 }
-/* Desktop: true viewport center regardless of sidebar width */
+/* Desktop: true viewport center — no transform needed, so slide animation still works */
 @media (min-width: 768px) {
   .comment-sheet-panel {
-    left: 50% !important;
+    left: calc(50vw - 340px) !important; /* 340px = half of 680px panel width */
     right: auto !important;
-    transform: translateX(-50%);
     width: 680px !important;
-    max-width: calc(100vw - 260px) !important; /* won't slide under sidebar */
+    max-width: 680px !important;
     margin: 0 !important;
   }
 }
