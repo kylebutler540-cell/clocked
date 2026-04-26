@@ -82,9 +82,14 @@ router.get('/', optionalAuth, async (req, res) => {
     if (isTopRated) {
       where.likes = { gte: 1 };
     }
-    // Polls-only filter
+    // Polls-only filter — two-query approach (reliable across all Prisma versions)
     if (has_poll === 'true') {
-      where.poll = { isNot: null };
+      const pollRows = await prisma.poll.findMany({ select: { post_id: true } });
+      const pollPostIds = pollRows.map(r => r.post_id);
+      if (pollPostIds.length === 0) {
+        return res.json({ posts: [], nextCursor: null });
+      }
+      where.id = { in: pollPostIds };
     }
 
     const orderBy = isTopRated

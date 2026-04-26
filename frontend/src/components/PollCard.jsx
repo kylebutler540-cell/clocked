@@ -69,6 +69,10 @@ export default function PollCard({ poll: initialPoll }) {
 
   return (
     <div className="poll-card">
+      {/* Purple label above poll */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)', marginBottom: 8, letterSpacing: '0.2px' }}>
+        Poll · {total} {total === 1 ? 'vote' : 'votes'}
+      </div>
       <p className="poll-question">{poll.question}</p>
 
       {hasVoted ? (
