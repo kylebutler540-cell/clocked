@@ -129,6 +129,13 @@ body {
   }
 }
 
+/* Hide elements that should only appear on mobile */
+@media (min-width: 768px) {
+  .mobile-only-menu {
+    display: none !important;
+  }
+}
+
 #root {
   min-height: 100dvh;
   display: flex;

@@ -805,7 +805,7 @@ export default function Profile() {
             {/* Name row with inline three-dot menu */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div className="profile-username-large" style={{ flex: 1, minWidth: 0 }}>{ownDisplayName}</div>
-              <ProfileMenuSheet />
+              <span className="mobile-only-menu"><ProfileMenuSheet /></span>
             </div>
             {user?.username && (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
