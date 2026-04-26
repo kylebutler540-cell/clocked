@@ -299,6 +299,7 @@ export default function DailyPrompts() {
                       key={opt.value}
                       className={`dp-slider-opt${selected === opt.value ? ' dp-slider-opt-selected' : ''}`}
                       onClick={() => setSelected(v => v === opt.value ? null : opt.value)}
+                      data-rating={opt.value}
                       title={opt.label}
                     >
                       <span className="dp-slider-emoji">{opt.emoji}</span>
