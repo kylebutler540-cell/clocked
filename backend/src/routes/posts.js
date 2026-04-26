@@ -343,7 +343,7 @@ router.get('/user/posts', requireAuth, async (req, res) => {
 });
 
 // Get posts by a specific public user (public profile)
-router.get('/user/:userId/posts', async (req, res) => {
+router.get('/user/:userId/posts', optionalAuth, async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       where: { anonymous_user_id: req.params.userId },
@@ -355,7 +355,19 @@ router.get('/user/:userId/posts', async (req, res) => {
       },
     });
 
-    res.json(posts.map(p => formatPost(p, new Set(), false)));
+    let userPollVotes = new Map();
+    if (req.user) {
+      const pollIds = posts.filter(p => p.poll).map(p => p.poll.id);
+      if (pollIds.length) {
+        const votes = await prisma.pollVote.findMany({
+          where: { user_id: req.user.id, poll_id: { in: pollIds } },
+          select: { poll_id: true, poll_option_id: true },
+        });
+        votes.forEach(v => userPollVotes.set(v.poll_id, v.poll_option_id));
+      }
+    }
+
+    res.json(posts.map(p => formatPost(p, new Set(), false, new Set(), new Set(), userPollVotes)));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch posts' });
@@ -619,29 +631,34 @@ router.post('/', optionalAuth, async (req, res) => {
     if (!header || !header.trim()) {
       return res.status(400).json({ error: 'Headline is required' });
     }
-    // Body is optional when poll is present
     if (!poll && body && body.trim().length > 0 && body.trim().length < 10) {
       return res.status(400).json({ error: 'Review body must be at least 10 characters' });
     }
     if (body && body.length > 5000) {
       return res.status(400).json({ error: 'Review body too long (max 5000 chars)' });
     }
-    // Validate poll if provided
+
+    // Normalize and validate poll
+    let cleanPoll = null;
     if (poll) {
       if (!poll.question || !poll.question.trim()) {
         return res.status(400).json({ error: 'Poll question is required' });
       }
-      if (!Array.isArray(poll.options) || poll.options.length < 2 || poll.options.length > 10) {
-        return res.status(400).json({ error: 'Poll must have 2-10 options' });
+      // Filter empty options — don't reject, just ignore blanks
+      const cleanOptions = Array.isArray(poll.options)
+        ? poll.options.map(o => (o || '').trim()).filter(Boolean)
+        : [];
+      if (cleanOptions.length < 2) {
+        return res.status(400).json({ error: 'Poll needs at least 2 options' });
       }
-      if (poll.options.some(o => !o || !o.trim())) {
-        return res.status(400).json({ error: 'All poll options must be non-empty' });
+      if (cleanOptions.length > 10) {
+        return res.status(400).json({ error: 'Poll can have at most 10 options' });
       }
+      cleanPoll = { question: poll.question.trim(), options: cleanOptions };
     }
 
     let userId = req.user?.id;
     if (!userId) {
-      // Create ephemeral anonymous user with permanent anon number
       const anonNum = await generateUniqueAnonNumber();
       const anonUser = await prisma.user.create({
         data: { anonymous_id: uuidv4(), anon_number: anonNum },
@@ -649,93 +666,67 @@ router.post('/', optionalAuth, async (req, res) => {
       userId = anonUser.id;
     }
 
-    const post = await prisma.post.create({
-      data: {
-        anonymous_user_id: userId,
-        employer_place_id,
-        employer_name,
-        employer_address,
-        rating_emoji,
-        header: header?.trim() || null,
-        body: body?.trim() || '',
-        media_urls: Array.isArray(media_urls) ? media_urls.slice(0, 10) : [],
-      },
-      include: {
-        user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
-        _count: { select: { comments: true } },
-        poll: { include: { options: { orderBy: { position: 'asc' } } } },
-      },
-    });
-
-    // Create poll if provided
-    if (poll) {
-      await prisma.poll.create({
+    // Atomic transaction — post + poll created together or not at all
+    const postWithPoll = await prisma.$transaction(async (tx) => {
+      const created = await tx.post.create({
         data: {
-          post_id: post.id,
-          question: poll.question.trim(),
-          options: {
-            create: poll.options.map((text, i) => ({ text: text.trim(), position: i })),
-          },
+          anonymous_user_id: userId,
+          employer_place_id,
+          employer_name,
+          employer_address,
+          rating_emoji,
+          header: header?.trim() || null,
+          body: body?.trim() || '',
+          media_urls: Array.isArray(media_urls) ? media_urls.slice(0, 10) : [],
         },
       });
-      // Re-fetch post with poll included
-      const postWithPoll = await prisma.post.findUnique({
-        where: { id: post.id },
+
+      if (cleanPoll) {
+        await tx.poll.create({
+          data: {
+            post_id: created.id,
+            question: cleanPoll.question,
+            options: {
+              create: cleanPoll.options.map((text, i) => ({ text, position: i })),
+            },
+          },
+        });
+      }
+
+      return tx.post.findUnique({
+        where: { id: created.id },
         include: {
           user: { select: { anon_number: true, display_name: true, username: true, avatar_url: true } },
           _count: { select: { comments: true } },
           poll: { include: { options: { orderBy: { position: 'asc' } } } },
         },
       });
-      // Auto star rating
-      const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
-      const starValue = emojiToStar[rating_emoji];
-      if (starValue) {
-        await prisma.companyRating.upsert({
-          where: { user_id_place_id: { user_id: userId, place_id: employer_place_id } },
-          update: { rating: starValue },
-          create: { user_id: userId, place_id: employer_place_id, rating: starValue },
-        });
-      }
-      if (post.employer_address) {
-        geocode(post.employer_address).then(coords => {
-          if (coords) {
-            prisma.post.update({
-              where: { id: post.id },
-              data: { employer_lat: coords.lat, employer_lng: coords.lng },
-            }).catch(() => {});
-          }
-        }).catch(() => {});
-      }
-      return res.status(201).json(formatPost(postWithPoll, new Set(), true));
-    }
+    });
 
-    // Auto-create/update star rating from emoji: GOOD=5, NEUTRAL=3, BAD=1
+    // Non-blocking side effects
     const emojiToStar = { GOOD: 5, NEUTRAL: 3, BAD: 1 };
     const starValue = emojiToStar[rating_emoji];
     if (starValue) {
-      await prisma.companyRating.upsert({
+      prisma.companyRating.upsert({
         where: { user_id_place_id: { user_id: userId, place_id: employer_place_id } },
         update: { rating: starValue },
         create: { user_id: userId, place_id: employer_place_id, rating: starValue },
-      });
+      }).catch(() => {});
     }
-
-    // Non-blocking: geocode employer address and store coords
-    if (post.employer_address) {
-      geocode(post.employer_address).then(coords => {
+    if (employer_address) {
+      geocode(employer_address).then(coords => {
         if (coords) {
           prisma.post.update({
-            where: { id: post.id },
+            where: { id: postWithPoll.id },
             data: { employer_lat: coords.lat, employer_lng: coords.lng },
           }).catch(() => {});
         }
       }).catch(() => {});
     }
 
-    res.status(201).json(formatPost(post, new Set(), true));
+    res.status(201).json(formatPost(postWithPoll, new Set(), true));
   } catch (err) {
-    console.error(err);
+    console.error('Create post error:', err);
     res.status(500).json({ error: 'Failed to create post' });
   }
 });

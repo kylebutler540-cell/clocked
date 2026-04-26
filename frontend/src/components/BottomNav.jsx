@@ -39,10 +39,19 @@ function PollsIcon() {
   );
 }
 
+function DailyPromptsIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
   { path: '/', label: 'Home', Icon: HomeIcon },
   { path: '/polls', label: 'Polls', Icon: PollsIcon },
   { path: '/messages', label: 'Messages', Icon: MessagesIcon },
+  { path: '/daily-prompts', label: 'Prompts', Icon: DailyPromptsIcon },
   { path: '/profile', label: 'Profile', Icon: ProfileIcon },
 ];
 

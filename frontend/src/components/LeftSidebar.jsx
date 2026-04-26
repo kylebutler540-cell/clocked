@@ -68,6 +68,9 @@ export default function LeftSidebar({ collapsed = false }) {
       <NavItem collapsed={collapsed} active={isActive('/polls')} label="Polls" onClick={() => navigate('/polls')}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>}
       />
+      <NavItem collapsed={collapsed} active={isActive('/daily-prompts')} label="Daily Prompts" onClick={() => navigate('/daily-prompts')}
+        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}
+      />
       <NavItem collapsed={collapsed} active={isActive('/profile')} label="Profile" onClick={() => navigate('/profile')}
         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
       />

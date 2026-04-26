@@ -3,7 +3,7 @@ import Feed from '../components/Feed';
 
 export default function Polls() {
   return (
-    <div>
+    <div className="polls-page">
       <Feed
         filters={{ has_poll: 'true' }}
         emptyState={

@@ -1965,8 +1965,21 @@ textarea.form-input {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 20px;
+  gap: 16px;
   padding: 28px 20px 24px;
+}
+
+/* Create button inside profile hero — mobile only */
+.profile-hero-create-btn {
+  align-self: flex-start;
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .profile-hero-create-btn {
+    display: none !important;
+  }
 }
 
 .profile-avatar-large {
@@ -2993,6 +3006,12 @@ textarea.form-input {
     width: 100%;
     max-width: 740px;
     margin: 0 auto;
+  }
+
+  /* Polls page — full feed width on desktop, same as home feed column */
+  .polls-page {
+    width: 100%;
+    max-width: 100%;
   }
 }
 

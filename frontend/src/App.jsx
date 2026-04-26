@@ -32,6 +32,7 @@ const PostDetail = React.lazy(() => import('./pages/PostDetail'));
 const CompanyProfile = React.lazy(() => import('./pages/CompanyProfile'));
 const Saved = React.lazy(() => import('./pages/Saved'));
 const Polls = React.lazy(() => import('./pages/Polls'));
+const DailyPrompts = React.lazy(() => import('./pages/DailyPrompts'));
 const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const Signup = React.lazy(() => import('./pages/Signup'));
 const SwitchAccount = React.lazy(() => import('./pages/SwitchAccount'));
@@ -43,6 +44,7 @@ const PAGE_TITLES = {
   '/notifications': 'Alerts',
   '/messages': 'Messages',
   '/polls': 'Polls',
+  '/daily-prompts': 'Daily Prompts',
 };
 
 // Desktop top bar — full width, Reddit-style
@@ -260,7 +262,7 @@ function BackButton() {
 }
 
 // Main tabs — back button suppressed here
-const MAIN_TABS = new Set(['/polls', '/messages', '/profile']);
+const MAIN_TABS = new Set(['/polls', '/messages', '/profile', '/daily-prompts']);
 
 // Tabs with no top bar content on mobile — hide the header entirely to reclaim space
 const NO_HEADER_TABS = new Set(['/profile']);
@@ -315,7 +317,7 @@ function AppMainWrapper({ children }) {
 }
 
 // Tab order matches BottomNav exactly
-const TAB_PATHS = ['/', '/polls', '/messages', '/profile'];
+const TAB_PATHS = ['/', '/polls', '/messages', '/daily-prompts', '/profile'];
 
 // Swipe handler: horizontal swipe on a main tab → move one adjacent tab
 function SwipeHandler() {
@@ -444,6 +446,7 @@ function AppInner() {
               <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/company/:placeId" element={<CompanyProfile />} />
               <Route path="/polls" element={<Polls />} />
+              <Route path="/daily-prompts" element={<DailyPrompts />} />
               <Route path="/saved" element={<Saved />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/switch-account" element={<SwitchAccount />} />
