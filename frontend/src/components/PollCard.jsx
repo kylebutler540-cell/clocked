@@ -2,39 +2,44 @@ import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { seedPoll, getVotedPoll, recordVote, subscribePoll } from '../lib/pollStore';
+import {
+  seedPoll,
+  recordVote,
+  cancelVoteInFlight,
+  markVoteInFlight,
+  subscribePoll,
+} from '../lib/pollStore';
 
 export default function PollCard({ poll: initialPoll }) {
+  // Always seed with fresh server data on mount (seedPoll skips if vote in-flight)
   useEffect(() => {
     if (initialPoll?.id) seedPoll(initialPoll.id, initialPoll);
-  }, [initialPoll?.id]); // eslint-disable-line
+  }); // no deps — runs every render so fresh feed data always wins
 
-  const [poll, setPoll] = useState(() => {
-    if (!initialPoll?.id) return initialPoll;
-    const stored = getVotedPoll(initialPoll.id);
-    if (stored?.user_voted_option_id) return stored;
-    return initialPoll;
-  });
-
+  // Initial state: trust server's user_voted_option_id directly
+  // The server already knows whether THIS user has voted (JWT-based lookup)
+  const [poll, setPoll] = useState(initialPoll);
   const [loading, setLoading] = useState(false);
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Subscribe to cross-feed vote updates (home → company page → profile, etc.)
+  // Sync when parent prop changes (feed refresh, navigation back)
+  // Always take server data unless a vote is pending
+  useEffect(() => {
+    if (!initialPoll) return;
+    setPoll(initialPoll);
+  }, [
+    initialPoll?.id,
+    initialPoll?.user_voted_option_id,
+    initialPoll?.total_votes,
+  ]); // eslint-disable-line
+
+  // Subscribe to cross-feed vote broadcasts (same user, multiple feed instances)
   useEffect(() => {
     if (!initialPoll?.id) return;
-    return subscribePoll(initialPoll.id, updated => {
-      setPoll(updated);
-    });
+    return subscribePoll(initialPoll.id, updated => setPoll(updated));
   }, [initialPoll?.id]); // eslint-disable-line
-
-  // Sync if feed refreshes with a voted state we don't have yet
-  useEffect(() => {
-    if (initialPoll?.user_voted_option_id && !poll?.user_voted_option_id) {
-      setPoll(initialPoll);
-      recordVote(initialPoll.id, initialPoll);
-    }
-  }, [initialPoll?.user_voted_option_id]); // eslint-disable-line
 
   if (!poll) return null;
 
@@ -44,20 +49,24 @@ export default function PollCard({ poll: initialPoll }) {
   async function handleVote(optionId) {
     if (loading) return;
     if (!user?.email) { navigate('/signup'); return; }
-    // Same option tapped again while voted → no-op
-    if (poll.user_voted_option_id === optionId) return;
+    if (poll.user_voted_option_id === optionId) return; // same option, no-op
 
     setLoading(true);
-    // Optimistic: highlight the tapped option immediately
-    setPoll(prev => ({ ...prev, user_voted_option_id: optionId }));
+    markVoteInFlight(poll.id);
+
+    // Optimistic update — show selection instantly
+    const optimistic = { ...poll, user_voted_option_id: optionId };
+    setPoll(optimistic);
 
     try {
       const res = await api.post(`/polls/${poll.id}/vote`, { optionId });
-      setPoll(res.data);
-      recordVote(poll.id, res.data);
+      const confirmed = res.data;
+      setPoll(confirmed);
+      recordVote(poll.id, confirmed); // broadcast to other PollCards showing this poll
     } catch {
-      // Revert optimistic update on failure
-      setPoll(prev => ({ ...prev, user_voted_option_id: poll.user_voted_option_id }));
+      // Revert on failure
+      cancelVoteInFlight(poll.id);
+      setPoll(poll);
     } finally {
       setLoading(false);
     }
@@ -84,14 +93,10 @@ export default function PollCard({ poll: initialPoll }) {
               className={`poll-option-btn${isSelected ? ' poll-option-selected' : ''}`}
               onClick={() => handleVote(option.id)}
               disabled={loading}
-              style={{ position: 'relative', overflow: 'hidden' }}
             >
-              {/* Subtle fill bar shown after voting */}
+              {/* Subtle fill bar — only after voting */}
               {pct !== null && (
-                <span
-                  className="poll-option-fill"
-                  style={{ width: `${pct}%` }}
-                />
+                <span className="poll-option-fill" style={{ width: `${pct}%` }} />
               )}
 
               {/* Radio circle */}
@@ -100,7 +105,7 @@ export default function PollCard({ poll: initialPoll }) {
               {/* Option text */}
               <span className="poll-option-text">{option.text}</span>
 
-              {/* Percentage — only shown after voting */}
+              {/* Percentage — only after voting */}
               {pct !== null && (
                 <span className="poll-option-pct">{pct}%</span>
               )}

@@ -3,6 +3,7 @@ import api from '../lib/api';
 import { cacheClear, lsClear } from '../lib/cache';
 import { clearFeedCache } from '../components/Feed';
 import { clearPostStore } from '../lib/postStore';
+import { clearPollStore } from '../lib/pollStore';
 
 const AuthContext = createContext();
 
@@ -262,6 +263,7 @@ export function AuthProvider({ children }) {
     cacheClear();
     clearFeedCache();
     clearPostStore();
+    clearPollStore(); // prevent previous account's vote state from leaking
     lsClear(''); // clears all clocked_c_ prefixed keys
     localStorage.removeItem('clocked_notifications');
     localStorage.removeItem('clocked_unread_count');
@@ -329,6 +331,7 @@ export function AuthProvider({ children }) {
     cacheClear();
     clearFeedCache();
     clearPostStore();
+    clearPollStore(); // prevent previous account's vote state from leaking
     lsClear('');
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
