@@ -22,6 +22,7 @@ const searchRoutes = require('./routes/search');
 const messageRoutes = require('./routes/messages');
 const userRoutes = require('./routes/users');
 const pollRoutes = require('./routes/polls');
+const dailyPromptsRoutes = require('./routes/dailyPrompts');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -93,6 +94,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/polls', pollRoutes);
+app.use('/api/daily-prompts', dailyPromptsRoutes);
 
 // 404 handler
 app.use((req, res) => {

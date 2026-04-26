@@ -111,6 +111,20 @@ async function run() {
       `DO $$ BEGIN ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_poll_id_fkey" FOREIGN KEY ("poll_id") REFERENCES "polls"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
       `DO $$ BEGIN ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_poll_option_id_fkey" FOREIGN KEY ("poll_option_id") REFERENCES "poll_options"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
       `DO $$ BEGIN ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // Daily Prompts
+      `CREATE TABLE IF NOT EXISTS "prompt_responses" (
+        "id" TEXT NOT NULL,
+        "prompt_date" TEXT NOT NULL,
+        "prompt_id" TEXT NOT NULL,
+        "user_id" TEXT NOT NULL,
+        "response_value" TEXT NOT NULL,
+        "industry" TEXT NOT NULL DEFAULT 'general',
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "prompt_responses_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "prompt_responses_date_user_key" ON "prompt_responses"("prompt_date", "user_id")`,
+      `CREATE INDEX IF NOT EXISTS "prompt_responses_date_idx" ON "prompt_responses"("prompt_date")`,
+      `DO $$ BEGIN ALTER TABLE "prompt_responses" ADD CONSTRAINT "prompt_responses_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     ];
 
     for (const stmt of statements) {
