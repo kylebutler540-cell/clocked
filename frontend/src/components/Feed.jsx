@@ -267,3 +267,15 @@ export default function Feed({ filters = {}, employerInfo = null, emptyState = n
 
 // Call after a new post is created to force the home feed to refetch on next mount
 export function clearFeedCache() { _feedCache.clear(); }
+
+// Patch a single field on a post across ALL cached feed entries.
+// Used for save/unsave so stale cache doesn't overwrite UI state on navigation.
+export function updatePostInCache(postId, updates) {
+  for (const [key, entry] of _feedCache.entries()) {
+    if (!entry?.posts) continue;
+    const idx = entry.posts.findIndex(p => p.id === postId);
+    if (idx !== -1) {
+      entry.posts[idx] = { ...entry.posts[idx], ...updates };
+    }
+  }
+}

@@ -20,6 +20,10 @@ const _listeners = new Map();
 // postId → true while a vote request is in-flight
 const _voting = new Set();
 
+// postId → bool — save states explicitly set by the user this session.
+// Protects against stale feed-cache data overwriting a user-initiated save/unsave.
+const _savedByUser = new Map();
+
 // postId → 'like'|'dislike'|null — queued next action while a request is in-flight
 // null means "toggle off whatever is current"
 const _queue = new Map();
@@ -63,7 +67,9 @@ export function seedPost(post) {
     dislikes:      _clamp(post.dislikes),
     liked:         !!post.liked,
     disliked:      !!post.disliked,
-    saved:         !!post.saved,
+    // If the user explicitly saved/unsaved this post in the current session,
+    // keep that value — don't let a stale feed cache overwrite it.
+    saved:         _savedByUser.has(post.id) ? _savedByUser.get(post.id) : !!post.saved,
     comment_count: _clamp(post.comment_count),
   });
   // Don't notify here — this is called from render, notification happens via React state
@@ -154,8 +160,9 @@ export function updateCommentCount(postId, delta) {
   _set(postId, { comment_count: s.comment_count + delta });
 }
 
-/** Update saved state. */
+/** Update saved state. Also records the user's explicit choice so seedPost won't overwrite it. */
 export function updateSaved(postId, saved) {
+  _savedByUser.set(postId, saved); // protect from stale cache overwrite
   const s = _store.get(postId);
   if (!s) return;
   _set(postId, { saved });
@@ -166,5 +173,6 @@ export function clearPostStore() {
   _store.clear();
   _voting.clear();
   _queue.clear();
+  _savedByUser.clear();
   // Keep listeners — components will re-seed on next render
 }

@@ -15,7 +15,7 @@ import {
 import FlagModal from './FlagModal';
 import CommentSheet from './CommentSheet';
 import ShareSheet from './ShareSheet';
-import { clearFeedCache } from './Feed';
+import { clearFeedCache, updatePostInCache } from './Feed';
 import BusinessLogo from './BusinessLogo';
 import PollCard from './PollCard';
 
@@ -236,13 +236,20 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   async function handleSave() {
     if (!user?.email) { navigate('/signup'); return; }
     const prevSaved = post.saved;
-    updateSaved(post.id, !prevSaved);
+    const newSaved = !prevSaved;
+    // Optimistic: update store + all feed caches immediately
+    updateSaved(post.id, newSaved);
+    updatePostInCache(post.id, { saved: newSaved });
     try {
       const res = await api.post(`/posts/${post.id}/save`);
+      // Confirm with server truth
       updateSaved(post.id, res.data.saved);
+      updatePostInCache(post.id, { saved: res.data.saved });
       addToast(res.data.saved ? 'Post saved' : 'Post unsaved');
     } catch (err) {
+      // Revert on failure
       updateSaved(post.id, prevSaved);
+      updatePostInCache(post.id, { saved: prevSaved });
       addToast(err.response?.status === 401 ? 'Sign in to save posts' : 'Failed to save post');
     }
   }
