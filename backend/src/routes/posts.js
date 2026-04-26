@@ -84,7 +84,7 @@ router.get('/', optionalAuth, async (req, res) => {
     }
     // Polls-only filter
     if (has_poll === 'true') {
-      where.poll = { is: {} };
+      where.poll = { isNot: null };
     }
 
     const orderBy = isTopRated
@@ -631,8 +631,8 @@ router.post('/', optionalAuth, async (req, res) => {
       if (!poll.question || !poll.question.trim()) {
         return res.status(400).json({ error: 'Poll question is required' });
       }
-      if (!Array.isArray(poll.options) || poll.options.length < 2 || poll.options.length > 4) {
-        return res.status(400).json({ error: 'Poll must have 2-4 options' });
+      if (!Array.isArray(poll.options) || poll.options.length < 2 || poll.options.length > 10) {
+        return res.status(400).json({ error: 'Poll must have 2-10 options' });
       }
       if (poll.options.some(o => !o || !o.trim())) {
         return res.status(400).json({ error: 'All poll options must be non-empty' });

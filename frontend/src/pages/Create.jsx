@@ -104,7 +104,7 @@ export default function Create() {
   }
 
   function addPollOption() {
-    if (pollOptions.length < 4) setPollOptions(prev => [...prev, '']);
+    if (pollOptions.length < 10) setPollOptions(prev => [...prev, '']);
   }
 
   function removePollOption(idx) {
@@ -257,7 +257,7 @@ export default function Create() {
                   )}
                 </div>
               ))}
-              {pollOptions.length < 4 && (
+              {pollOptions.length < 10 && (
                 <button
                   type="button"
                   onClick={addPollOption}
