@@ -3346,9 +3346,18 @@ body[data-comments-open] .mobile-only-header {
 .poll-card {
   margin: 10px 0 6px;
   padding: 14px;
-  background: var(--bg-elevated);
+  background: var(--bg-primary); /* white in light mode, black in dark mode */
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
+}
+
+/* Purple 'Poll · N votes' label */
+.poll-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--purple);
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
 }
 
 .poll-question {
@@ -3359,20 +3368,19 @@ body[data-comments-open] .mobile-only-header {
   line-height: 1.4;
 }
 
-/* Pre-vote option buttons */
 .poll-options {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Unselected option — neutral gray bubble */
+/* Base option button — neutral, clean */
 .poll-option-btn {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 16px;
+  padding: 11px 14px;
   border-radius: 12px;
   border: 1.5px solid var(--border);
   background: var(--bg-elevated);
@@ -3381,131 +3389,91 @@ body[data-comments-open] .mobile-only-header {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.12s, background 0.12s;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
 }
 
 .poll-option-btn:hover:not(:disabled):not(.poll-option-selected) {
   border-color: var(--text-muted);
-  background: var(--bg-card);
 }
 
 .poll-option-btn:disabled {
-  opacity: 0.6;
   cursor: default;
 }
 
-/* Selected option — purple highlight */
+/* Selected / voted option — purple border + tint */
 .poll-option-selected {
   border-color: var(--purple) !important;
-  background: rgba(168, 85, 247, 0.08) !important;
-  color: var(--purple) !important;
+  background: rgba(168, 85, 247, 0.07) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Radio circle — empty */
+.poll-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  flex-shrink: 0;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+/* Radio circle — filled purple */
+.poll-radio-selected {
+  border-color: var(--purple) !important;
+  background: var(--purple) !important;
+  box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 9px var(--purple);
 }
 
 .poll-option-text {
   flex: 1;
   min-width: 0;
   line-height: 1.4;
+  position: relative; /* above fill bar */
+  z-index: 1;
 }
 
-/* Radio circle — unselected */
-.poll-radio {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--text-muted);
-  background: transparent;
+/* Percentage shown after voting */
+.poll-option-pct {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
   flex-shrink: 0;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   position: relative;
+  z-index: 1;
 }
 
-/* Radio circle — selected (filled purple with white center dot) */
-.poll-radio-selected {
-  border-color: var(--purple) !important;
-  background: var(--purple) !important;
-  box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 9px var(--purple);
+.poll-option-selected .poll-option-pct {
+  color: var(--purple);
+}
+
+/* Subtle fill bar behind text (visible after voting) */
+.poll-option-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(168, 85, 247, 0.1);
+  border-radius: 10px;
+  transition: width 0.4s ease;
+  pointer-events: none;
+}
+
+.poll-option-selected .poll-option-fill {
+  background: rgba(168, 85, 247, 0.15);
 }
 
 .poll-signin-hint {
   font-size: 12px;
   color: var(--text-muted);
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   text-align: center;
 }
 
-/* Post-vote result bars */
-.poll-results {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.poll-result-bar {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  min-height: 38px;
-}
-
-.poll-result-bar.poll-result-winner {
-  border-color: rgba(168, 85, 247, 0.4);
-}
-
-.poll-result-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  background: rgba(168, 85, 247, 0.18);
-  transition: width 0.4s ease;
-  border-radius: 8px;
-}
-
-.poll-result-bar.poll-result-winner .poll-result-fill {
-  background: rgba(168, 85, 247, 0.28);
-}
-
-.poll-result-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px;
-  gap: 8px;
-}
-
-.poll-result-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.poll-check {
-  color: var(--purple);
-  font-weight: 700;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.poll-result-pct {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.poll-total {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-  text-align: center;
-}
+/* Legacy poll-result classes removed — unified option style handles post-vote display */
 
 /* Poll composer in Create page */
 .poll-add-section {
