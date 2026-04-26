@@ -51,8 +51,7 @@ function RatingBadge({ value }) {
   );
 }
 
-const TRUNCATE_LIMIT_MOBILE = 400;
-const TRUNCATE_LIMIT_DESKTOP = 600;
+// Line-clamp limits defined in CSS (.post-text-clamp): mobile=10, desktop=7
 
 export default function PostCard({ post: initialPost, onUpdate, onDelete, closeButton }) {
   // ── Store bootstrap ──────────────────────────────────────────────────────────
@@ -121,8 +120,15 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const [expanded, setExpanded] = useState(false);
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-  const TRUNCATE_LIMIT = isDesktop ? TRUNCATE_LIMIT_DESKTOP : TRUNCATE_LIMIT_MOBILE;
+  const [isClamped, setIsClamped] = useState(false);
+  const bodyTextRef = useRef(null);
+
+  // Detect whether text actually overflows the line-clamp container
+  useEffect(() => {
+    const el = bodyTextRef.current;
+    if (!el || expanded) return;
+    setIsClamped(el.scrollHeight > el.clientHeight + 2);
+  }, [post.body, post.id, expanded]);
 
   const { user } = useAuth();
   const { addToast } = useToast();
@@ -450,17 +456,22 @@ export default function PostCard({ post: initialPost, onUpdate, onDelete, closeB
         ) : (
           <>
             <div className="post-text">
-              {previewText && previewText.length > TRUNCATE_LIMIT ? (
-                <p style={{ margin: 0 }}>
-                  {expanded ? previewText : previewText.slice(0, TRUNCATE_LIMIT).trimEnd() + '…'}
-                  {' '}
-                  <button
-                    onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'inline', lineHeight: 'inherit' }}
-                  >{expanded ? 'See less' : 'See more'}</button>
-                </p>
-              ) : (
-                <p style={{ margin: 0 }}>{previewText}</p>
+              <p
+                ref={bodyTextRef}
+                className={expanded ? '' : 'post-text-clamp'}
+                style={{ margin: 0 }}
+              >{previewText}</p>
+              {(isClamped && !expanded) && (
+                <button
+                  onClick={e => { e.stopPropagation(); setExpanded(true); }}
+                  style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
+                >See more</button>
+              )}
+              {expanded && (
+                <button
+                  onClick={e => { e.stopPropagation(); setExpanded(false); }}
+                  style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', color: 'var(--purple)', fontWeight: 600, fontSize: 13, display: 'block' }}
+                >See less</button>
               )}
             </div>
           </>

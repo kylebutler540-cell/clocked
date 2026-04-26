@@ -1199,6 +1199,21 @@ img, video {
   white-space: pre-wrap;
 }
 
+/* Line-clamp: mobile = 10 lines, desktop = 7 lines */
+.post-text-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 10;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap; /* preserve line breaks within the clamp */
+}
+
+@media (min-width: 768px) {
+  .post-text-clamp {
+    -webkit-line-clamp: 7;
+  }
+}
+
 .post-text-blurred {
   position: relative;
 }
