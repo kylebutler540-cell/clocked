@@ -13,11 +13,24 @@ const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.goog
 
 function ProfileMenuSheet() {
   const [open, setOpen] = React.useState(false);
+  const [view, setView] = React.useState('main'); // 'main' | 'about'
+  const [swipeOffset, setSwipeOffset] = React.useState(0);
+  const [closing, setClosing] = React.useState(false);
+  const touchStartY = React.useRef(0);
+  const sheetRef = React.useRef(null);
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
   const { user, logout, savedAccounts, switchToAccount } = useAuth();
 
-  function close() { setOpen(false); }
+  function close() {
+    setClosing(true);
+    setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+      setSwipeOffset(0);
+      setView('main');
+    }, 240);
+  }
 
   function handleSignOut() {
     close();
@@ -33,7 +46,47 @@ function ProfileMenuSheet() {
     navigate('/', { replace: true });
   }
 
+  // Swipe-down to close
+  function handleTouchStart(e) {
+    touchStartY.current = e.touches[0].clientY;
+    setSwipeOffset(0);
+  }
+
+  function handleTouchMove(e) {
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setSwipeOffset(delta);
+  }
+
+  function handleTouchEnd() {
+    if (swipeOffset > 80) {
+      close();
+    } else {
+      setSwipeOffset(0);
+    }
+  }
+
+  const sheetStyle = {
+    maxWidth: 480,
+    transform: closing
+      ? 'translateY(100%)'
+      : swipeOffset > 0
+        ? `translateY(${swipeOffset}px)`
+        : 'translateY(0)',
+    transition: closing
+      ? 'transform 0.24s cubic-bezier(0.4,0,0.6,1)'
+      : swipeOffset > 0
+        ? 'none'
+        : 'transform 0.24s cubic-bezier(0,0,0.2,1)',
+  };
+
   const otherAccounts = (savedAccounts || []).filter(a => a.userId !== user?.id);
+
+  const ABOUT_ITEMS = [
+    { label: 'Terms', path: '/terms' },
+    { label: 'Privacy', path: '/privacy' },
+    { label: 'Guidelines', path: '/community-guidelines' },
+    { label: 'Contact', path: '/contact' },
+  ];
 
   return (
     <>
@@ -51,71 +104,125 @@ function ProfileMenuSheet() {
 
       {open && (
         <div className="modal-overlay" onClick={close}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+          <div
+            ref={sheetRef}
+            className="modal-sheet"
+            onClick={e => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={sheetStyle}
+          >
             <div className="modal-handle" />
-            <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 8 }}>
 
-              <button className="profile-sheet-item" onClick={() => { close(); navigate('/profile-setup?mode=edit'); }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Edit Profile
-              </button>
+            {view === 'about' ? (
+              /* ── About sub-screen ── */
+              <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 8 }}>
+                <button
+                  className="profile-sheet-item"
+                  onClick={() => setView('main')}
+                  style={{ color: 'var(--purple)', fontWeight: 600 }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Back
+                </button>
+                <div className="profile-sheet-divider" />
+                <div style={{ padding: '8px 20px 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  About
+                </div>
+                {ABOUT_ITEMS.map(item => (
+                  <button
+                    key={item.path}
+                    className="profile-sheet-item"
+                    onClick={() => { close(); setTimeout(() => navigate(item.path), 250); }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              /* ── Main menu ── */
+              <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 8 }}>
 
-              <button className="profile-sheet-item" onClick={() => { close(); navigate('/saved'); }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-                Saved Posts
-              </button>
+                <button className="profile-sheet-item" onClick={() => { close(); navigate('/profile-setup?mode=edit'); }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit Profile
+                </button>
 
-              <button className="profile-sheet-item" onClick={() => { close(); navigate('/find-friends'); }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                Find Friends
-              </button>
+                <button className="profile-sheet-item" onClick={() => { close(); navigate('/saved'); }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                  Saved Posts
+                </button>
 
-              <button className="profile-sheet-item" onClick={() => { close(); navigate('/?sort=top'); }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
-                Top Rated
-              </button>
+                <button className="profile-sheet-item" onClick={() => { close(); navigate('/find-friends'); }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Find Friends
+                </button>
 
-              <div className="profile-sheet-divider" />
+                <button className="profile-sheet-item" onClick={() => { close(); navigate('/?sort=top'); }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                  Top Rated
+                </button>
 
-              <button className="profile-sheet-item" onClick={() => { toggle(); close(); }}>
-                {theme === 'dark' ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                <div className="profile-sheet-divider" />
+
+                <button className="profile-sheet-item" onClick={() => { toggle(); close(); }}>
+                  {theme === 'dark' ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                  )}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
+
+                <button className="profile-sheet-item" onClick={() => setView('about')}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  About
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+
+                <div className="profile-sheet-divider" />
+
+                {otherAccounts.length > 0 && (
+                  <>
+                    <div style={{ padding: '8px 20px 4px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                      Switch Account
+                    </div>
+                    {otherAccounts.map(account => (
+                      <button key={account.userId} className="profile-sheet-item" onClick={() => handleSwitch(account)}>
+                        <AvatarCircle avatarUrl={account.avatarUrl} name={account.displayName || account.email} size={28} />
+                        <span style={{ fontWeight: 600 }}>{account.displayName || account.email?.split('@')[0]}</span>
+                      </button>
+                    ))}
+                    <div className="profile-sheet-divider" />
+                  </>
                 )}
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              </button>
 
-              <div className="profile-sheet-divider" />
+                <button className="profile-sheet-item" onClick={() => { close(); navigate('/switch-account'); }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h7"/></svg>
+                  Add Another Account
+                </button>
 
-              {otherAccounts.length > 0 && (
-                <>
-                  <div style={{ padding: '8px 20px 4px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    Switch Account
-                  </div>
-                  {otherAccounts.map(account => (
-                    <button key={account.userId} className="profile-sheet-item" onClick={() => handleSwitch(account)}>
-                      <AvatarCircle avatarUrl={account.avatarUrl} name={account.displayName || account.email} size={28} />
-                      <span style={{ fontWeight: 600 }}>{account.displayName || account.email?.split('@')[0]}</span>
-                    </button>
-                  ))}
-                  <div className="profile-sheet-divider" />
-                </>
-              )}
+                <div className="profile-sheet-divider" />
 
-              <button className="profile-sheet-item" onClick={() => { close(); navigate('/switch-account'); }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h7"/></svg>
-                Add Another Account
-              </button>
+                <button className="profile-sheet-item profile-sheet-item-danger" onClick={handleSignOut}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Sign Out
+                </button>
 
-              <div className="profile-sheet-divider" />
-
-              <button className="profile-sheet-item profile-sheet-item-danger" onClick={handleSignOut}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Sign Out
-              </button>
-
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
