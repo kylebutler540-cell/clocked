@@ -118,4 +118,38 @@ router.post('/:pollId/vote', requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/polls/:pollId/vote — remove current user's vote
+router.delete('/:pollId/vote', requireAuth, async (req, res) => {
+  try {
+    const poll = await prisma.poll.findUnique({
+      where: { id: req.params.pollId },
+      include: { options: { orderBy: { position: 'asc' } } },
+    });
+    if (!poll) return res.status(404).json({ error: 'Poll not found' });
+
+    const existing = await prisma.pollVote.findUnique({
+      where: { poll_id_user_id: { poll_id: poll.id, user_id: req.user.id } },
+    });
+    if (!existing) return res.status(404).json({ error: 'No vote to remove' });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.pollVote.delete({ where: { id: existing.id } });
+      await tx.pollOption.update({
+        where: { id: existing.poll_option_id },
+        data: { vote_count: { decrement: 1 } },
+      });
+    });
+
+    const updated = await prisma.poll.findUnique({
+      where: { id: poll.id },
+      include: { options: { orderBy: { position: 'asc' } } },
+    });
+
+    res.json(buildPollResponse(updated, null)); // user_voted_option_id = null (unvoted)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to remove vote' });
+  }
+});
+
 module.exports = router;

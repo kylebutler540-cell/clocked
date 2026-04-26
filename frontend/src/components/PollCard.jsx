@@ -49,26 +49,41 @@ export default function PollCard({ poll: initialPoll }) {
   async function handleVote(optionId) {
     if (loading) return;
     if (!user?.email) { navigate('/signup'); return; }
-    if (poll.user_voted_option_id === optionId) return; // same option, no-op
+
+    const isUnvoting = poll.user_voted_option_id === optionId;
+    const prevPoll = poll;
 
     setLoading(true);
     markVoteInFlight(poll.id);
 
-    // Optimistic update — show selection instantly
-    const optimistic = { ...poll, user_voted_option_id: optionId };
-    setPoll(optimistic);
-
-    try {
-      const res = await api.post(`/polls/${poll.id}/vote`, { optionId });
-      const confirmed = res.data;
-      setPoll(confirmed);
-      recordVote(poll.id, confirmed); // broadcast to other PollCards showing this poll
-    } catch {
-      // Revert on failure
-      cancelVoteInFlight(poll.id);
-      setPoll(poll);
-    } finally {
-      setLoading(false);
+    if (isUnvoting) {
+      // Optimistic: clear vote immediately
+      const optimistic = { ...poll, user_voted_option_id: null };
+      setPoll(optimistic);
+      try {
+        const res = await api.delete(`/polls/${poll.id}/vote`);
+        setPoll(res.data);
+        recordVote(poll.id, res.data);
+      } catch {
+        cancelVoteInFlight(poll.id);
+        setPoll(prevPoll);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Optimistic: highlight new selection
+      const optimistic = { ...poll, user_voted_option_id: optionId };
+      setPoll(optimistic);
+      try {
+        const res = await api.post(`/polls/${poll.id}/vote`, { optionId });
+        setPoll(res.data);
+        recordVote(poll.id, res.data);
+      } catch {
+        cancelVoteInFlight(poll.id);
+        setPoll(prevPoll);
+      } finally {
+        setLoading(false);
+      }
     }
   }
 
