@@ -233,92 +233,27 @@ function ProfileMenuSheet() {
 }
 
 // ── Own Profile Hero ─────────────────────────────────────────────────────────
-function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate, setFollowListModal, addToast }) {
-  const [showJobSearch, setShowJobSearch] = useState(false);
-  const [savingJob, setSavingJob] = useState(false);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const desktopJobRef = useRef(null);
+// Default building icon for when no workplace is selected
+function WorkplacePlaceholder({ size = 36 }) {
+  return (
+    <div style={{
+      width: size, height: size,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: 'var(--text-muted)',
+    }}>
+      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="12"/>
+        <path d="M9 12h6"/>
+        <path d="M9 16h6"/>
+      </svg>
+    </div>
+  );
+}
 
-  // Desktop: close dropdown when clicking outside
-  useEffect(() => {
-    if (isMobile || !showJobSearch) return;
-    function handleOutside(e) {
-      if (desktopJobRef.current && !desktopJobRef.current.contains(e.target)) {
-        setShowJobSearch(false);
-      }
-    }
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [showJobSearch, isMobile]);
-
-  async function handleJobSelect(employer) {
-    setSavingJob(true);
-    setShowJobSearch(false);
-    try {
-      const res = await api.patch('/auth/profile', {
-        workplace_name: employer.name,
-        workplace_place_id: employer.place_id,
-        workplace_address: employer.address || employer.description || '',
-      });
-      if (res.data.user && setUser) setUser(res.data.user);
-    } catch {
-      addToast('Failed to save job');
-    } finally {
-      setSavingJob(false);
-    }
-  }
-
-  async function handleRemoveJob() {
-    setShowJobSearch(false);
-    try {
-      const res = await api.patch('/auth/profile', { workplace_name: null, workplace_place_id: null, workplace_address: null });
-      if (res.data.user && setUser) setUser(res.data.user);
-    } catch { addToast('Failed to remove job'); }
-  }
-
+function OwnProfileHero({ user, ownDisplayName, isSubscribed, navigate, setFollowListModal }) {
   const hasJob = !!user?.workplace_name;
-
-  // Job picker: modal on mobile, dropdown on desktop
-  const JobPicker = showJobSearch ? (
-    isMobile ? (
-      // ─ Mobile: centered overlay modal ─
-      <div
-        style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '18vh' }}
-        onClick={() => setShowJobSearch(false)}
-      >
-        <div
-          style={{ background: 'var(--bg-card)', borderRadius: 16, width: 'calc(100vw - 40px)', maxWidth: 380, boxShadow: '0 16px 48px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 8px', flexShrink: 0 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Current Job</span>
-            <button onClick={() => setShowJobSearch(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
-          </div>
-          <div style={{ padding: '0 10px 10px', flex: 1, overflowY: 'auto', minHeight: 320 }}>
-            <EmployerSearch onSelect={handleJobSelect} placeholder="Search your employer..." />
-          </div>
-          {hasJob && (
-            <button onClick={handleRemoveJob} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', fontSize: 14, color: '#EF4444', fontWeight: 500 }}>
-              Remove current job
-            </button>
-          )}
-        </div>
-      </div>
-    ) : (
-      // ─ Desktop: dropdown anchored to button ─
-      <div className="profile-job-dropdown">
-        <div style={{ padding: '10px 12px 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Job</div>
-        <div style={{ padding: '0 8px 8px' }}>
-          <EmployerSearch onSelect={handleJobSelect} placeholder="Search your employer..." />
-        </div>
-        {hasJob && (
-          <button onClick={handleRemoveJob} style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#EF4444', borderTop: '1px solid var(--border)' }}>
-            Remove job
-          </button>
-        )}
-      </div>
-    )
-  ) : null;
 
   return (
     <>
@@ -356,26 +291,15 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', minWidth: 0 }}>
             <span className="profile-username-large" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ownDisplayName}</span>
 
-            {/* + Job button */}
-            <div ref={desktopJobRef} style={{ position: 'relative', flexShrink: 0 }}>
-              <button
-                className="profile-job-box"
-                onClick={() => setShowJobSearch(v => !v)}
-                title={hasJob ? user.workplace_name : 'Add current job'}
-              >
-                {hasJob ? (
-                  <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={36} borderRadius={8} />
-                ) : (
-                  <span className="profile-job-plus">
-                    {savingJob
-                      ? <div className="spinner" style={{ width: 14, height: 14 }} />
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    }
-                  </span>
-                )}
-              </button>
-              {/* Desktop dropdown anchored here */}
-              {!isMobile && JobPicker}
+            {/* Workplace display — read-only, edit via Edit Profile */}
+            <div
+              className="profile-job-box"
+              title={hasJob ? user.workplace_name : 'Add workplace via Edit Profile'}
+              style={{ cursor: 'default' }}
+            >
+              {hasJob
+                ? <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={36} borderRadius={8} />
+                : <WorkplacePlaceholder size={36} />}
             </div>
 
             {/* Hamburger menu (mobile only) */}
@@ -430,8 +354,6 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
         </div>
       )}
 
-      {/* Mobile job picker modal (rendered at root level so it covers full screen) */}
-      {isMobile && JobPicker}
     </>
   );
 }
@@ -999,10 +921,8 @@ export default function Profile() {
           user={user}
           ownDisplayName={ownDisplayName}
           isSubscribed={isSubscribed}
-          setUser={setUser}
           navigate={navigate}
           setFollowListModal={setFollowListModal}
-          addToast={addToast}
         />
       )}
 

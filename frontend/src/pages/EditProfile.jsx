@@ -9,6 +9,19 @@ import CropModal from '../components/CropModal';
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_.]{3,20}$/;
 
+function WorkplacePlaceholderIcon({ size = 32 }) {
+  return (
+    <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, background: 'var(--bg-elevated)', flexShrink: 0, color: 'var(--text-muted)' }}>
+      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <path d="M9 12h6"/>
+        <path d="M9 16h6"/>
+      </svg>
+    </div>
+  );
+}
+
 function AvatarCircle({ avatarUrl, displayName, size = 90 }) {
   const letter = displayName ? displayName[0].toUpperCase() : '?';
   return (
@@ -177,9 +190,9 @@ export default function EditProfile() {
             </label>
             {workplace ? (
               <div className="edit-profile-workplace-selected">
-                {workplace.place_id && (
-                  <BusinessLogo placeId={workplace.place_id} name={workplace.name} size={32} borderRadius={6} />
-                )}
+                {workplace.place_id
+                  ? <BusinessLogo placeId={workplace.place_id} name={workplace.name} size={32} borderRadius={6} />
+                  : <WorkplacePlaceholderIcon size={32} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{workplace.name}</div>
                   {workplace.address && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{workplace.address}</div>}
@@ -187,10 +200,16 @@ export default function EditProfile() {
                 <button type="button" onClick={() => setWorkplace(null)} className="edit-profile-clear">×</button>
               </div>
             ) : (
-              <EmployerSearch
-                onSelect={emp => setWorkplace(emp)}
-                placeholder="Search your workplace..."
-              />
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', border: '1.5px dashed var(--border)' }}>
+                  <WorkplacePlaceholderIcon size={32} />
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>No workplace selected — search below to add one.</span>
+                </div>
+                <EmployerSearch
+                  onSelect={emp => setWorkplace(emp)}
+                  placeholder="Search your workplace..."
+                />
+              </>
             )}
           </div>
 
