@@ -8,6 +8,8 @@ import api from '../lib/api';
 import { lsGet, lsSet, lsDelete, lsClear } from '../lib/cache';
 import Feed from '../components/Feed';
 import PostCard from '../components/PostCard';
+import EmployerSearch from '../components/EmployerSearch';
+import BusinessLogo from '../components/BusinessLogo';
 
 const GOOGLE_CLIENT_ID = '65166396387-6vt1cjhm9u4e9da06h409gcq6p7t08pv.apps.googleusercontent.com';
 
@@ -227,6 +229,157 @@ function ProfileMenuSheet() {
         </div>
       )}
     </>
+  );
+}
+
+// ── Own Profile Hero ─────────────────────────────────────────────────────────
+function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate, setFollowListModal, addToast }) {
+  const [showJobSearch, setShowJobSearch] = useState(false);
+  const [savingJob, setSavingJob] = useState(false);
+  const jobRef = useRef(null);
+
+  // Close job search when clicking outside
+  useEffect(() => {
+    function handleOutside(e) {
+      if (jobRef.current && !jobRef.current.contains(e.target)) setShowJobSearch(false);
+    }
+    if (showJobSearch) document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showJobSearch]);
+
+  async function handleJobSelect(employer) {
+    setSavingJob(true);
+    setShowJobSearch(false);
+    try {
+      const res = await api.patch('/auth/profile', {
+        workplace_name: employer.name,
+        workplace_place_id: employer.place_id,
+        workplace_address: employer.address || employer.description || '',
+      });
+      if (res.data.user && setUser) setUser(res.data.user);
+    } catch {
+      addToast('Failed to save job');
+    } finally {
+      setSavingJob(false);
+    }
+  }
+
+  const hasJob = !!user?.workplace_name;
+
+  return (
+    <div className="profile-hero-v2">
+      {/* Mobile create button */}
+      <button
+        className="mobile-top-bar-btn mobile-top-bar-create profile-hero-create-btn"
+        onClick={() => navigate('/create')}
+        aria-label="Create post"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+
+      {/* Avatar */}
+      <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
+
+      {/* Right section */}
+      <div className="profile-hero-v2-info">
+
+        {/* Row 1: Name + Job box */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span className="profile-username-large" style={{ flexShrink: 0 }}>{ownDisplayName}</span>
+          <span className="mobile-only-menu" style={{ marginLeft: 'auto' }}><ProfileMenuSheet /></span>
+
+          {/* Current Job box */}
+          <div ref={jobRef} style={{ position: 'relative' }}>
+            <button
+              className="profile-job-box"
+              onClick={() => setShowJobSearch(v => !v)}
+              title={hasJob ? user.workplace_name : 'Add current job'}
+            >
+              {hasJob ? (
+                <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={36} borderRadius={8} />
+              ) : (
+                <span className="profile-job-plus">
+                  {savingJob
+                    ? <div className="spinner" style={{ width: 14, height: 14 }} />
+                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  }
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown search */}
+            {showJobSearch && (
+              <div className="profile-job-dropdown">
+                <div style={{ padding: '10px 12px 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Job</div>
+                <div style={{ padding: '0 8px 8px' }}>
+                  <EmployerSearch
+                    onSelect={emp => handleJobSelect(emp)}
+                    placeholder="Search your employer..."
+                  />
+                </div>
+                {hasJob && (
+                  <button
+                    style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#EF4444', borderTop: '1px solid var(--border)' }}
+                    onClick={async () => {
+                      setShowJobSearch(false);
+                      try {
+                        const res = await api.patch('/auth/profile', { workplace_name: null, workplace_place_id: null, workplace_address: null });
+                        if (res.data.user && setUser) setUser(res.data.user);
+                      } catch { addToast('Failed to remove job'); }
+                    }}
+                  >
+                    Remove job
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: @username */}
+        {(user?.username) && (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
+        )}
+
+        {isSubscribed && <span className="sub-badge" style={{ marginTop: 6, display: 'inline-block' }}>✦ Pro Member</span>}
+
+        {/* Row 3: Posts · Followers · Following */}
+        {user?.email && (
+          <div style={{ display: 'flex', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>
+              {formatCount(user?.post_count ?? 0)}
+              <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 13, marginLeft: 4 }}>Post{user?.post_count !== 1 ? 's' : ''}</span>
+            </span>
+            <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }} onClick={() => setFollowListModal('followers')}>
+              {formatCount(user?.follower_count)}
+              <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 13, marginLeft: 4 }}>{user?.follower_count === 1 ? 'Follower' : 'Followers'}</span>
+            </button>
+            <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }} onClick={() => setFollowListModal('following')}>
+              {formatCount(user?.following_count)}
+              <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 13, marginLeft: 4 }}>Following</span>
+            </button>
+          </div>
+        )}
+
+        {/* Row 4: Bio */}
+        {user?.bio && (
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '8px 0 0', lineHeight: 1.5 }}>{user.bio}</p>
+        )}
+
+        {/* Row 5: Edit Profile button */}
+        {user?.email && (
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '7px 16px', fontSize: 13, marginTop: 12 }}
+            onClick={() => navigate('/edit-profile')}
+          >
+            Edit Profile
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -789,62 +942,15 @@ export default function Profile() {
           </button>
         </div>
       ) : (
-        <div className="profile-hero" style={{ position: 'relative' }}>
-          {/* Create button — mobile only, top-left of hero */}
-          <button
-            className="mobile-top-bar-btn mobile-top-bar-create profile-hero-create-btn"
-            onClick={() => navigate('/create')}
-            aria-label="Create post"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
-          <div className="profile-hero-info" style={{ flex: 1, minWidth: 0 }}>
-            {/* Name row with inline three-dot menu */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div className="profile-username-large" style={{ flex: 1, minWidth: 0 }}>{ownDisplayName}</div>
-              <span className="mobile-only-menu"><ProfileMenuSheet /></span>
-            </div>
-            {user?.username && (
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
-            )}
-  
-            {isSubscribed && <span className="sub-badge" style={{ marginTop: 8 }}>✦ Pro Member</span>}
-
-            {user?.email && (
-              <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-                <button
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                  onClick={() => setFollowListModal('followers')}
-                >
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.follower_count)}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>{user?.follower_count === 1 ? 'Follower' : 'Followers'}</span>
-                </button>
-                <button
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                  onClick={() => setFollowListModal('following')}
-                >
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCount(user?.following_count)}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 4 }}>Following</span>
-                </button>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              {user?.email && (
-                <button
-                  className="btn btn-secondary"
-                  style={{ padding: '7px 16px', fontSize: 13 }}
-                  onClick={() => navigate('/edit-profile')}
-                >
-                  Edit Profile
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <OwnProfileHero
+          user={user}
+          ownDisplayName={ownDisplayName}
+          isSubscribed={isSubscribed}
+          setUser={setUser}
+          navigate={navigate}
+          setFollowListModal={setFollowListModal}
+          addToast={addToast}
+        />
       )}
 
       {user?.email && (

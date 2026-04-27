@@ -1997,6 +1997,65 @@ textarea.form-input {
   padding: 28px 20px 24px;
 }
 
+/* New own-profile hero layout */
+.profile-hero-v2 {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 20px 18px;
+}
+
+.profile-hero-v2-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+/* Current job box */
+.profile-job-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.profile-job-box:hover { border-color: var(--purple); }
+
+.profile-job-plus {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Job dropdown */
+.profile-job-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .profile-hero-v2 { padding: 24px 24px 20px; }
+}
+
 /* Create button inside profile hero — mobile only */
 .profile-hero-create-btn {
   align-self: flex-start;

@@ -182,7 +182,12 @@ router.get('/user/:userId', async (req, res) => {
 
 // Get current user
 router.get('/me', requireAuth, async (req, res) => {
-  res.json({ user: formatUser(req.user) });
+  try {
+    const postCount = await prisma.post.count({ where: { anonymous_user_id: req.user.id } });
+    res.json({ user: { ...formatUser(req.user), post_count: postCount } });
+  } catch {
+    res.json({ user: { ...formatUser(req.user), post_count: 0 } });
+  }
 });
 
 // Update profile (display_name, username, avatar_url, bio, workplace)
