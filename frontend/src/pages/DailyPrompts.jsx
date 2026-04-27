@@ -97,7 +97,7 @@ function ResultBar({ label, pct, count, isSelected, color }) {
       <div className="dp-result-bar-wrap">
         <div
           className="dp-result-bar-fill"
-          style={{ width: `${animPct}%`, background: isSelected ? color || 'var(--purple)' : 'var(--bg-elevated)' }}
+          style={{ width: `${animPct}%`, background: isSelected ? color || 'var(--purple)' : color ? `${color}30` : 'var(--bg-elevated)' }}
         />
         <span className="dp-result-pct">{pct}%</span>
       </div>
@@ -364,8 +364,8 @@ export default function DailyPrompts() {
 
                 {promptData.responseType === 'yesno' && promptData.results && (
                   <>
-                    <ResultBar label="Yes" pct={promptData.results.yes?.pct || 0} count={promptData.results.yes?.count || 0} isSelected={promptData.userResponse === 'yes'} color={catColor} />
-                    <ResultBar label="No"  pct={promptData.results.no?.pct  || 0} count={promptData.results.no?.count  || 0} isSelected={promptData.userResponse === 'no'}  color={catColor} />
+                    <ResultBar label="Yes" pct={promptData.results.yes?.pct || 0} count={promptData.results.yes?.count || 0} isSelected={promptData.userResponse === 'yes'} color="#22C55E" />
+                    <ResultBar label="No"  pct={promptData.results.no?.pct  || 0} count={promptData.results.no?.count  || 0} isSelected={promptData.userResponse === 'no'}  color="#EF4444" />
                   </>
                 )}
 
