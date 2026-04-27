@@ -287,22 +287,28 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, navigate, setFollo
 
         {/* Right col: name row, handle, stats */}
         <div className="profile-hero-v2-right">
-          {/* Name row: Name | + job | ☰ menu */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', minWidth: 0 }}>
-            <span className="profile-username-large" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ownDisplayName}</span>
+          {/* Name row: [Name][Job box]  →spacer→  [☰ menu] */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            {/* Name — natural width, does not flex-grow */}
+            <span
+              className="profile-username-large"
+              style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%', flexShrink: 1 }}
+            >{ownDisplayName}</span>
 
-            {/* Workplace display — read-only, edit via Edit Profile */}
+            {/* Workplace display — sits immediately right of name, display-only */}
             <div
-              className="profile-job-box"
-              title={hasJob ? user.workplace_name : 'Add workplace via Edit Profile'}
-              style={{ cursor: 'default' }}
+              className={`profile-job-box${hasJob ? ' has-job' : ''}`}
+              title={hasJob ? user.workplace_name : ''}
             >
               {hasJob
-                ? <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={36} borderRadius={8} />
+                ? <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={40} borderRadius={8} />
                 : <WorkplacePlaceholder size={36} />}
             </div>
 
-            {/* Hamburger menu (mobile only) */}
+            {/* Flex spacer pushes menu to the far right */}
+            <div style={{ flex: 1 }} />
+
+            {/* Hamburger menu — mobile only, aligned with create btn height */}
             <span className="mobile-only-menu" style={{ flexShrink: 0 }}><ProfileMenuSheet /></span>
           </div>
 

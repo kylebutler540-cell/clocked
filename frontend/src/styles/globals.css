@@ -2027,21 +2027,36 @@ textarea.form-input {
 
 /* Current job box */
 .profile-job-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   border: 1.5px solid var(--border);
   background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: default;          /* display-only — not interactive */
   flex-shrink: 0;
-  transition: border-color 0.15s;
   overflow: hidden;
+  /* No hover, no transitions, no tap highlight */
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
-.profile-job-box:hover { border-color: var(--purple); }
+/* No hover / active styling — display only */
+.profile-job-box:hover { border-color: var(--border); }
+.profile-job-box:active { border-color: var(--border); }
+
+/* When a real logo is shown, remove the border */
+.profile-job-box.has-job {
+  border: none;
+  background: transparent;
+}
+
+/* Make the mobile menu trigger bigger to align with create button */
+.mobile-only-menu button {
+  width: 40px !important;
+  height: 40px !important;
+}
 
 .profile-job-plus {
   color: var(--text-muted);
