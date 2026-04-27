@@ -237,6 +237,19 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
   const [showJobSearch, setShowJobSearch] = useState(false);
   const [savingJob, setSavingJob] = useState(false);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const desktopJobRef = useRef(null);
+
+  // Desktop: close dropdown when clicking outside
+  useEffect(() => {
+    if (isMobile || !showJobSearch) return;
+    function handleOutside(e) {
+      if (desktopJobRef.current && !desktopJobRef.current.contains(e.target)) {
+        setShowJobSearch(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showJobSearch, isMobile]);
 
   async function handleJobSelect(employer) {
     setSavingJob(true);
@@ -344,7 +357,7 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
             <span className="profile-username-large" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ownDisplayName}</span>
 
             {/* + Job button */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div ref={desktopJobRef} style={{ position: 'relative', flexShrink: 0 }}>
               <button
                 className="profile-job-box"
                 onClick={() => setShowJobSearch(v => !v)}
