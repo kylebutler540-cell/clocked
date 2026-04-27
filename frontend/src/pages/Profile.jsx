@@ -274,14 +274,14 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
         onClick={() => setShowJobSearch(false)}
       >
         <div
-          style={{ background: 'var(--bg-card)', borderRadius: 16, width: 'calc(100vw - 40px)', maxWidth: 360, boxShadow: '0 16px 48px rgba(0,0,0,0.25)', overflow: 'hidden' }}
+          style={{ background: 'var(--bg-card)', borderRadius: 16, width: 'calc(100vw - 40px)', maxWidth: 380, boxShadow: '0 16px 48px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}
           onClick={e => e.stopPropagation()}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 8px', flexShrink: 0 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Current Job</span>
             <button onClick={() => setShowJobSearch(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
           </div>
-          <div style={{ padding: '0 10px 10px' }}>
+          <div style={{ padding: '0 10px 10px', flex: 1, overflowY: 'auto', minHeight: 320 }}>
             <EmployerSearch onSelect={handleJobSelect} placeholder="Search your employer..." />
           </div>
           {hasJob && (
@@ -318,17 +318,20 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
           [Edit Profile]
       */}
       <div className="profile-hero-v2">
-        {/* Mobile create button */}
+        {/* Mobile create button — sits on its own row above the avatar */}
         <button
           className="mobile-top-bar-btn mobile-top-bar-create profile-hero-create-btn"
           onClick={() => navigate('/create')}
           aria-label="Create post"
+          style={{ alignSelf: 'flex-start' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
 
+        {/* Avatar + info row */}
+        <div className="profile-hero-v2-body">
         {/* Left col: Avatar */}
         <div className="profile-hero-v2-left">
           <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
@@ -391,6 +394,7 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
             </div>
           )}
         </div>
+        </div> {/* end profile-hero-v2-body */}
       </div>
 
       {/* Bio — full-width below the two columns, left-aligned */}

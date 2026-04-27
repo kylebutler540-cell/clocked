@@ -1997,13 +1997,20 @@ textarea.form-input {
   padding: 28px 20px 24px;
 }
 
-/* New own-profile hero layout */
+/* New own-profile hero layout — column on mobile: create btn on top, avatar+info below */
 .profile-hero-v2 {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 20px 8px;
+  gap: 10px;
+}
+
+/* Inner row: avatar + right info */
+.profile-hero-v2-body {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   gap: 14px;
-  padding: 16px 20px 8px;
 }
 
 /* Left column: avatar */
@@ -2059,7 +2066,15 @@ textarea.form-input {
 }
 
 @media (min-width: 768px) {
-  .profile-hero-v2 { padding: 24px 24px 20px; }
+  .profile-hero-v2 {
+    flex-direction: row; /* desktop stays row layout */
+    align-items: flex-start;
+    padding: 24px 24px 20px;
+    gap: 14px;
+  }
+  .profile-hero-v2-body {
+    display: contents; /* on desktop the body wrapper dissolves — children flow directly in the row */
+  }
 }
 
 /* Create button inside profile hero — mobile only */
@@ -2100,10 +2115,10 @@ textarea.form-input {
 }
 
 .profile-username-large {
-  font-size: 18px;
+  font-size: 20px;          /* slightly bigger but not huge */
   font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 3px;
+  margin-bottom: 1px;       /* tighter gap to @username */
   letter-spacing: -0.3px;
   overflow: hidden;
   text-overflow: ellipsis;
