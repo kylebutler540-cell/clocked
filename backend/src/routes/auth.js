@@ -40,6 +40,10 @@ function formatUser(user) {
     avatar_url: user.avatar_url,
     follower_count: user.follower_count,
     following_count: user.following_count,
+    bio: user.bio ?? null,
+    workplace_name: user.workplace_name ?? null,
+    workplace_place_id: user.workplace_place_id ?? null,
+    workplace_address: user.workplace_address ?? null,
   };
 }
 
@@ -181,10 +185,10 @@ router.get('/me', requireAuth, async (req, res) => {
   res.json({ user: formatUser(req.user) });
 });
 
-// Update profile (display_name, username, avatar_url)
+// Update profile (display_name, username, avatar_url, bio, workplace)
 router.patch('/profile', requireAuth, async (req, res) => {
   try {
-    const { display_name, username, avatar_url } = req.body;
+    const { display_name, username, avatar_url, bio, workplace_name, workplace_place_id, workplace_address } = req.body;
     const updateData = {};
 
     if (display_name !== undefined) {
@@ -211,6 +215,16 @@ router.patch('/profile', requireAuth, async (req, res) => {
 
     if (avatar_url !== undefined) {
       updateData.avatar_url = avatar_url || null;
+    }
+
+    if (bio !== undefined) {
+      updateData.bio = bio ? bio.slice(0, 150).trim() : null;
+    }
+
+    if (workplace_name !== undefined) {
+      updateData.workplace_name = workplace_name || null;
+      updateData.workplace_place_id = workplace_place_id || null;
+      updateData.workplace_address = workplace_address || null;
     }
 
     const updated = await prisma.user.update({

@@ -111,6 +111,11 @@ async function run() {
       `DO $$ BEGIN ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_poll_id_fkey" FOREIGN KEY ("poll_id") REFERENCES "polls"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
       `DO $$ BEGIN ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_poll_option_id_fkey" FOREIGN KEY ("poll_option_id") REFERENCES "poll_options"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
       `DO $$ BEGIN ALTER TABLE "poll_votes" ADD CONSTRAINT "poll_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // Bio + Workplace on user profile
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "bio" TEXT`,
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "workplace_name" TEXT`,
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "workplace_place_id" TEXT`,
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "workplace_address" TEXT`,
       // Daily Prompts
       `CREATE TABLE IF NOT EXISTS "prompt_responses" (
         "id" TEXT NOT NULL,

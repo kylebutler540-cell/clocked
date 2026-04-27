@@ -1,0 +1,234 @@
+import React, { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import api from '../lib/api';
+import EmployerSearch from '../components/EmployerSearch';
+import BusinessLogo from '../components/BusinessLogo';
+import CropModal from '../components/CropModal';
+
+const USERNAME_REGEX = /^[a-zA-Z0-9_.]{3,20}$/;
+
+function AvatarCircle({ avatarUrl, displayName, size = 90 }) {
+  const letter = displayName ? displayName[0].toUpperCase() : '?';
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, #A855F7, #7C3AED)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden', flexShrink: 0,
+      fontSize: size * 0.38, fontWeight: 700, color: 'white', userSelect: 'none',
+    }}>
+      {avatarUrl
+        ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : letter}
+    </div>
+  );
+}
+
+export default function EditProfile() {
+  const navigate = useNavigate();
+  const { user, setUser } = useAuth();
+  const { addToast } = useToast();
+  const fileInputRef = useRef(null);
+
+  const [displayName, setDisplayName] = useState(user?.display_name || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
+  const [workplace, setWorkplace] = useState(
+    user?.workplace_place_id
+      ? { place_id: user.workplace_place_id, name: user.workplace_name, address: user.workplace_address }
+      : null
+  );
+  const [usernameError, setUsernameError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [cropRawUrl, setCropRawUrl] = useState(null);
+
+  // ── Username validation ────────────────────────────────────────────────────
+  function validateUsername(val) {
+    if (!val) return 'Username is required';
+    if (!USERNAME_REGEX.test(val)) return 'Letters, numbers, underscores, periods only (3–20 chars)';
+    return '';
+  }
+
+  const handleUsernameChange = useCallback((e) => {
+    const val = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '');
+    setUsername(val);
+    setUsernameError(validateUsername(val));
+  }, []);
+
+  // ── Avatar upload ──────────────────────────────────────────────────────────
+  function handleAvatarFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCropRawUrl(ev.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  function handleCropConfirm(croppedDataUrl) {
+    setAvatarUrl(croppedDataUrl);
+    setCropRawUrl(null);
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  async function handleSave(e) {
+    e.preventDefault();
+    if (!displayName.trim()) return addToast('Display name is required');
+    const unErr = validateUsername(username);
+    if (unErr) return addToast(unErr);
+    if (!workplace) return addToast('Workplace is required');
+
+    setSaving(true);
+    try {
+      const res = await api.patch('/auth/profile', {
+        display_name: displayName.trim(),
+        username,
+        avatar_url: avatarUrl || null,
+        bio: bio.trim() || null,
+        workplace_name: workplace.name,
+        workplace_place_id: workplace.place_id,
+        workplace_address: workplace.address || '',
+      });
+      if (res.data.user && setUser) setUser(res.data.user);
+      addToast('Profile saved!');
+      navigate('/profile');
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="edit-profile-page">
+        {/* Header */}
+        <div className="edit-profile-header">
+          <button className="edit-profile-back" onClick={() => navigate(-1)} aria-label="Back">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <h1 className="edit-profile-title">Edit Profile</h1>
+          <div style={{ width: 40 }} />
+        </div>
+
+        <form onSubmit={handleSave} className="edit-profile-form">
+          {/* Avatar */}
+          <div className="edit-profile-avatar-wrap">
+            <div className="edit-profile-avatar-btn" onClick={() => fileInputRef.current?.click()}>
+              <AvatarCircle avatarUrl={avatarUrl} displayName={displayName || user?.display_name} size={90} />
+              <div className="edit-profile-camera">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarFile} />
+          </div>
+
+          {/* Display Name */}
+          <div className="edit-profile-field">
+            <label className="edit-profile-label">
+              Display Name <span className="edit-profile-required">*</span>
+            </label>
+            <input
+              className="form-input"
+              type="text"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder="e.g. Night Owl or TechWorker99"
+              maxLength={50}
+              required
+            />
+          </div>
+
+          {/* Username */}
+          <div className="edit-profile-field">
+            <label className="edit-profile-label">
+              @Username <span className="edit-profile-required">*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <span className="edit-profile-at">@</span>
+              <input
+                className="form-input"
+                type="text"
+                value={username}
+                onChange={handleUsernameChange}
+                placeholder="yourhandle"
+                maxLength={20}
+                style={{ paddingLeft: 28 }}
+                required
+              />
+            </div>
+            {usernameError && (
+              <p className="edit-profile-error">{usernameError}</p>
+            )}
+          </div>
+
+          {/* Workplace */}
+          <div className="edit-profile-field">
+            <label className="edit-profile-label">
+              Workplace <span className="edit-profile-required">*</span>
+            </label>
+            {workplace ? (
+              <div className="edit-profile-workplace-selected">
+                {workplace.place_id && (
+                  <BusinessLogo placeId={workplace.place_id} name={workplace.name} size={32} borderRadius={6} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{workplace.name}</div>
+                  {workplace.address && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{workplace.address}</div>}
+                </div>
+                <button type="button" onClick={() => setWorkplace(null)} className="edit-profile-clear">×</button>
+              </div>
+            ) : (
+              <EmployerSearch
+                onSelect={emp => setWorkplace(emp)}
+                placeholder="Search your workplace..."
+              />
+            )}
+          </div>
+
+          {/* Bio */}
+          <div className="edit-profile-field">
+            <label className="edit-profile-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Bio <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12 }}>(optional)</span></span>
+              <span style={{ fontSize: 12, color: bio.length >= 130 ? '#EF4444' : 'var(--text-muted)', fontWeight: 500 }}>{bio.length}/150</span>
+            </label>
+            <textarea
+              className="form-input"
+              value={bio}
+              onChange={e => setBio(e.target.value.slice(0, 150))}
+              placeholder="Tell people a little about yourself..."
+              rows={3}
+              maxLength={150}
+              style={{ resize: 'none' }}
+            />
+          </div>
+
+          {/* Save Button */}
+          <button
+            type="submit"
+            className="btn btn-primary btn-full edit-profile-save"
+            disabled={saving || !!usernameError}
+          >
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </form>
+      </div>
+
+      {cropRawUrl && (
+        <CropModal
+          rawDataUrl={cropRawUrl}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropRawUrl(null)}
+        />
+      )}
+    </>
+  );
+}

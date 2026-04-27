@@ -37,6 +37,7 @@ const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const Signup = React.lazy(() => import('./pages/Signup'));
 const SwitchAccount = React.lazy(() => import('./pages/SwitchAccount'));
 const ProfileSetup = React.lazy(() => import('./pages/ProfileSetup'));
+const EditProfile = React.lazy(() => import('./pages/EditProfile'));
 // Messages exports two things — need special handling
 import Messages, { AppLevelConversationView } from './pages/Messages';
 
@@ -451,6 +452,7 @@ function AppInner() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/switch-account" element={<SwitchAccount />} />
               <Route path="/profile-setup" element={<ProfileSetup />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/subscription/success" element={<SubscriptionSuccess />} />
               <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
               <Route path="/terms" element={<Terms />} />

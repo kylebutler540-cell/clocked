@@ -23,6 +23,10 @@ model User {
   follower_count    Int            @default(0)
   following_count   Int            @default(0)
   blocked_user_ids  String[]       @default([])
+  bio               String?
+  workplace_name    String?
+  workplace_place_id String?
+  workplace_address String?
 
   posts         Post[]
   comments      Comment[]
