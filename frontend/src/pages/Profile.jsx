@@ -236,16 +236,7 @@ function ProfileMenuSheet() {
 function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate, setFollowListModal, addToast }) {
   const [showJobSearch, setShowJobSearch] = useState(false);
   const [savingJob, setSavingJob] = useState(false);
-  const jobRef = useRef(null);
-
-  // Close job search when clicking outside
-  useEffect(() => {
-    function handleOutside(e) {
-      if (jobRef.current && !jobRef.current.contains(e.target)) setShowJobSearch(false);
-    }
-    if (showJobSearch) document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [showJobSearch]);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   async function handleJobSelect(employer) {
     setSavingJob(true);
@@ -264,122 +255,167 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, setUser, navigate,
     }
   }
 
+  async function handleRemoveJob() {
+    setShowJobSearch(false);
+    try {
+      const res = await api.patch('/auth/profile', { workplace_name: null, workplace_place_id: null, workplace_address: null });
+      if (res.data.user && setUser) setUser(res.data.user);
+    } catch { addToast('Failed to remove job'); }
+  }
+
   const hasJob = !!user?.workplace_name;
 
-  return (
-    <div className="profile-hero-v2">
-      {/* Mobile create button */}
-      <button
-        className="mobile-top-bar-btn mobile-top-bar-create profile-hero-create-btn"
-        onClick={() => navigate('/create')}
-        aria-label="Create post"
+  // Job picker: modal on mobile, dropdown on desktop
+  const JobPicker = showJobSearch ? (
+    isMobile ? (
+      // ─ Mobile: centered overlay modal ─
+      <div
+        style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '18vh' }}
+        onClick={() => setShowJobSearch(false)}
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </button>
-
-      {/* Avatar */}
-      <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
-
-      {/* Right section */}
-      <div className="profile-hero-v2-info">
-
-        {/* Row 1: Name + Job box */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span className="profile-username-large" style={{ flexShrink: 0 }}>{ownDisplayName}</span>
-          <span className="mobile-only-menu" style={{ marginLeft: 'auto' }}><ProfileMenuSheet /></span>
-
-          {/* Current Job box */}
-          <div ref={jobRef} style={{ position: 'relative' }}>
-            <button
-              className="profile-job-box"
-              onClick={() => setShowJobSearch(v => !v)}
-              title={hasJob ? user.workplace_name : 'Add current job'}
-            >
-              {hasJob ? (
-                <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={36} borderRadius={8} />
-              ) : (
-                <span className="profile-job-plus">
-                  {savingJob
-                    ? <div className="spinner" style={{ width: 14, height: 14 }} />
-                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  }
-                </span>
-              )}
-            </button>
-
-            {/* Dropdown search */}
-            {showJobSearch && (
-              <div className="profile-job-dropdown">
-                <div style={{ padding: '10px 12px 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Job</div>
-                <div style={{ padding: '0 8px 8px' }}>
-                  <EmployerSearch
-                    onSelect={emp => handleJobSelect(emp)}
-                    placeholder="Search your employer..."
-                  />
-                </div>
-                {hasJob && (
-                  <button
-                    style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#EF4444', borderTop: '1px solid var(--border)' }}
-                    onClick={async () => {
-                      setShowJobSearch(false);
-                      try {
-                        const res = await api.patch('/auth/profile', { workplace_name: null, workplace_place_id: null, workplace_address: null });
-                        if (res.data.user && setUser) setUser(res.data.user);
-                      } catch { addToast('Failed to remove job'); }
-                    }}
-                  >
-                    Remove job
-                  </button>
-                )}
-              </div>
-            )}
+        <div
+          style={{ background: 'var(--bg-card)', borderRadius: 16, width: 'calc(100vw - 40px)', maxWidth: 360, boxShadow: '0 16px 48px rgba(0,0,0,0.25)', overflow: 'hidden' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 8px' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Current Job</span>
+            <button onClick={() => setShowJobSearch(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
           </div>
+          <div style={{ padding: '0 10px 10px' }}>
+            <EmployerSearch onSelect={handleJobSelect} placeholder="Search your employer..." />
+          </div>
+          {hasJob && (
+            <button onClick={handleRemoveJob} style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', fontSize: 14, color: '#EF4444', fontWeight: 500 }}>
+              Remove current job
+            </button>
+          )}
+        </div>
+      </div>
+    ) : (
+      // ─ Desktop: dropdown anchored to button ─
+      <div className="profile-job-dropdown">
+        <div style={{ padding: '10px 12px 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Job</div>
+        <div style={{ padding: '0 8px 8px' }}>
+          <EmployerSearch onSelect={handleJobSelect} placeholder="Search your employer..." />
+        </div>
+        {hasJob && (
+          <button onClick={handleRemoveJob} style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#EF4444', borderTop: '1px solid var(--border)' }}>
+            Remove job
+          </button>
+        )}
+      </div>
+    )
+  ) : null;
+
+  return (
+    <>
+      {/* Layout:
+          [+ create]  (mobile-only, top-left)
+          [Avatar]  [Name] [+ job] [☰ menu]
+                    @handle
+                    Posts · Followers · Following
+          [Bio]
+          [Edit Profile]
+      */}
+      <div className="profile-hero-v2">
+        {/* Mobile create button */}
+        <button
+          className="mobile-top-bar-btn mobile-top-bar-create profile-hero-create-btn"
+          onClick={() => navigate('/create')}
+          aria-label="Create post"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+
+        {/* Left col: Avatar */}
+        <div className="profile-hero-v2-left">
+          <AvatarCircle avatarUrl={user?.avatar_url} name={ownDisplayName} size={72} />
         </div>
 
-        {/* Row 2: @username */}
-        {(user?.username) && (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{user.username}</div>
-        )}
+        {/* Right col: name row, handle, stats */}
+        <div className="profile-hero-v2-right">
+          {/* Name row: Name | + job | ☰ menu */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', minWidth: 0 }}>
+            <span className="profile-username-large" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ownDisplayName}</span>
 
-        {isSubscribed && <span className="sub-badge" style={{ marginTop: 6, display: 'inline-block' }}>✦ Pro Member</span>}
+            {/* + Job button */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                className="profile-job-box"
+                onClick={() => setShowJobSearch(v => !v)}
+                title={hasJob ? user.workplace_name : 'Add current job'}
+              >
+                {hasJob ? (
+                  <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={36} borderRadius={8} />
+                ) : (
+                  <span className="profile-job-plus">
+                    {savingJob
+                      ? <div className="spinner" style={{ width: 14, height: 14 }} />
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    }
+                  </span>
+                )}
+              </button>
+              {/* Desktop dropdown anchored here */}
+              {!isMobile && JobPicker}
+            </div>
 
-        {/* Row 3: Posts · Followers · Following */}
-        {user?.email && (
-          <div style={{ display: 'flex', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>
-              {formatCount(user?.post_count ?? 0)}
-              <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 13, marginLeft: 4 }}>Post{user?.post_count !== 1 ? 's' : ''}</span>
-            </span>
-            <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }} onClick={() => setFollowListModal('followers')}>
-              {formatCount(user?.follower_count)}
-              <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 13, marginLeft: 4 }}>{user?.follower_count === 1 ? 'Follower' : 'Followers'}</span>
-            </button>
-            <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }} onClick={() => setFollowListModal('following')}>
-              {formatCount(user?.following_count)}
-              <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 13, marginLeft: 4 }}>Following</span>
-            </button>
+            {/* Hamburger menu (mobile only) */}
+            <span className="mobile-only-menu" style={{ flexShrink: 0 }}><ProfileMenuSheet /></span>
           </div>
-        )}
 
-        {/* Row 4: Bio */}
-        {user?.bio && (
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '8px 0 0', lineHeight: 1.5 }}>{user.bio}</p>
-        )}
+          {/* @username */}
+          {user?.username && (
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>@{user.username}</div>
+          )}
 
-        {/* Row 5: Edit Profile button */}
-        {user?.email && (
+          {isSubscribed && <span className="sub-badge" style={{ marginTop: 6, display: 'inline-block' }}>✦ Pro Member</span>}
+
+          {/* Stats: Posts · Followers · Following */}
+          {user?.email && (
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>
+                {formatCount(user?.post_count ?? 0)}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 3 }}>Post{user?.post_count !== 1 ? 's' : ''}</span>
+              </span>
+              <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }} onClick={() => setFollowListModal('followers')}>
+                {formatCount(user?.follower_count)}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 3 }}>{user?.follower_count === 1 ? 'Follower' : 'Followers'}</span>
+              </button>
+              <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }} onClick={() => setFollowListModal('following')}>
+                {formatCount(user?.following_count)}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 3 }}>Following</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bio — full-width below the two columns, left-aligned */}
+      {user?.bio && (
+        <div style={{ padding: '0 20px 8px' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>{user.bio}</p>
+        </div>
+      )}
+
+      {/* Edit Profile — bottom-left */}
+      {user?.email && (
+        <div style={{ padding: '4px 20px 16px' }}>
           <button
             className="btn btn-secondary"
-            style={{ padding: '7px 16px', fontSize: 13, marginTop: 12 }}
+            style={{ padding: '7px 16px', fontSize: 13 }}
             onClick={() => navigate('/edit-profile')}
           >
             Edit Profile
           </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+
+      {/* Mobile job picker modal (rendered at root level so it covers full screen) */}
+      {isMobile && JobPicker}
+    </>
   );
 }
 

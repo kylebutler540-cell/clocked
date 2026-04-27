@@ -2002,14 +2002,20 @@ textarea.form-input {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 16px;
-  padding: 20px 20px 18px;
+  gap: 14px;
+  padding: 16px 20px 8px;
 }
 
-.profile-hero-v2-info {
+/* Left column: avatar */
+.profile-hero-v2-left {
+  flex-shrink: 0;
+}
+
+/* Right column: name, handle, stats */
+.profile-hero-v2-right {
   flex: 1;
   min-width: 0;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 /* Current job box */
