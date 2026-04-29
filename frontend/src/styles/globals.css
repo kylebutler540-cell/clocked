@@ -3136,6 +3136,11 @@ textarea.form-input {
     width: 100%;
     max-width: 100%;
   }
+
+  /* Daily Prompts — same full feed width as polls on desktop */
+  .dp-page {
+    max-width: 100%;
+  }
 }
 
 /* Center auth/form pages within the full app-main area on desktop */
