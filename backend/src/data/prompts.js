@@ -839,11 +839,36 @@ function getSliderScale(prompt) {
 }
 
 /**
+ * Auto-detect whether the question is about a negative thing (more = worse)
+ * or a positive thing (more = better).
+ * Experience/quality scales already encode direction in their labels, so only
+ * intensity and frequency scales need reversing.
+ */
+function getScaleDirection(prompt) {
+  if (prompt.scaleDirection) return prompt.scaleDirection;
+  const q = (prompt.variants.general || '').toLowerCase();
+  // Negative topics — a higher amount is a worse experience
+  if (/entitled|rude|hostile|stress|chaot|brutal|overwhelm|demand|understaffed|burnt|burned|fried|exhaust|drain|difficult|close to burnout|toxic|burnout|chaotic|worried|afraid|fear|resent|bitter|unkind|harsh|aggressive|unreasonable|disrespect/.test(q)) {
+    return 'negative';
+  }
+  return 'positive';
+}
+
+/**
  * Return the 5 label strings for a slider prompt.
+ * For negative-direction intensity/frequency prompts the labels are reversed so
+ * the angry emoji (value 1, leftmost) → “Extremely” / worst, and
+ * the happy emoji (value 5, rightmost) → “Not at all” / best.
  */
 function getSliderLabels(prompt) {
   const scale = getSliderScale(prompt);
-  return SLIDER_SCALE_LABELS[scale] || SLIDER_SCALE_LABELS.experience;
+  const labels = SLIDER_SCALE_LABELS[scale] || SLIDER_SCALE_LABELS.experience;
+  const direction = getScaleDirection(prompt);
+  // Reverse intensity/frequency labels for negative-direction questions
+  if (direction === 'negative' && (scale === 'intensity' || scale === 'frequency')) {
+    return [...labels].reverse();
+  }
+  return labels;
 }
 
 module.exports = { PROMPTS, getTodayPrompt, getPromptText, getPollOptions, getTodayDateStr, getSliderLabels };
