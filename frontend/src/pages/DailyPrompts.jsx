@@ -137,8 +137,15 @@ export default function DailyPrompts() {
         navigate('/daily-prompts/feed', { replace: true });
         return;
       }
-      // In change mode: pre-select existing answer
-      if (res.data.hasVotedToday && isChangeMode && res.data.userResponse) {
+      // In change mode: switch to the voted occupation so they see the right question
+      if (res.data.hasVotedToday && isChangeMode && res.data.votedOccupation && res.data.votedOccupation !== ind) {
+        setIndustry(res.data.votedOccupation);
+        setIndustryState(res.data.votedOccupation);
+        fetchPrompt(res.data.votedOccupation);
+        return;
+      }
+      // Pre-select existing answer in change mode
+      if (isChangeMode && res.data.userResponse) {
         setSelected(res.data.userResponse);
       }
     } catch {
