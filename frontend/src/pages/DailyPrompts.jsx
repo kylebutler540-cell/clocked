@@ -358,12 +358,12 @@ export default function DailyPrompts() {
               )}
 
               {/* Submit button */}
-              {selected && (
+              {(selected || isChangeMode) && (
                 <button
                   className="dp-submit-btn"
                   onClick={handleSubmit}
-                  disabled={submitting}
-                  style={{ background: catColor }}
+                  disabled={submitting || !selected}
+                  style={{ background: catColor, opacity: selected ? 1 : 0.5 }}
                 >
                   {submitting ? 'Saving…' : isChangeMode ? 'Save Changes' : 'Submit Answer'}
                 </button>
