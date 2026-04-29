@@ -110,9 +110,12 @@ function ResultBar({ label, pct, count, isSelected, color }) {
 export default function DailyPrompts() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isChangeMode = new URLSearchParams(window.location.search).get('change') === 'true';
+  const searchParams = new URLSearchParams(window.location.search);
+  const isChangeMode = searchParams.get('change') === 'true';
+  const changeOccupation = searchParams.get('occ') || null;
 
-  const [industry, setIndustryState] = useState(getIndustry);
+  // In change mode, lock the industry to the voted occupation from URL
+  const [industry, setIndustryState] = useState(() => isChangeMode && changeOccupation ? changeOccupation : getIndustry());
   const [showIndustryPicker, setShowIndustryPicker] = useState(false);
   const [firstVisit, setFirstVisit] = useState(!getIndustry());
 
@@ -135,13 +138,6 @@ export default function DailyPrompts() {
       // Already voted today — go straight to the feed (unless in change mode)
       if (res.data.hasVotedToday && !isChangeMode) {
         navigate('/daily-prompts/feed', { replace: true });
-        return;
-      }
-      // In change mode: switch to the voted occupation so they see the right question
-      if (res.data.hasVotedToday && isChangeMode && res.data.votedOccupation && res.data.votedOccupation !== ind) {
-        setIndustry(res.data.votedOccupation);
-        setIndustryState(res.data.votedOccupation);
-        fetchPrompt(res.data.votedOccupation);
         return;
       }
       // Pre-select existing answer in change mode
