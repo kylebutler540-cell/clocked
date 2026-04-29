@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import CommentSheet from './CommentSheet';
 
 const CATEGORY_LABELS = {
   management: 'Management',
@@ -38,15 +40,16 @@ function ResultBar({ label, pct, color, isUserAnswer }) {
   );
 }
 
-export default function PromptPostCard({ post, onReact, onComment }) {
+export default function PromptPostCard({ post, onReact, onCommentAdded }) {
   const navigate = useNavigate();
+  const [showComments, setShowComments] = useState(false);
   const {
     occupation, occupationLabel, occupationEmoji,
     question, hook, responseType, pollOptions,
     userResponse, results, totalResponses,
     likeCount, dislikeCount, saveCount, commentCount,
     userLiked, userDisliked, userSaved,
-    isPinned, category, friendResponses,
+    isPinned, category, friendResponses, postId,
   } = post;
 
   const categoryLabel = CATEGORY_LABELS[category] || category || '';
@@ -178,12 +181,13 @@ export default function PromptPostCard({ post, onReact, onComment }) {
 
           {/* Comment — same pill style as normal posts */}
           <button
-            onClick={onComment}
+            onClick={() => postId && setShowComments(true)}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               background: 'var(--bg-pill)', borderRadius: 20,
               padding: '6px 12px', border: '1px solid var(--border)',
-              flexShrink: 0, color: 'var(--text-muted)',
+              flexShrink: 0, color: showComments ? 'var(--purple)' : 'var(--text-muted)',
+              opacity: showComments ? 0.6 : 1,
               outline: 'none', cursor: 'pointer', transition: 'color 0.15s',
               WebkitTapHighlightColor: 'transparent', minHeight: 36,
             }}
@@ -220,6 +224,18 @@ export default function PromptPostCard({ post, onReact, onComment }) {
           </button>
         </div>
       </div>
+
+      {/* CommentSheet — exact same as normal posts */}
+      {showComments && postId && createPortal(
+        <CommentSheet
+          postId={postId}
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          onCommentAdded={() => onCommentAdded && onCommentAdded(occupation)}
+          onCommentDeleted={() => {}}
+        />,
+        document.body
+      )}
     </div>
   );
 }

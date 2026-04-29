@@ -156,6 +156,15 @@ async function run() {
       )`,
       `CREATE INDEX IF NOT EXISTS "dpc_date_occ_idx" ON "daily_prompt_comments"("prompt_date", "occupation")`,
       `DO $$ BEGIN ALTER TABLE "daily_prompt_comments" ADD CONSTRAINT "dpc_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // System user for daily prompt posts (author of auto-created post records)
+      `INSERT INTO users (id, anonymous_id, created_at) VALUES ('dp-system-user', '00000000-0000-0000-0000-000000000001', NOW()) ON CONFLICT (id) DO NOTHING`,
+      // Bridge table: maps each (prompt_date, occupation) to a real post_id
+      `CREATE TABLE IF NOT EXISTS "daily_prompt_post_ids" (
+        "prompt_date" TEXT NOT NULL,
+        "occupation" TEXT NOT NULL,
+        "post_id" TEXT NOT NULL,
+        PRIMARY KEY ("prompt_date", "occupation")
+      )`,
     ];
 
     for (const stmt of statements) {

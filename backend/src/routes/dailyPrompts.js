@@ -327,6 +327,32 @@ router.get('/feed', optionalAuth, async (req, res) => {
         });
       }
 
+      // Get or create a real Post record so CommentSheet can be used directly
+      let postId = null;
+      try {
+        const existingPost = await prisma.$queryRawUnsafe(
+          `SELECT post_id FROM daily_prompt_post_ids WHERE prompt_date = $1 AND occupation = $2 LIMIT 1`,
+          dateStr, ind.key
+        );
+        if (existingPost && existingPost.length > 0) {
+          postId = existingPost[0].post_id;
+        } else {
+          postId = uuidv4();
+          await prisma.$queryRawUnsafe(
+            `INSERT INTO posts (id, anonymous_user_id, employer_place_id, employer_name, employer_address, rating_emoji, body, media_urls, likes, dislikes, created_at, updated_at)
+             VALUES ($1, 'dp-system-user', $2, $3, 'Clocked Daily Prompts', 'NEUTRAL', $4, '{}', 0, 0, NOW(), NOW())`,
+            postId, `dp_${dateStr}_${ind.key}`, ind.label, question
+          );
+          await prisma.$queryRawUnsafe(
+            `INSERT INTO daily_prompt_post_ids (prompt_date, occupation, post_id) VALUES ($1, $2, $3)`,
+            dateStr, ind.key, postId
+          );
+        }
+      } catch (e) {
+        // non-fatal — comments just won't work for this post
+        console.error('Post ID creation failed:', e.message);
+      }
+
       posts.push({
         occupation: ind.key,
         occupationLabel: ind.label,
@@ -348,6 +374,7 @@ router.get('/feed', optionalAuth, async (req, res) => {
         isPinned: ind.key === userOccupation,
         category: prompt.category,
         friendResponses,
+        postId,
       });
     }
 
