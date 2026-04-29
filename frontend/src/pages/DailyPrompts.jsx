@@ -200,7 +200,8 @@ export default function DailyPrompts() {
   }
 
   const catColor = promptData ? CATEGORY_COLORS[promptData.category] || 'var(--purple)' : 'var(--purple)';
-  const hasResponded = !!promptData?.userResponse;
+  // In change mode, show voting buttons even if already answered
+  const hasResponded = !isChangeMode && !!promptData?.userResponse;
   // User voted today but under a DIFFERENT occupation — lock this tab to results-only
   const votedElsewhere = promptData?.hasVotedToday && !hasResponded;
   const votedOccupationLabel = votedElsewhere
