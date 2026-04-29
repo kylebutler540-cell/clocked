@@ -110,6 +110,7 @@ function ResultBar({ label, pct, count, isSelected, color }) {
 export default function DailyPrompts() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isChangeMode = new URLSearchParams(window.location.search).get('change') === 'true';
 
   const [industry, setIndustryState] = useState(getIndustry);
   const [showIndustryPicker, setShowIndustryPicker] = useState(false);
@@ -131,10 +132,14 @@ export default function DailyPrompts() {
       const res = await api.get('/daily-prompts/today', { params: { industry: ind || 'general' } });
       setPromptData(res.data);
       if (res.data.userResponse) setSelected(res.data.userResponse);
-      // Already voted today — go straight to the feed
-      if (res.data.hasVotedToday) {
+      // Already voted today — go straight to the feed (unless in change mode)
+      if (res.data.hasVotedToday && !isChangeMode) {
         navigate('/daily-prompts/feed', { replace: true });
         return;
+      }
+      // In change mode: pre-select existing answer
+      if (res.data.hasVotedToday && isChangeMode && res.data.userResponse) {
+        setSelected(res.data.userResponse);
       }
     } catch {
       setError('Could not load today\'s prompt. Please try again.');
@@ -359,7 +364,7 @@ export default function DailyPrompts() {
                   disabled={submitting}
                   style={{ background: catColor }}
                 >
-                  {submitting ? 'Submitting…' : 'Submit Answer'}
+                  {submitting ? 'Saving…' : isChangeMode ? 'Save Changes' : 'Submit Answer'}
                 </button>
               )}
 
