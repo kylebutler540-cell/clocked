@@ -378,21 +378,28 @@ router.get('/feed', optionalAuth, async (req, res) => {
       });
     }
 
-    // Friends filter: keep only posts where friends voted (always keep user's own pinned post)
+    // Apply filter & sort
     let filtered = posts;
-    if (filter === 'friends') {
-      filtered = posts.filter(p => p.isPinned || p.friendResponses.length > 0);
-    }
 
-    // Sort
-    filtered.sort((a, b) => {
-      if (b.isPinned !== a.isPinned) return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
-      if (filter === 'top') {
-        // Use global totalResponses for most-votes sort — re-query needed
-        return b.totalResponses - a.totalResponses;
+    if (filter === 'friends') {
+      const friendPosts = posts.filter(p => p.friendResponses.length > 0);
+      if (friendPosts.length === 0) {
+        // No friends voted — show ONLY the user's own post
+        filtered = posts.filter(p => p.isPinned);
+      } else {
+        // Friends voted — show only their occupation posts (plus user's own)
+        const friendOccupations = new Set(friendPosts.map(p => p.occupation));
+        filtered = posts.filter(p => p.isPinned || friendOccupations.has(p.occupation));
       }
-      return 0;
-    });
+      // Sort: user's post first, then default order
+      filtered.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+    } else if (filter === 'top') {
+      // Pure sort by vote count — no pinning
+      filtered = [...posts].sort((a, b) => b.totalResponses - a.totalResponses);
+    } else {
+      // All Industries: user's post pinned first
+      filtered.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+    }
 
     res.json({ date: dateStr, promptId: prompt.id, userOccupation, filter, posts: filtered });
   } catch (err) {
