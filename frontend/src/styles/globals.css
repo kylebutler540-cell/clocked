@@ -4317,3 +4317,7 @@ body[data-comments-open] .mobile-only-header {
 .ppc-actions { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 4px; }
 .ppc-actions-left { display: flex; gap: 4px; }
 .ppc-actions-right { display: flex; gap: 4px; }
+
+/* Prompt post cards — white in light mode, elevated in dark */
+.ppc { background: #FFFFFF; }
+[data-theme="dark"] .ppc { background: var(--bg-elevated); }
