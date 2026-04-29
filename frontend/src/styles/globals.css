@@ -4160,9 +4160,9 @@ body[data-comments-open] .mobile-only-header {
 
 .dp-result-row {
   display: grid;
-  grid-template-columns: 24px auto 1fr 36px;
+  grid-template-columns: 24px max-content 1fr 36px;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 5px 0;
 }
 .dp-result-row-selected .dp-result-label { color: var(--text-primary); font-weight: 800; }
@@ -4176,7 +4176,8 @@ body[data-comments-open] .mobile-only-header {
   display: flex;
   align-items: center;
   gap: 4px;
-  overflow: visible;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .dp-result-text {
   font-size: 13px;
@@ -4376,9 +4377,9 @@ body[data-comments-open] .mobile-only-header {
 /* ── Result bar v2 — grid layout, always visible, full labels ── */
 .ppc-result-row {
   display: grid;
-  grid-template-columns: 22px auto 1fr 32px;
+  grid-template-columns: 22px max-content 1fr 32px;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 3px 0;
 }
 .ppc-result-emoji {
@@ -4390,7 +4391,7 @@ body[data-comments-open] .mobile-only-header {
   display: flex;
   align-items: center;
   gap: 4px;
-  overflow: visible;
+  overflow: hidden;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
