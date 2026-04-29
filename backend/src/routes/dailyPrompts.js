@@ -273,20 +273,37 @@ router.get('/feed', optionalAuth, async (req, res) => {
       const resultMap = {};
       allResponses.forEach(r => { resultMap[r.response_value] = Number(r.count); });
 
+      // Compute results — always normalize so percentages sum to 100%
       let results = {};
+      function normPct(values, total) {
+        if (total === 0) return values.map(() => 0);
+        const raw = values.map(v => (v / total) * 100);
+        const floored = raw.map(Math.floor);
+        const remainder = 100 - floored.reduce((s, v) => s + v, 0);
+        // Add remainder to the largest value's bucket
+        const maxIdx = raw.indexOf(Math.max(...raw));
+        floored[maxIdx] += remainder;
+        return floored;
+      }
       if (prompt.responseType === 'yesno') {
         const y = resultMap['yes'] || 0, n = resultMap['no'] || 0, t = y + n;
+        const [yPct, nPct] = normPct([y, n], t);
         results = {
-          yes: { count: y, pct: t > 0 ? Math.round((y / t) * 100) : 0 },
-          no:  { count: n, pct: t > 0 ? Math.round((n / t) * 100) : 0 },
+          yes: { count: y, pct: yPct },
+          no:  { count: n, pct: nPct },
         };
       } else if (prompt.responseType === 'slider') {
-        const t = ['1','2','3','4','5'].reduce((s,v) => s+(resultMap[v]||0), 0);
-        ['1','2','3','4','5'].forEach(v => { const c = resultMap[v]||0; results[v] = { count: c, pct: t>0?Math.round((c/t)*100):0 }; });
+        const buckets = ['1','2','3','4','5'];
+        const counts = buckets.map(v => resultMap[v] || 0);
+        const t = counts.reduce((s, v) => s + v, 0);
+        const pcts = normPct(counts, t);
+        buckets.forEach((v, i) => { results[v] = { count: counts[i], pct: pcts[i] }; });
       } else if (prompt.responseType === 'poll') {
         const opts = pollOptions || [];
-        const t = opts.reduce((s,o) => s+(resultMap[o]||0), 0);
-        opts.forEach(o => { const c = resultMap[o]||0; results[o] = { count: c, pct: t>0?Math.round((c/t)*100):0 }; });
+        const counts = opts.map(o => resultMap[o] || 0);
+        const t = counts.reduce((s, v) => s + v, 0);
+        const pcts = normPct(counts, t);
+        opts.forEach((o, i) => { results[o] = { count: counts[i], pct: pcts[i] }; });
       }
 
       // Reaction counts
