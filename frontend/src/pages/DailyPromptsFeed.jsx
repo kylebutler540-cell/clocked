@@ -13,6 +13,7 @@ export default function DailyPromptsFeed() {
   const navigate = useNavigate();
 
   const [feed, setFeed] = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' | 'friends'
@@ -89,20 +90,42 @@ export default function DailyPromptsFeed() {
         </button>
       </div>
 
-      {/* Filter bar */}
-      <div className="dpf-filter-bar">
+      {/* Filter pill + dropdown */}
+      <div className="dpf-filter-wrap" style={{ position: 'relative', display: 'inline-block', marginBottom: 8 }}>
         <button
-          className={`dpf-filter-btn${filter === 'all' ? ' active' : ''}`}
-          onClick={() => handleFilterChange('all')}
+          className="dpf-filter-pill"
+          onClick={() => setFilterOpen(v => !v)}
         >
-          🌐 All Industries
+          {/* Filter lines icon */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <line x1="7" y1="12" x2="17" y2="12"/>
+            <line x1="10" y1="18" x2="14" y2="18"/>
+          </svg>
+          <span>
+            {filter === 'friends' ? '👥 Friends'
+              : filter === 'top' ? '🔥 Most Votes'
+              : '🌐 All Industries'}
+          </span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </button>
-        <button
-          className={`dpf-filter-btn${filter === 'friends' ? ' active' : ''}`}
-          onClick={() => handleFilterChange('friends')}
-        >
-          👥 Friends
-        </button>
+
+        {filterOpen && (
+          <div className="dpf-dropdown">
+            {[['all', '🌐 All Industries'], ['friends', '👥 Friends'], ['top', '🔥 Most Votes']].map(([key, label]) => (
+              <button
+                key={key}
+                className={`dpf-dropdown-item${filter === key ? ' active' : ''}`}
+                onClick={() => { handleFilterChange(key); setFilterOpen(false); }}
+              >
+                {label}
+                {filter === key && <span className="dpf-dropdown-check">✓</span>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {loading ? (

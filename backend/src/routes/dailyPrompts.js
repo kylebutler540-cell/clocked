@@ -215,7 +215,7 @@ const INDUSTRIES = [
 router.get('/feed', optionalAuth, async (req, res) => {
   try {
     const userOccupation = req.query.occupation || 'general';
-    const filter = req.query.filter || 'all'; // 'all' | 'friends'
+    const filter = req.query.filter || 'all'; // 'all' | 'friends' | 'top'
     const prompt = getTodayPrompt();
     const dateStr = getTodayDateStr();
 
@@ -378,8 +378,12 @@ router.get('/feed', optionalAuth, async (req, res) => {
       });
     }
 
-    // Sort: user's occupation first
-    posts.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+    // Sort: user's occupation first, then by filter
+    posts.sort((a, b) => {
+      if (b.isPinned !== a.isPinned) return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
+      if (filter === 'top') return b.totalResponses - a.totalResponses;
+      return 0;
+    });
 
     res.json({ date: dateStr, promptId: prompt.id, userOccupation, filter, posts });
   } catch (err) {
