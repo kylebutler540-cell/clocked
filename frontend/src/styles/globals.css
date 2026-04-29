@@ -4355,3 +4355,12 @@ body[data-comments-open] .mobile-only-header {
 .dpf-dropdown-item:hover { background: var(--bg-base); }
 .dpf-dropdown-item.active { font-weight: 700; }
 .dpf-dropdown-check { color: var(--purple); font-size: 13px; }
+
+/* Friend votes on prompt cards */
+.ppc-friends-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ppc-friends-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 2px; }
+.ppc-friend-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 20px; border: 1px solid; padding: 3px 8px; font-size: 12px; font-weight: 600; }
+.ppc-friend-chip.yes { background: rgba(21,128,61,0.08); border-color: #15803D; color: #15803D; }
+.ppc-friend-chip.no { background: rgba(220,38,38,0.08); border-color: #DC2626; color: #DC2626; }
+.ppc-friend-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; }
+.ppc-friend-vote { font-size: 12px; }

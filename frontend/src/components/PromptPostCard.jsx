@@ -89,16 +89,17 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
         {totalResponses} {totalResponses === 1 ? 'person' : 'people'} answered today
       </div>
 
-      {/* Friend chips */}
+      {/* Friend votes */}
       {friendResponses && friendResponses.length > 0 && (
         <div className="ppc-friends-row">
+          <span className="ppc-friends-label">Friends:</span>
           {friendResponses.map((f, i) => (
-            <div key={i} className="ppc-friend-chip">
+            <div key={i} className={`ppc-friend-chip${f.response_value === 'yes' ? ' yes' : ' no'}`}>
               {f.avatar_url
                 ? <img src={f.avatar_url} alt="" className="ppc-friend-avatar" />
-                : <span className="ppc-friend-anon">#{f.anon_number}</span>
+                : <span className="ppc-friend-anon">#{f.anon_number ?? '?'}</span>
               }
-              <span className="ppc-friend-answer">{f.response_value === 'yes' ? '👍' : '👎'}</span>
+              <span className="ppc-friend-vote">{f.response_value === 'yes' ? '👍 Yes' : '👎 No'}</span>
             </div>
           ))}
         </div>

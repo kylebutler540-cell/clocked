@@ -378,14 +378,23 @@ router.get('/feed', optionalAuth, async (req, res) => {
       });
     }
 
-    // Sort: user's occupation first, then by filter
-    posts.sort((a, b) => {
+    // Friends filter: keep only posts where friends voted (always keep user's own pinned post)
+    let filtered = posts;
+    if (filter === 'friends') {
+      filtered = posts.filter(p => p.isPinned || p.friendResponses.length > 0);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
       if (b.isPinned !== a.isPinned) return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
-      if (filter === 'top') return b.totalResponses - a.totalResponses;
+      if (filter === 'top') {
+        // Use global totalResponses for most-votes sort — re-query needed
+        return b.totalResponses - a.totalResponses;
+      }
       return 0;
     });
 
-    res.json({ date: dateStr, promptId: prompt.id, userOccupation, filter, posts });
+    res.json({ date: dateStr, promptId: prompt.id, userOccupation, filter, posts: filtered });
   } catch (err) {
     console.error('Feed error:', err);
     res.status(500).json({ error: 'Failed to load feed' });
