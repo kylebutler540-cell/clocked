@@ -33,6 +33,7 @@ const CompanyProfile = React.lazy(() => import('./pages/CompanyProfile'));
 const Saved = React.lazy(() => import('./pages/Saved'));
 const Polls = React.lazy(() => import('./pages/Polls'));
 const DailyPrompts = React.lazy(() => import('./pages/DailyPrompts'));
+const DailyPromptsFeed = React.lazy(() => import('./pages/DailyPromptsFeed'));
 const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const Signup = React.lazy(() => import('./pages/Signup'));
 const SwitchAccount = React.lazy(() => import('./pages/SwitchAccount'));
@@ -448,6 +449,7 @@ function AppInner() {
               <Route path="/company/:placeId" element={<CompanyProfile />} />
               <Route path="/polls" element={<Polls />} />
               <Route path="/daily-prompts" element={<DailyPrompts />} />
+              <Route path="/daily-prompts/feed" element={<DailyPromptsFeed />} />
               <Route path="/saved" element={<Saved />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/switch-account" element={<SwitchAccount />} />

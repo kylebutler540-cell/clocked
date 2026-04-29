@@ -165,7 +165,7 @@ export default function DailyPrompts() {
         totalResponses: res.data.totalResponses,
         streak: res.data.streak,
       }));
-      setJustAnswered(true);
+      navigate('/daily-prompts/feed');
     } catch {
       // fail silently — keep selection shown
     } finally {
@@ -276,14 +276,14 @@ export default function DailyPrompts() {
                 <div className="dp-yesno">
                   <button
                     className={`dp-yesno-btn dp-yesno-yes${selected === 'yes' ? ' dp-yesno-selected' : ''}`}
-                    onClick={() => setSelected(v => v === 'yes' ? null : 'yes')}
+                    onClick={() => setSelected('yes')}
                   >
                     <span className="dp-yesno-emoji">👍</span>
                     <span>Yes</span>
                   </button>
                   <button
                     className={`dp-yesno-btn dp-yesno-no${selected === 'no' ? ' dp-yesno-selected' : ''}`}
-                    onClick={() => setSelected(v => v === 'no' ? null : 'no')}
+                    onClick={() => setSelected('no')}
                   >
                     <span className="dp-yesno-emoji">👎</span>
                     <span>No</span>

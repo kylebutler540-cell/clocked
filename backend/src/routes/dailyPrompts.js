@@ -185,6 +185,163 @@ router.get('/streak', requireAuth, async (req, res) => {
   }
 });
 
+// ── Feed & Reactions ─────────────────────────────────────────────────────────────
+
+const INDUSTRIES = [
+  { key: 'general',    label: 'General',               emoji: '🌐' },
+  { key: 'restaurant', label: 'Food & Restaurant',     emoji: '🍽️' },
+  { key: 'retail',     label: 'Retail & Sales',        emoji: '🛒' },
+  { key: 'hvac',       label: 'Trades & HVAC',         emoji: '🔧' },
+  { key: 'office',     label: 'Office & Corporate',    emoji: '💼' },
+  { key: 'warehouse',  label: 'Warehouse & Logistics', emoji: '📦' },
+  { key: 'healthcare', label: 'Healthcare',            emoji: '🏥' },
+];
+
+// GET /api/daily-prompts/feed
+router.get('/feed', optionalAuth, async (req, res) => {
+  try {
+    const userOccupation = req.query.occupation || 'general';
+    const prompt = getTodayPrompt();
+    const dateStr = getTodayDateStr();
+
+    const posts = [];
+
+    for (const ind of INDUSTRIES) {
+      const question = getPromptText(prompt, ind.key);
+      const pollOptions = getPollOptions(prompt, ind.key);
+
+      // Aggregate results for this industry
+      const allResponses = await prisma.$queryRawUnsafe(
+        `SELECT response_value, COUNT(*) as count FROM prompt_responses WHERE prompt_date = $1 AND industry = $2 GROUP BY response_value`,
+        dateStr, ind.key
+      );
+      const total = allResponses.reduce((s, r) => s + Number(r.count), 0);
+      const resultMap = {};
+      allResponses.forEach(r => { resultMap[r.response_value] = Number(r.count); });
+
+      let results = {};
+      if (prompt.responseType === 'yesno') {
+        const y = resultMap['yes'] || 0, n = resultMap['no'] || 0, t = y + n;
+        results = {
+          yes: { count: y, pct: t > 0 ? Math.round((y / t) * 100) : 0 },
+          no:  { count: n, pct: t > 0 ? Math.round((n / t) * 100) : 0 },
+        };
+      } else if (prompt.responseType === 'slider') {
+        const t = ['1','2','3','4','5'].reduce((s,v) => s+(resultMap[v]||0), 0);
+        ['1','2','3','4','5'].forEach(v => { const c = resultMap[v]||0; results[v] = { count: c, pct: t>0?Math.round((c/t)*100):0 }; });
+      } else if (prompt.responseType === 'poll') {
+        const opts = pollOptions || [];
+        const t = opts.reduce((s,o) => s+(resultMap[o]||0), 0);
+        opts.forEach(o => { const c = resultMap[o]||0; results[o] = { count: c, pct: t>0?Math.round((c/t)*100):0 }; });
+      }
+
+      // Reaction counts
+      const reactions = await prisma.$queryRawUnsafe(
+        `SELECT type, COUNT(*) as count FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 GROUP BY type`,
+        dateStr, ind.key
+      );
+      const reactionMap = {};
+      reactions.forEach(r => { reactionMap[r.type] = Number(r.count); });
+
+      // User-specific data
+      let userResponse = null;
+      let userLiked = false;
+      let userSaved = false;
+      if (req.user) {
+        const ur = await prisma.$queryRawUnsafe(
+          `SELECT response_value FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 AND industry = $3 LIMIT 1`,
+          dateStr, req.user.id, ind.key
+        );
+        if (ur && ur.length > 0) userResponse = ur[0].response_value;
+
+        const ur2 = await prisma.$queryRawUnsafe(
+          `SELECT type FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3`,
+          dateStr, ind.key, req.user.id
+        );
+        ur2.forEach(r => {
+          if (r.type === 'like') userLiked = true;
+          if (r.type === 'save') userSaved = true;
+        });
+      }
+
+      posts.push({
+        occupation: ind.key,
+        occupationLabel: ind.label,
+        occupationEmoji: ind.emoji,
+        question,
+        hook: prompt.hook,
+        responseType: prompt.responseType,
+        pollOptions,
+        userResponse,
+        results,
+        totalResponses: total,
+        likeCount: reactionMap['like'] || 0,
+        saveCount: reactionMap['save'] || 0,
+        userLiked,
+        userSaved,
+        isPinned: ind.key === userOccupation,
+      });
+    }
+
+    // Sort: user's occupation first
+    posts.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+
+    res.json({ date: dateStr, promptId: prompt.id, userOccupation, posts });
+  } catch (err) {
+    console.error('Feed error:', err);
+    res.status(500).json({ error: 'Failed to load feed' });
+  }
+});
+
+// POST /api/daily-prompts/feed/:date/:occupation/react
+router.post('/feed/:date/:occupation/react', requireAuth, async (req, res) => {
+  try {
+    const { date, occupation } = req.params;
+    const { type } = req.body;
+    if (!['like', 'save'].includes(type)) return res.status(400).json({ error: 'type must be like or save' });
+
+    // Toggle
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT id FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3 AND type = $4 LIMIT 1`,
+      date, occupation, req.user.id, type
+    );
+    if (existing && existing.length > 0) {
+      await prisma.$queryRawUnsafe(
+        `DELETE FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3 AND type = $4`,
+        date, occupation, req.user.id, type
+      );
+    } else {
+      await prisma.$queryRawUnsafe(
+        `INSERT INTO daily_prompt_reactions (id, prompt_date, occupation, user_id, type, created_at) VALUES ($1,$2,$3,$4,$5,NOW())`,
+        uuidv4(), date, occupation, req.user.id, type
+      );
+    }
+
+    // Return updated counts + user state
+    const counts = await prisma.$queryRawUnsafe(
+      `SELECT type, COUNT(*) as count FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 GROUP BY type`,
+      date, occupation
+    );
+    const cmap = {};
+    counts.forEach(r => { cmap[r.type] = Number(r.count); });
+    const userReacts = await prisma.$queryRawUnsafe(
+      `SELECT type FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3`,
+      date, occupation, req.user.id
+    );
+    const userTypes = new Set(userReacts.map(r => r.type));
+
+    res.json({
+      liked: userTypes.has('like'),
+      saved: userTypes.has('save'),
+      likeCount: cmap['like'] || 0,
+      saveCount: cmap['save'] || 0,
+    });
+  } catch (err) {
+    console.error('React error:', err);
+    res.status(500).json({ error: 'Failed to react' });
+  }
+});
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 async function getUserStreak(userId) {

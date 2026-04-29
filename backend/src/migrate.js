@@ -127,9 +127,22 @@ async function run() {
         "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "prompt_responses_pkey" PRIMARY KEY ("id")
       )`,
-      `CREATE UNIQUE INDEX IF NOT EXISTS "prompt_responses_date_user_key" ON "prompt_responses"("prompt_date", "user_id")`,
+      `DROP INDEX IF EXISTS "prompt_responses_date_user_key"`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "prompt_responses_date_user_industry_key" ON "prompt_responses"("prompt_date", "user_id", "industry")`,
       `CREATE INDEX IF NOT EXISTS "prompt_responses_date_idx" ON "prompt_responses"("prompt_date")`,
       `DO $$ BEGIN ALTER TABLE "prompt_responses" ADD CONSTRAINT "prompt_responses_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // Daily Prompt Post Reactions (likes/saves per occupation post)
+      `CREATE TABLE IF NOT EXISTS "daily_prompt_reactions" (
+        "id" TEXT NOT NULL,
+        "prompt_date" TEXT NOT NULL,
+        "occupation" TEXT NOT NULL,
+        "user_id" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "daily_prompt_reactions_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "dpr_unique" ON "daily_prompt_reactions"("prompt_date", "occupation", "user_id", "type")`,
+      `DO $$ BEGIN ALTER TABLE "daily_prompt_reactions" ADD CONSTRAINT "dpr_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     ];
 
     for (const stmt of statements) {
