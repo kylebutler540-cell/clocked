@@ -199,30 +199,7 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
           </button>
         </div>
 
-        <div className="ppc-actions-right">
-          {/* Save */}
-          <button className={`ppc-action-btn${userSaved ? ' saved' : ''}`} onClick={() => onReact('save')}>
-            <svg viewBox="0 0 24 24" fill={userSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-            </svg>
-            {saveCount > 0 && <span>{saveCount}</span>}
-          </button>
-
-          {/* Share */}
-          <button className="ppc-action-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-          </button>
-
-          {/* Flag */}
-          <button className="ppc-action-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-            </svg>
-          </button>
-        </div>
+        <div className="ppc-actions-right" />
       </div>
 
       {/* CommentSheet — exact same as normal posts */}
