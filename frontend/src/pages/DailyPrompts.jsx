@@ -210,7 +210,8 @@ export default function DailyPrompts() {
   // In change mode, show voting buttons even if already answered
   const hasResponded = !isChangeMode && !!promptData?.userResponse;
   // User voted today but under a DIFFERENT occupation — lock this tab to results-only
-  const votedElsewhere = promptData?.hasVotedToday && !hasResponded;
+  // (never lock in change mode — they're here to update their answer)
+  const votedElsewhere = !isChangeMode && promptData?.hasVotedToday && !hasResponded;
   const votedOccupationLabel = votedElsewhere
     ? (INDUSTRIES.find(i => i.key === promptData.votedOccupation)?.label || promptData.votedOccupation)
     : null;
