@@ -13,6 +13,16 @@ const CATEGORY_LABELS = {
   teamwork:   'Teamwork',
 };
 
+const CATEGORY_COLORS = {
+  management: '#8B5CF6',
+  workload:   '#F59E0B',
+  customers:  '#3B82F6',
+  pay:        '#10B981',
+  stress:     '#EF4444',
+  culture:    '#EC4899',
+  teamwork:   '#06B6D4',
+};
+
 const SLIDER_LABELS = { '1': '😡 Very Bad', '2': '😕 Bad', '3': '😐 Okay', '4': '🙂 Good', '5': '😄 Great' };
 const SLIDER_COLORS = { '1': '#EF4444', '2': '#F97316', '3': '#EAB308', '4': '#22C55E', '5': '#15803D' };
 
@@ -53,12 +63,20 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
   } = post;
 
   const categoryLabel = CATEGORY_LABELS[category] || category || '';
+  const categoryColor = CATEGORY_COLORS[category] || 'var(--text-muted)';
 
   return (
     <div className={`ppc${isPinned ? ' pinned' : ''}`}>
       {/* Top bar: category left, occupation right */}
       <div className="ppc-top-bar">
-        {categoryLabel && <span className="ppc-category-badge">{categoryLabel.toUpperCase()}</span>}
+        {categoryLabel && (
+        <span
+          className="ppc-category-badge"
+          style={{ color: categoryColor, background: `${categoryColor}15`, borderColor: `${categoryColor}40` }}
+        >
+          {categoryLabel.toUpperCase()}
+        </span>
+      )}
         <span className="ppc-occupation-pill">{occupationEmoji} {occupationLabel}</span>
       </div>
 
