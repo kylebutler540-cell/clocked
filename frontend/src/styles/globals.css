@@ -4162,8 +4162,9 @@ body[data-comments-open] .mobile-only-header {
   display: grid;
   grid-template-columns: 24px max-content 1fr 36px;
   align-items: center;
-  gap: 10px;
-  padding: 5px 0;
+  column-gap: 12px;
+  row-gap: 5px;
+  padding: 2px 0;
 }
 .dp-result-row-selected .dp-result-label { color: var(--text-primary); font-weight: 800; }
 .dp-result-row-selected .dp-result-pct { color: var(--text-primary); font-weight: 800; }
@@ -4176,8 +4177,8 @@ body[data-comments-open] .mobile-only-header {
   display: flex;
   align-items: center;
   gap: 4px;
-  overflow: hidden;
   white-space: nowrap;
+  min-width: max-content;
 }
 .dp-result-text {
   font-size: 13px;
@@ -4379,8 +4380,9 @@ body[data-comments-open] .mobile-only-header {
   display: grid;
   grid-template-columns: 22px max-content 1fr 32px;
   align-items: center;
-  gap: 10px;
-  padding: 3px 0;
+  column-gap: 12px;
+  row-gap: 3px;
+  padding: 2px 0;
 }
 .ppc-result-emoji {
   font-size: 15px;
@@ -4391,11 +4393,11 @@ body[data-comments-open] .mobile-only-header {
   display: flex;
   align-items: center;
   gap: 4px;
-  overflow: hidden;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
+  min-width: max-content;
 }
 .ppc-result-row-mine .ppc-result-label { color: var(--text-primary); font-weight: 800; }
 .ppc-result-check { color: #15803D; flex-shrink: 0; }
