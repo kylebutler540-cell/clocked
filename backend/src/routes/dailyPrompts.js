@@ -445,17 +445,26 @@ router.post('/feed/:date/:occupation/react', requireAuth, async (req, res) => {
     const { type } = req.body;
     if (!['like', 'save'].includes(type)) return res.status(400).json({ error: 'type must be like or save' });
 
-    // Toggle
+    // Toggle: if already reacted with this type, remove it; otherwise add it and remove the opposite
     const existing = await prisma.$queryRawUnsafe(
       `SELECT id FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3 AND type = $4 LIMIT 1`,
       date, occupation, req.user.id, type
     );
     if (existing && existing.length > 0) {
+      // Un-react
       await prisma.$queryRawUnsafe(
         `DELETE FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3 AND type = $4`,
         date, occupation, req.user.id, type
       );
     } else {
+      // Remove opposite reaction first (like ↔ dislike are mutually exclusive)
+      const opposite = type === 'like' ? 'dislike' : type === 'dislike' ? 'like' : null;
+      if (opposite) {
+        await prisma.$queryRawUnsafe(
+          `DELETE FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 AND user_id = $3 AND type = $4`,
+          date, occupation, req.user.id, opposite
+        );
+      }
       await prisma.$queryRawUnsafe(
         `INSERT INTO daily_prompt_reactions (id, prompt_date, occupation, user_id, type, created_at) VALUES ($1,$2,$3,$4,$5,NOW())`,
         uuidv4(), date, occupation, req.user.id, type

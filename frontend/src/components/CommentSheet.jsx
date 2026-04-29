@@ -134,7 +134,7 @@ function CommentItem({ comment, currentUserId, currentUserEmail, isAdmin, onRepl
   );
 }
 
-export default function CommentSheet({ postId, post, isOpen, onClose, onCommentAdded, onCommentDeleted, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false }) {
+export default function CommentSheet({ postId, post, isOpen, onClose, onCommentAdded, onCommentDeleted, highlightCommentId = null, openReplyToId = null, preloadedLikes = null, fullscreen = false, commentPlaceholder = null }) {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -608,7 +608,7 @@ export default function CommentSheet({ postId, post, isOpen, onClose, onCommentA
                 setInputHeight(next);
               }}
               onKeyDown={e => { if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
-              placeholder={replyingTo ? 'Write a reply...' : 'Add a comment...'}
+              placeholder={replyingTo ? 'Write a reply...' : (commentPlaceholder || 'Add a comment...')}
               maxLength={1600} rows={1}
               style={{ flex: 1, borderRadius: 20, padding: '8px 14px', fontSize: 14, resize: 'none', overflowY: inputHeight >= 120 ? 'auto' : 'hidden', height: inputHeight, minHeight: 36, maxHeight: 120, lineHeight: '1.4', display: 'block', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }} />
             <button onClick={handleSubmit}

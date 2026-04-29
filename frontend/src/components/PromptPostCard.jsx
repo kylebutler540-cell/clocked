@@ -74,6 +74,48 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
     isPinned, category, friendResponses, postId,
   } = post;
 
+  // Optimistic local state
+  const [localLikes, setLocalLikes] = useState(likeCount ?? 0);
+  const [localDislikes, setLocalDislikes] = useState(dislikeCount ?? 0);
+  const [localLiked, setLocalLiked] = useState(!!userLiked);
+  const [localDisliked, setLocalDisliked] = useState(!!userDisliked);
+  const [localComments, setLocalComments] = useState(commentCount ?? 0);
+
+  // Sync with prop updates (e.g. feed refresh)
+  useEffect(() => { setLocalLikes(likeCount ?? 0); }, [likeCount]);
+  useEffect(() => { setLocalDislikes(dislikeCount ?? 0); }, [dislikeCount]);
+  useEffect(() => { setLocalLiked(!!userLiked); }, [userLiked]);
+  useEffect(() => { setLocalDisliked(!!userDisliked); }, [userDisliked]);
+  useEffect(() => { setLocalComments(commentCount ?? 0); }, [commentCount]);
+
+  function handleReactOptimistic(type) {
+    // Snapshot for rollback
+    const prev = { localLikes, localDislikes, localLiked, localDisliked };
+
+    // Apply optimistic update immediately
+    if (type === 'like') {
+      if (localLiked) {
+        setLocalLiked(false); setLocalLikes(l => Math.max(0, l - 1));
+      } else {
+        setLocalLiked(true); setLocalLikes(l => l + 1);
+        if (localDisliked) { setLocalDisliked(false); setLocalDislikes(d => Math.max(0, d - 1)); }
+      }
+    } else if (type === 'dislike') {
+      if (localDisliked) {
+        setLocalDisliked(false); setLocalDislikes(d => Math.max(0, d - 1));
+      } else {
+        setLocalDisliked(true); setLocalDislikes(d => d + 1);
+        if (localLiked) { setLocalLiked(false); setLocalLikes(l => Math.max(0, l - 1)); }
+      }
+    }
+
+    // Fire API in background, revert on failure
+    Promise.resolve(onReact(type)).catch(() => {
+      setLocalLikes(prev.localLikes); setLocalDislikes(prev.localDislikes);
+      setLocalLiked(prev.localLiked); setLocalDisliked(prev.localDisliked);
+    });
+  }
+
   const categoryLabel = CATEGORY_LABELS[category] || category || '';
   const categoryColor = CATEGORY_COLORS[category] || 'var(--text-muted)';
   const sliderLabels = post.sliderLabels || null;
@@ -171,47 +213,47 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
       {/* Engagement row */}
       <div className="ppc-actions">
         <div className="ppc-actions-left">
-          {/* Like — same pill style as normal posts */}
+          {/* Like */}
           <button
-            onClick={() => onReact('like')}
+            onClick={() => handleReactOptimistic('like')}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              background: userLiked ? 'rgba(34,197,94,0.12)' : 'var(--bg-pill)',
+              background: localLiked ? 'rgba(34,197,94,0.12)' : 'var(--bg-pill)',
               borderRadius: 20, padding: '6px 12px',
-              border: `1px solid ${userLiked ? '#22C55E' : 'var(--border)'}`,
-              flexShrink: 0, color: userLiked ? '#22C55E' : 'var(--text-muted)',
+              border: `1px solid ${localLiked ? '#22C55E' : 'var(--border)'}`,
+              flexShrink: 0, color: localLiked ? '#22C55E' : 'var(--text-muted)',
               minHeight: 36, cursor: 'pointer', outline: 'none',
               transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={userLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={localLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
               <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
             </svg>
-            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{likeCount}</span>
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{localLikes}</span>
           </button>
 
-          {/* Dislike — same pill style as normal posts */}
+          {/* Dislike */}
           <button
-            onClick={() => onReact('dislike')}
+            onClick={() => handleReactOptimistic('dislike')}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              background: userDisliked ? 'rgba(239,68,68,0.12)' : 'var(--bg-pill)',
+              background: localDisliked ? 'rgba(239,68,68,0.12)' : 'var(--bg-pill)',
               borderRadius: 20, padding: '6px 12px',
-              border: `1px solid ${userDisliked ? '#EF4444' : 'var(--border)'}`,
-              flexShrink: 0, color: userDisliked ? '#EF4444' : 'var(--text-muted)',
+              border: `1px solid ${localDisliked ? '#EF4444' : 'var(--border)'}`,
+              flexShrink: 0, color: localDisliked ? '#EF4444' : 'var(--text-muted)',
               minHeight: 36, cursor: 'pointer', outline: 'none',
               transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={userDisliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={localDisliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
               <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
             </svg>
-            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{dislikeCount}</span>
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{localDislikes}</span>
           </button>
 
-          {/* Comment — same pill style as normal posts */}
+          {/* Comment */}
           <button
             onClick={() => postId && setShowComments(true)}
             style={{
@@ -227,7 +269,7 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{commentCount ?? 0}</span>
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{localComments}</span>
           </button>
         </div>
 
@@ -240,8 +282,12 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
           postId={postId}
           isOpen={showComments}
           onClose={() => setShowComments(false)}
-          onCommentAdded={() => onCommentAdded && onCommentAdded(occupation)}
-          onCommentDeleted={() => {}}
+          onCommentAdded={() => {
+            setLocalComments(c => c + 1);
+            onCommentAdded && onCommentAdded(occupation);
+          }}
+          onCommentDeleted={() => setLocalComments(c => Math.max(0, c - 1))}
+          commentPlaceholder="Share your experience…"
         />,
         document.body
       )}
