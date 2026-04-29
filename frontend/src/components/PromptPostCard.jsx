@@ -27,7 +27,7 @@ export default function PromptPostCard({ post, onReact, onComment }) {
     userResponse, results, totalResponses,
     likeCount, dislikeCount, saveCount, commentCount,
     userLiked, userDisliked, userSaved,
-    isPinned,
+    isPinned, friendResponses,
   } = post;
 
   return (
@@ -44,6 +44,21 @@ export default function PromptPostCard({ post, onReact, onComment }) {
       )}
       {userResponse === 'no' && (
         <span className="ppc-answer-pill no">👎 No</span>
+      )}
+
+      {/* Friend avatars */}
+      {friendResponses && friendResponses.length > 0 && (
+        <div className="ppc-friends-row">
+          {friendResponses.map((f, i) => (
+            <div key={i} className="ppc-friend-chip">
+              {f.avatar_url
+                ? <img src={f.avatar_url} alt="" className="ppc-friend-avatar" />
+                : <span className="ppc-friend-anon">#{f.anon_number}</span>
+              }
+              <span className={`ppc-friend-answer ${f.response_value}`}>{f.response_value === 'yes' ? '👍' : '👎'}</span>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Results */}

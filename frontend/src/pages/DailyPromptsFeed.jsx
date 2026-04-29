@@ -15,6 +15,7 @@ export default function DailyPromptsFeed() {
   const [feed, setFeed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState('all'); // 'all' | 'friends'
 
   // Comments sheet
   const [commentSheet, setCommentSheet] = useState(null); // { occupation, date }
@@ -24,12 +25,12 @@ export default function DailyPromptsFeed() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const commentInputRef = useRef(null);
 
-  const fetchFeed = useCallback(async () => {
+  const fetchFeed = useCallback(async (activeFilter) => {
     setLoading(true);
     setError(null);
     try {
       const occupation = getIndustry();
-      const res = await api.get('/daily-prompts/feed', { params: { occupation } });
+      const res = await api.get('/daily-prompts/feed', { params: { occupation, filter: activeFilter || 'all' } });
       setFeed(res.data);
     } catch {
       setError('Could not load feed. Please try again.');
@@ -38,7 +39,12 @@ export default function DailyPromptsFeed() {
     }
   }, []);
 
-  useEffect(() => { fetchFeed(); }, [fetchFeed]);
+  useEffect(() => { fetchFeed(filter); }, [fetchFeed]); // eslint-disable-line
+
+  function handleFilterChange(f) {
+    setFilter(f);
+    fetchFeed(f);
+  }
 
   async function handleReact(occupation, type) {
     if (!user?.email) { navigate('/signup'); return; }
@@ -118,6 +124,22 @@ export default function DailyPromptsFeed() {
           onClick={() => navigate('/daily-prompts')}
         >
           ← Back
+        </button>
+      </div>
+
+      {/* Filter bar */}
+      <div className="dpf-filter-bar">
+        <button
+          className={`dpf-filter-btn${filter === 'all' ? ' active' : ''}`}
+          onClick={() => handleFilterChange('all')}
+        >
+          🌐 All Industries
+        </button>
+        <button
+          className={`dpf-filter-btn${filter === 'friends' ? ' active' : ''}`}
+          onClick={() => handleFilterChange('friends')}
+        >
+          👥 Friends
         </button>
       </div>
 

@@ -18,16 +18,23 @@ router.get('/today', optionalAuth, async (req, res) => {
     const pollOptions = getPollOptions(prompt, industry);
 
     let userResponse = null;
+    let hasVotedToday = false;
+    let votedOccupation = null;
     let results = null;
 
     if (req.user) {
-      // Check if user already responded today FOR THIS INDUSTRY
+      // Check if user has voted today at all (one global vote per day)
       const existing = await prisma.$queryRawUnsafe(
-        `SELECT response_value FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 AND industry = $3 LIMIT 1`,
-        dateStr, req.user.id, industry
+        `SELECT response_value, industry FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 LIMIT 1`,
+        dateStr, req.user.id
       );
       if (existing && existing.length > 0) {
-        userResponse = existing[0].response_value;
+        hasVotedToday = true;
+        votedOccupation = existing[0].industry;
+        // Only show their answer if this tab matches the occupation they voted under
+        if (existing[0].industry === industry) {
+          userResponse = existing[0].response_value;
+        }
       }
     }
 
@@ -86,6 +93,8 @@ router.get('/today', optionalAuth, async (req, res) => {
       question,
       pollOptions,
       userResponse,
+      hasVotedToday,
+      votedOccupation,
       results,
       totalResponses,
       streak,
@@ -113,17 +122,22 @@ router.post('/today/respond', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid slider value' });
     }
 
-    // Upsert — keyed on (prompt_date, user_id, industry) so each tab is independent
+    // One vote per user per day globally
     const ind = industry || 'general';
     const existing = await prisma.$queryRawUnsafe(
-      `SELECT id FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 AND industry = $3 LIMIT 1`,
-      dateStr, req.user.id, ind
+      `SELECT id, industry FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 LIMIT 1`,
+      dateStr, req.user.id
     );
 
     if (existing && existing.length > 0) {
+      // Already voted — reject if different occupation; allow same occupation re-vote
+      if (existing[0].industry !== ind) {
+        return res.status(409).json({ error: 'already_voted', votedOccupation: existing[0].industry });
+      }
+      // Same occupation — update answer
       await prisma.$queryRawUnsafe(
-        `UPDATE prompt_responses SET response_value = $1 WHERE prompt_date = $2 AND user_id = $3 AND industry = $4`,
-        value, dateStr, req.user.id, ind
+        `UPDATE prompt_responses SET response_value = $1 WHERE prompt_date = $2 AND user_id = $3`,
+        value, dateStr, req.user.id
       );
     } else {
       await prisma.$queryRawUnsafe(
@@ -201,8 +215,22 @@ const INDUSTRIES = [
 router.get('/feed', optionalAuth, async (req, res) => {
   try {
     const userOccupation = req.query.occupation || 'general';
+    const filter = req.query.filter || 'all'; // 'all' | 'friends'
     const prompt = getTodayPrompt();
     const dateStr = getTodayDateStr();
+
+    // For friends filter: get mutual follower IDs
+    let friendIds = [];
+    if (filter === 'friends' && req.user) {
+      const mutual = await prisma.$queryRawUnsafe(
+        `SELECT f1.follower_id as friend_id
+         FROM follows f1
+         JOIN follows f2 ON f2.follower_id = $1 AND f2.following_id = f1.follower_id
+         WHERE f1.following_id = $1`,
+        req.user.id
+      );
+      friendIds = mutual.map(r => r.friend_id);
+    }
 
     const posts = [];
 
@@ -210,11 +238,37 @@ router.get('/feed', optionalAuth, async (req, res) => {
       const question = getPromptText(prompt, ind.key);
       const pollOptions = getPollOptions(prompt, ind.key);
 
-      // Aggregate results for this industry
-      const allResponses = await prisma.$queryRawUnsafe(
-        `SELECT response_value, COUNT(*) as count FROM prompt_responses WHERE prompt_date = $1 AND industry = $2 GROUP BY response_value`,
-        dateStr, ind.key
-      );
+      // Aggregate results for this industry (filtered by friends if needed)
+      let allResponses;
+      if (filter === 'friends' && friendIds.length > 0) {
+        const placeholders = friendIds.map((_, i) => `$${i + 3}`).join(',');
+        allResponses = await prisma.$queryRawUnsafe(
+          `SELECT response_value, COUNT(*) as count FROM prompt_responses WHERE prompt_date = $1 AND industry = $2 AND user_id IN (${placeholders}) GROUP BY response_value`,
+          dateStr, ind.key, ...friendIds
+        );
+      } else if (filter === 'friends' && friendIds.length === 0) {
+        allResponses = [];
+      } else {
+        allResponses = await prisma.$queryRawUnsafe(
+          `SELECT response_value, COUNT(*) as count FROM prompt_responses WHERE prompt_date = $1 AND industry = $2 GROUP BY response_value`,
+          dateStr, ind.key
+        );
+      }
+
+      // Friends who answered this occupation (for avatars)
+      let friendResponses = [];
+      if (filter === 'friends' && friendIds.length > 0) {
+        const placeholders = friendIds.map((_, i) => `$${i + 3}`).join(',');
+        const rows = await prisma.$queryRawUnsafe(
+          `SELECT pr.response_value, u.anon_number, u.avatar_url
+           FROM prompt_responses pr
+           JOIN users u ON u.id = pr.user_id
+           WHERE pr.prompt_date = $1 AND pr.industry = $2 AND pr.user_id IN (${placeholders})
+           LIMIT 10`,
+          dateStr, ind.key, ...friendIds
+        );
+        friendResponses = rows;
+      }
       const total = allResponses.reduce((s, r) => s + Number(r.count), 0);
       const resultMap = {};
       allResponses.forEach(r => { resultMap[r.response_value] = Number(r.count); });
@@ -292,13 +346,14 @@ router.get('/feed', optionalAuth, async (req, res) => {
         userDisliked,
         userSaved,
         isPinned: ind.key === userOccupation,
+        friendResponses,
       });
     }
 
     // Sort: user's occupation first
     posts.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
 
-    res.json({ date: dateStr, promptId: prompt.id, userOccupation, posts });
+    res.json({ date: dateStr, promptId: prompt.id, userOccupation, filter, posts });
   } catch (err) {
     console.error('Feed error:', err);
     res.status(500).json({ error: 'Failed to load feed' });

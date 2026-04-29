@@ -191,6 +191,11 @@ export default function DailyPrompts() {
 
   const catColor = promptData ? CATEGORY_COLORS[promptData.category] || 'var(--purple)' : 'var(--purple)';
   const hasResponded = !!promptData?.userResponse;
+  // User voted today but under a DIFFERENT occupation — lock this tab to results-only
+  const votedElsewhere = promptData?.hasVotedToday && !hasResponded;
+  const votedOccupationLabel = votedElsewhere
+    ? (INDUSTRIES.find(i => i.key === promptData.votedOccupation)?.label || promptData.votedOccupation)
+    : null;
   const industryObj = INDUSTRIES.find(i => i.key === industry) || INDUSTRIES[0];
 
   return (
@@ -269,7 +274,21 @@ export default function DailyPrompts() {
           <div className="dp-question">{promptData.question}</div>
 
           {/* Response area */}
-          {!hasResponded ? (
+          {votedElsewhere ? (
+            /* Locked — already voted in a different occupation */
+            <div className="dp-voted-elsewhere">
+              <div className="dp-voted-elsewhere-icon">🔒</div>
+              <div className="dp-voted-elsewhere-msg">
+                You already voted today under <strong>{votedOccupationLabel}</strong>.
+              </div>
+              <button
+                className="dp-voted-elsewhere-btn"
+                onClick={() => navigate('/daily-prompts/feed')}
+              >
+                See the feed →
+              </button>
+            </div>
+          ) : !hasResponded ? (
             <>
               {/* Yes / No */}
               {promptData.responseType === 'yesno' && (
