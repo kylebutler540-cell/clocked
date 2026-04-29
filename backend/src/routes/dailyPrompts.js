@@ -346,6 +346,7 @@ router.get('/feed', optionalAuth, async (req, res) => {
         userDisliked,
         userSaved,
         isPinned: ind.key === userOccupation,
+        category: prompt.category,
         friendResponses,
       });
     }
