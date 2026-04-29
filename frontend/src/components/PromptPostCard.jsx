@@ -136,28 +136,62 @@ export default function PromptPostCard({ post, onReact, onComment }) {
       {/* Engagement row */}
       <div className="ppc-actions">
         <div className="ppc-actions-left">
-          {/* Like */}
-          <button className={`ppc-action-btn${userLiked ? ' liked' : ''}`} onClick={() => onReact('like')}>
-            <svg viewBox="0 0 24 24" fill={userLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+          {/* Like — same pill style as normal posts */}
+          <button
+            onClick={() => onReact('like')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: userLiked ? 'rgba(34,197,94,0.12)' : 'var(--bg-pill)',
+              borderRadius: 20, padding: '6px 12px',
+              border: `1px solid ${userLiked ? '#22C55E' : 'var(--border)'}`,
+              flexShrink: 0, color: userLiked ? '#22C55E' : 'var(--text-muted)',
+              minHeight: 36, cursor: 'pointer', outline: 'none',
+              transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={userLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+              <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
             </svg>
-            {likeCount > 0 && <span>{likeCount}</span>}
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{likeCount}</span>
           </button>
 
-          {/* Dislike */}
-          <button className={`ppc-action-btn${userDisliked ? ' disliked' : ''}`} onClick={() => onReact('dislike')}>
-            <svg viewBox="0 0 24 24" fill={userDisliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+          {/* Dislike — same pill style as normal posts */}
+          <button
+            onClick={() => onReact('dislike')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: userDisliked ? 'rgba(239,68,68,0.12)' : 'var(--bg-pill)',
+              borderRadius: 20, padding: '6px 12px',
+              border: `1px solid ${userDisliked ? '#EF4444' : 'var(--border)'}`,
+              flexShrink: 0, color: userDisliked ? '#EF4444' : 'var(--text-muted)',
+              minHeight: 36, cursor: 'pointer', outline: 'none',
+              transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={userDisliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+              <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
             </svg>
-            {dislikeCount > 0 && <span>{dislikeCount}</span>}
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{dislikeCount}</span>
           </button>
 
-          {/* Comment */}
-          <button className="ppc-action-btn" onClick={onComment}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          {/* Comment — same pill style as normal posts */}
+          <button
+            onClick={onComment}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'var(--bg-pill)', borderRadius: 20,
+              padding: '6px 12px', border: '1px solid var(--border)',
+              flexShrink: 0, color: 'var(--text-muted)',
+              outline: 'none', cursor: 'pointer', transition: 'color 0.15s',
+              WebkitTapHighlightColor: 'transparent', minHeight: 36,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            {commentCount > 0 && <span>{commentCount}</span>}
+            <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1 }}>{commentCount ?? 0}</span>
           </button>
         </div>
 
