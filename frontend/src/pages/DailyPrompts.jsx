@@ -165,7 +165,7 @@ export default function DailyPrompts() {
         totalResponses: res.data.totalResponses,
         streak: res.data.streak,
       }));
-      navigate('/daily-prompts/feed');
+      navigate('/daily-prompts/feed', { replace: true });
     } catch {
       // fail silently — keep selection shown
     } finally {

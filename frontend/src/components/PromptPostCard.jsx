@@ -127,7 +127,7 @@ export default function PromptPostCard({ post, onReact, onComment }) {
       {isPinned && userResponse && (
         <button
           className="ppc-change-btn"
-          onClick={() => navigate('/daily-prompts')}
+          onClick={() => navigate('/daily-prompts', { replace: true })}
         >
           Change my answer
         </button>

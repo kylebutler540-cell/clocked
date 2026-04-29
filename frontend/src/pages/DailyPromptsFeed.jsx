@@ -121,9 +121,9 @@ export default function DailyPromptsFeed() {
         </div>
         <button
           className="dp-back-btn"
-          onClick={() => navigate('/daily-prompts')}
+          onClick={() => navigate('/')}
         >
-          ← Back
+          Home
         </button>
       </div>
 
