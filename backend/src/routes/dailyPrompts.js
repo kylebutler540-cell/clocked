@@ -21,10 +21,10 @@ router.get('/today', optionalAuth, async (req, res) => {
     let results = null;
 
     if (req.user) {
-      // Check if user already responded today
+      // Check if user already responded today FOR THIS INDUSTRY
       const existing = await prisma.$queryRawUnsafe(
-        `SELECT response_value, industry FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 LIMIT 1`,
-        dateStr, req.user.id
+        `SELECT response_value FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 AND industry = $3 LIMIT 1`,
+        dateStr, req.user.id, industry
       );
       if (existing && existing.length > 0) {
         userResponse = existing[0].response_value;
@@ -113,22 +113,23 @@ router.post('/today/respond', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid slider value' });
     }
 
-    // Upsert — allows changing today's response
+    // Upsert — keyed on (prompt_date, user_id, industry) so each tab is independent
+    const ind = industry || 'general';
     const existing = await prisma.$queryRawUnsafe(
-      `SELECT id FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 LIMIT 1`,
-      dateStr, req.user.id
+      `SELECT id FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 AND industry = $3 LIMIT 1`,
+      dateStr, req.user.id, ind
     );
 
     if (existing && existing.length > 0) {
       await prisma.$queryRawUnsafe(
-        `UPDATE prompt_responses SET response_value = $1, industry = $2 WHERE prompt_date = $3 AND user_id = $4`,
-        value, industry || 'general', dateStr, req.user.id
+        `UPDATE prompt_responses SET response_value = $1 WHERE prompt_date = $2 AND user_id = $3 AND industry = $4`,
+        value, dateStr, req.user.id, ind
       );
     } else {
       await prisma.$queryRawUnsafe(
         `INSERT INTO prompt_responses (id, prompt_date, prompt_id, user_id, response_value, industry, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-        uuidv4(), dateStr, String(prompt.id), req.user.id, value, industry || 'general'
+        uuidv4(), dateStr, String(prompt.id), req.user.id, value, ind
       );
     }
 
