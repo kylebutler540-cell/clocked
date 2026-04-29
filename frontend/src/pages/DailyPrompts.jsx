@@ -35,13 +35,12 @@ const CATEGORY_LABELS = {
   teamwork:   'Teamwork',
 };
 
-const SLIDER_OPTIONS = [
-  { value: '1', emoji: '😡', label: 'Very Bad' },
-  { value: '2', emoji: '😕', label: 'Bad' },
-  { value: '3', emoji: '😐', label: 'Okay' },
-  { value: '4', emoji: '🙂', label: 'Good' },
-  { value: '5', emoji: '😄', label: 'Great' },
-];
+const SLIDER_EMOJIS = ['😡', '😕', '😐', '🙂', '😄'];
+
+function buildSliderOptions(labels) {
+  const l = labels && labels.length === 5 ? labels : ['Very Bad', 'Bad', 'OK', 'Good', 'Great'];
+  return ['1','2','3','4','5'].map((v, i) => ({ value: v, emoji: SLIDER_EMOJIS[i], label: l[i] }));
+}
 
 function getIndustry() {
   return localStorage.getItem('clocked_industry') || null;
@@ -205,6 +204,8 @@ export default function DailyPrompts() {
   const catColor = promptData ? CATEGORY_COLORS[promptData.category] || 'var(--purple)' : 'var(--purple)';
   // In change mode, show voting buttons even if already answered
   const hasResponded = !isChangeMode && !!promptData?.userResponse;
+  // Per-prompt slider options (labels from API, emojis always the same)
+  const sliderOptions = buildSliderOptions(promptData?.sliderLabels);
   // User voted today but under a DIFFERENT occupation — lock this tab to results-only
   // (never lock in change mode — they're here to update their answer)
   const votedElsewhere = !isChangeMode && promptData?.hasVotedToday && !hasResponded;
@@ -328,7 +329,7 @@ export default function DailyPrompts() {
               {/* Emoji Slider */}
               {promptData.responseType === 'slider' && (
                 <div className="dp-slider">
-                  {SLIDER_OPTIONS.map(opt => (
+                  {sliderOptions.map(opt => (
                     <button
                       key={opt.value}
                       className={`dp-slider-opt${selected === opt.value ? ' dp-slider-opt-selected' : ''}`}
@@ -405,7 +406,7 @@ export default function DailyPrompts() {
 
                 {promptData.responseType === 'slider' && promptData.results && (
                   <div className="dp-slider-results">
-                    {SLIDER_OPTIONS.map(opt => (
+                    {sliderOptions.map(opt => (
                       <ResultBar
                         key={opt.value}
                         label={`${opt.emoji} ${opt.label}`}

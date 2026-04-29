@@ -2,7 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
-const { getTodayPrompt, getPromptText, getPollOptions, getTodayDateStr } = require('../data/prompts');
+const { getTodayPrompt, getPromptText, getPollOptions, getTodayDateStr, getSliderLabels } = require('../data/prompts');
 
 const router = express.Router();
 
@@ -92,6 +92,7 @@ router.get('/today', optionalAuth, async (req, res) => {
       hook: prompt.hook,
       question,
       pollOptions,
+      sliderLabels: prompt.responseType === 'slider' ? getSliderLabels(prompt) : null,
       userResponse,
       hasVotedToday,
       votedOccupation,
@@ -401,6 +402,7 @@ router.get('/feed', optionalAuth, async (req, res) => {
         userSaved,
         isPinned: ind.key === userOccupation,
         category: prompt.category,
+        sliderLabels: prompt.responseType === 'slider' ? getSliderLabels(prompt) : null,
         friendResponses,
         postId,
       });

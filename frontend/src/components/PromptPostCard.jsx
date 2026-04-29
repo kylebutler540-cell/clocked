@@ -23,7 +23,12 @@ const CATEGORY_COLORS = {
   teamwork:   '#06B6D4',
 };
 
-const SLIDER_LABELS = { '1': '😡 Very Bad', '2': '😕 Bad', '3': '😐 Okay', '4': '🙂 Good', '5': '😄 Great' };
+const SLIDER_EMOJIS_MAP = { '1': '😡', '2': '😕', '3': '😐', '4': '🙂', '5': '😄' };
+const DEFAULT_SLIDER_LABELS = { '1': 'Very Bad', '2': 'Bad', '3': 'Okay', '4': 'Good', '5': 'Great' };
+function buildSliderLabel(v, sliderLabels) {
+  const label = (sliderLabels && sliderLabels[parseInt(v) - 1]) || DEFAULT_SLIDER_LABELS[v];
+  return `${SLIDER_EMOJIS_MAP[v]} ${label}`;
+}
 const SLIDER_COLORS = { '1': '#EF4444', '2': '#F97316', '3': '#EAB308', '4': '#22C55E', '5': '#15803D' };
 
 function ResultBar({ label, pct, color, isUserAnswer }) {
@@ -64,6 +69,7 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
 
   const categoryLabel = CATEGORY_LABELS[category] || category || '';
   const categoryColor = CATEGORY_COLORS[category] || 'var(--text-muted)';
+  const sliderLabels = post.sliderLabels || null;
 
   return (
     <div className={`ppc${isPinned ? ' pinned' : ''}`}>
@@ -127,7 +133,7 @@ export default function PromptPostCard({ post, onReact, onCommentAdded }) {
           {responseType === 'slider' && ['1','2','3','4','5'].map(v => (
             <ResultBar
               key={v}
-              label={SLIDER_LABELS[v]}
+              label={buildSliderLabel(v, sliderLabels)}
               pct={results[v]?.pct ?? 0}
               color={SLIDER_COLORS[v]}
               isUserAnswer={userResponse === v}

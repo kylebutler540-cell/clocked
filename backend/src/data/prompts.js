@@ -807,4 +807,43 @@ function getTodayDateStr() {
   return `${y}-${m}-${d}`;
 }
 
-module.exports = { PROMPTS, getTodayPrompt, getPromptText, getPollOptions, getTodayDateStr };
+/**
+ * Slider scale types — maps to a set of 5 answer labels.
+ * Each question type gets the scale that reads naturally with its question.
+ */
+const SLIDER_SCALE_LABELS = {
+  experience: ['Very Bad',          'Bad',           'OK',       'Good',     'Great'],
+  intensity:  ['Not at all',        'A little',      'Somewhat', 'Very',     'Extremely'],
+  frequency:  ['Never',             'Rarely',        'Sometimes','Often',    'Always'],
+  quality:    ['Poor',              'Below average', 'OK',       'Good',     'Excellent'],
+  agreement:  ['Strongly disagree', 'Disagree',      'Neutral',  'Agree',    'Strongly agree'],
+};
+
+/**
+ * Auto-detect the correct slider scale from question wording.
+ * Checks the `general` variant (or an explicit `sliderScale` override on the prompt).
+ */
+function getSliderScale(prompt) {
+  if (prompt.sliderScale) return prompt.sliderScale;
+  const q = (prompt.variants.general || '').toLowerCase();
+  // Frequency questions — "how often"
+  if (/how often|how frequently/.test(q)) return 'frequency';
+  // Intensity questions — amount, degree, closeness
+  if (/how much|how close|how likely|how physically|how mentally|how emotionally|how demanding|how entitled|how stressed|how drained|how worn|how burnt|how burned|how fried|how beat/.test(q)) return 'intensity';
+  // Quality questions — how well/good/effective/etc.
+  if (/how well|how good|how efficient|how organized|how effective|how realistic|how consistent|how reasonable|how manageable|how available|how approachable|how stable|how fair|how smart|how trusted|how trusting/.test(q)) return 'quality';
+  // Agreement questions — statements about management/workplace
+  if (/agree|disagree|statement/.test(q)) return 'agreement';
+  // Experience questions — "how was", "rate", scale of experience
+  return 'experience';
+}
+
+/**
+ * Return the 5 label strings for a slider prompt.
+ */
+function getSliderLabels(prompt) {
+  const scale = getSliderScale(prompt);
+  return SLIDER_SCALE_LABELS[scale] || SLIDER_SCALE_LABELS.experience;
+}
+
+module.exports = { PROMPTS, getTodayPrompt, getPromptText, getPollOptions, getTodayDateStr, getSliderLabels };
