@@ -3118,7 +3118,7 @@ textarea.form-input {
 
 /* Center signup/profile/etc pages on desktop */
 @media (min-width: 768px) {
-  .page-content > div:not(.feed):not(.home-layout):not(.profile-page):not(.company-header):not(.post-detail-page):not([class]) {
+  .page-content > div:not(.feed):not(.home-layout):not(.profile-page):not(.company-header):not(.post-detail-page):not(.dp-page):not([class]) {
     max-width: 500px;
     margin: 0 auto;
   }
@@ -3138,8 +3138,11 @@ textarea.form-input {
   }
 
   /* Daily Prompts — same full feed width as polls on desktop */
-  .dp-page {
+  .dp-page,
+  .page-content > .dp-page {
+    width: 100%;
     max-width: 100%;
+    margin: 0;
   }
 }
 
