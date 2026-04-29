@@ -4160,9 +4160,9 @@ body[data-comments-open] .mobile-only-header {
 
 .dp-result-row {
   display: grid;
-  grid-template-columns: 24px 150px 1fr 36px;
+  grid-template-columns: 24px auto 1fr 36px;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 5px 0;
 }
 .dp-result-row-selected .dp-result-label { color: var(--text-primary); font-weight: 800; }
@@ -4376,9 +4376,9 @@ body[data-comments-open] .mobile-only-header {
 /* ── Result bar v2 — grid layout, always visible, full labels ── */
 .ppc-result-row {
   display: grid;
-  grid-template-columns: 22px 140px 1fr 32px;
+  grid-template-columns: 22px auto 1fr 32px;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 3px 0;
 }
 .ppc-result-emoji {
