@@ -405,14 +405,14 @@ export default function DailyPrompts() {
                 </div>
 
                 {promptData.responseType === 'yesno' && promptData.results && (
-                  <>
+                  <div className="dp-result-bars">
                     <ResultBar label="Yes" pct={promptData.results.yes?.pct || 0} count={promptData.results.yes?.count || 0} isSelected={promptData.userResponse === 'yes'} color="#22C55E" />
                     <ResultBar label="No"  pct={promptData.results.no?.pct  || 0} count={promptData.results.no?.count  || 0} isSelected={promptData.userResponse === 'no'}  color="#EF4444" />
-                  </>
+                  </div>
                 )}
 
                 {promptData.responseType === 'slider' && promptData.results && (
-                  <div className="dp-slider-results">
+                  <div className="dp-result-bars">
                     {sliderOptions.map(opt => (
                       <ResultBar
                         key={opt.value}
@@ -427,7 +427,7 @@ export default function DailyPrompts() {
                 )}
 
                 {promptData.responseType === 'poll' && promptData.results && promptData.pollOptions && (
-                  <>
+                  <div className="dp-result-bars">
                     {promptData.pollOptions.map(opt => (
                       <ResultBar
                         key={opt}
@@ -438,7 +438,7 @@ export default function DailyPrompts() {
                         color={catColor}
                       />
                     ))}
-                  </>
+                  </div>
                 )}
 
                 <button

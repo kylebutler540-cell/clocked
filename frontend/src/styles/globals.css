@@ -4142,7 +4142,15 @@ body[data-comments-open] .mobile-only-header {
 .dp-results {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+/* Shared grid for result bars — all rows share ONE column layout */
+.dp-result-bars {
+  display: grid;
+  grid-template-columns: 24px max-content 1fr 36px;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: center;
 }
 
 .dp-results-total {
@@ -4158,14 +4166,8 @@ body[data-comments-open] .mobile-only-header {
   gap: 8px;
 }
 
-.dp-result-row {
-  display: grid;
-  grid-template-columns: 24px max-content 1fr 36px;
-  align-items: center;
-  column-gap: 12px;
-  row-gap: 5px;
-  padding: 2px 0;
-}
+/* Each row uses display:contents so its 4 children become grid items of .dp-result-bars */
+.dp-result-row { display: contents; }
 .dp-result-row-selected .dp-result-label { color: var(--text-primary); font-weight: 800; }
 .dp-result-row-selected .dp-result-pct { color: var(--text-primary); font-weight: 800; }
 .dp-result-emoji {
@@ -4274,7 +4276,14 @@ body[data-comments-open] .mobile-only-header {
 .ppc-answer-pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 20px; border: 1.5px solid; font-size: 13px; font-weight: 700; padding: 4px 12px; width: fit-content; }
 .ppc-answer-pill.yes { background: rgba(21,128,61,0.1); border-color: #15803D; color: #15803D; }
 .ppc-answer-pill.no { background: rgba(220,38,38,0.1); border-color: #DC2626; color: #DC2626; }
-.ppc-results { display: flex; flex-direction: column; gap: 5px; }
+/* Shared grid for prompt post card result bars */
+.ppc-results {
+  display: grid;
+  grid-template-columns: 22px max-content 1fr 32px;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: center;
+}
 .ppc-result-row { display: flex; align-items: center; gap: 8px; }
 .ppc-result-label { font-size: 12px; font-weight: 700; width: 36px; flex-shrink: 0; color: var(--text-muted); }
 .ppc-result-bar-wrap { flex: 1; height: 8px; background: var(--bg-base); border-radius: 4px; overflow: hidden; }
@@ -4376,14 +4385,8 @@ body[data-comments-open] .mobile-only-header {
 .ppc-friend-vote { font-size: 12px; }
 
 /* ── Result bar v2 — grid layout, always visible, full labels ── */
-.ppc-result-row {
-  display: grid;
-  grid-template-columns: 22px max-content 1fr 32px;
-  align-items: center;
-  column-gap: 12px;
-  row-gap: 3px;
-  padding: 2px 0;
-}
+/* Each row uses display:contents so its 4 children become grid items of .ppc-results */
+.ppc-result-row { display: contents; }
 .ppc-result-emoji {
   font-size: 15px;
   text-align: center;
