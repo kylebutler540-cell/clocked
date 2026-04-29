@@ -214,10 +214,21 @@ const INDUSTRIES = [
 // GET /api/daily-prompts/feed
 router.get('/feed', optionalAuth, async (req, res) => {
   try {
-    const userOccupation = req.query.occupation || 'general';
     const filter = req.query.filter || 'all'; // 'all' | 'friends' | 'top'
     const prompt = getTodayPrompt();
     const dateStr = getTodayDateStr();
+
+    // Determine user's actual voted occupation from DB (not client-provided param)
+    let userOccupation = req.query.occupation || 'general';
+    if (req.user) {
+      const votedRow = await prisma.$queryRawUnsafe(
+        `SELECT industry FROM prompt_responses WHERE prompt_date = $1 AND user_id = $2 LIMIT 1`,
+        dateStr, req.user.id
+      );
+      if (votedRow && votedRow.length > 0) {
+        userOccupation = votedRow[0].industry;
+      }
+    }
 
     // For friends filter: get mutual follower IDs
     let friendIds = [];
