@@ -143,6 +143,18 @@ async function run() {
       )`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "dpr_unique" ON "daily_prompt_reactions"("prompt_date", "occupation", "user_id", "type")`,
       `DO $$ BEGIN ALTER TABLE "daily_prompt_reactions" ADD CONSTRAINT "dpr_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+      // Comments on daily prompt posts
+      `CREATE TABLE IF NOT EXISTS "daily_prompt_comments" (
+        "id" TEXT NOT NULL,
+        "prompt_date" TEXT NOT NULL,
+        "occupation" TEXT NOT NULL,
+        "user_id" TEXT NOT NULL,
+        "body" TEXT NOT NULL,
+        "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "daily_prompt_comments_pkey" PRIMARY KEY ("id")
+      )`,
+      `CREATE INDEX IF NOT EXISTS "dpc_date_occ_idx" ON "daily_prompt_comments"("prompt_date", "occupation")`,
+      `DO $$ BEGIN ALTER TABLE "daily_prompt_comments" ADD CONSTRAINT "dpc_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     ];
 
     for (const stmt of statements) {

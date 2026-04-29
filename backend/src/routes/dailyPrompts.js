@@ -243,9 +243,17 @@ router.get('/feed', optionalAuth, async (req, res) => {
       const reactionMap = {};
       reactions.forEach(r => { reactionMap[r.type] = Number(r.count); });
 
+      // Comment count
+      const commentCountRows = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*) as count FROM daily_prompt_comments WHERE prompt_date = $1 AND occupation = $2`,
+        dateStr, ind.key
+      );
+      const commentCount = Number(commentCountRows[0]?.count || 0);
+
       // User-specific data
       let userResponse = null;
       let userLiked = false;
+      let userDisliked = false;
       let userSaved = false;
       if (req.user) {
         const ur = await prisma.$queryRawUnsafe(
@@ -260,6 +268,7 @@ router.get('/feed', optionalAuth, async (req, res) => {
         );
         ur2.forEach(r => {
           if (r.type === 'like') userLiked = true;
+          if (r.type === 'dislike') userDisliked = true;
           if (r.type === 'save') userSaved = true;
         });
       }
@@ -276,8 +285,11 @@ router.get('/feed', optionalAuth, async (req, res) => {
         results,
         totalResponses: total,
         likeCount: reactionMap['like'] || 0,
+        dislikeCount: reactionMap['dislike'] || 0,
         saveCount: reactionMap['save'] || 0,
+        commentCount,
         userLiked,
+        userDisliked,
         userSaved,
         isPinned: ind.key === userOccupation,
       });
@@ -332,13 +344,72 @@ router.post('/feed/:date/:occupation/react', requireAuth, async (req, res) => {
 
     res.json({
       liked: userTypes.has('like'),
+      disliked: userTypes.has('dislike'),
       saved: userTypes.has('save'),
       likeCount: cmap['like'] || 0,
+      dislikeCount: cmap['dislike'] || 0,
       saveCount: cmap['save'] || 0,
     });
   } catch (err) {
     console.error('React error:', err);
     res.status(500).json({ error: 'Failed to react' });
+  }
+});
+
+// GET /api/daily-prompts/feed/:date/:occupation/comments
+router.get('/feed/:date/:occupation/comments', optionalAuth, async (req, res) => {
+  try {
+    const { date, occupation } = req.params;
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT c.id, c.body, c.created_at, u.anon_number
+       FROM daily_prompt_comments c
+       JOIN users u ON u.id = c.user_id
+       WHERE c.prompt_date = $1 AND c.occupation = $2
+       ORDER BY c.created_at ASC
+       LIMIT 100`,
+      date, occupation
+    );
+    res.json({ comments: rows });
+  } catch (err) {
+    console.error('Comments fetch error:', err);
+    res.status(500).json({ error: 'Failed to load comments' });
+  }
+});
+
+// POST /api/daily-prompts/feed/:date/:occupation/comments
+router.post('/feed/:date/:occupation/comments', requireAuth, async (req, res) => {
+  try {
+    const { date, occupation } = req.params;
+    const { body } = req.body;
+    if (!body || !body.trim()) return res.status(400).json({ error: 'body required' });
+    const id = uuidv4();
+    await prisma.$queryRawUnsafe(
+      `INSERT INTO daily_prompt_comments (id, prompt_date, occupation, user_id, body, created_at) VALUES ($1,$2,$3,$4,$5,NOW())`,
+      id, date, occupation, req.user.id, body.trim()
+    );
+    // Return new comment with anon_number
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT c.id, c.body, c.created_at, u.anon_number FROM daily_prompt_comments c JOIN users u ON u.id = c.user_id WHERE c.id = $1`,
+      id
+    );
+    res.json({ comment: rows[0] });
+  } catch (err) {
+    console.error('Comment post error:', err);
+    res.status(500).json({ error: 'Failed to post comment' });
+  }
+});
+
+// DELETE /api/daily-prompts/feed/:date/:occupation/comments/:id
+router.delete('/feed/:date/:occupation/comments/:commentId', requireAuth, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    await prisma.$queryRawUnsafe(
+      `DELETE FROM daily_prompt_comments WHERE id = $1 AND user_id = $2`,
+      commentId, req.user.id
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete comment' });
   }
 });
 

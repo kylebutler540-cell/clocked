@@ -20,12 +20,13 @@ function ResultBar({ label, pct, color }) {
   );
 }
 
-export default function PromptPostCard({ post, onReact }) {
+export default function PromptPostCard({ post, onReact, onComment }) {
   const {
     occupation, occupationLabel, occupationEmoji,
     question, responseType, pollOptions,
     userResponse, results, totalResponses,
-    likeCount, saveCount, userLiked, userSaved,
+    likeCount, dislikeCount, saveCount, commentCount,
+    userLiked, userDisliked, userSaved,
     isPinned,
   } = post;
 
@@ -66,25 +67,36 @@ export default function PromptPostCard({ post, onReact }) {
 
       {/* Engagement */}
       <div className="ppc-actions">
+        {/* Like */}
         <button className={`ppc-action-btn${userLiked ? ' liked' : ''}`} onClick={() => onReact('like')}>
           <svg viewBox="0 0 24 24" fill={userLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
           </svg>
           {likeCount > 0 && likeCount}
         </button>
 
+        {/* Dislike */}
+        <button className={`ppc-action-btn${userDisliked ? ' disliked' : ''}`} onClick={() => onReact('dislike')}>
+          <svg viewBox="0 0 24 24" fill={userDisliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+          </svg>
+          {dislikeCount > 0 && dislikeCount}
+        </button>
+
+        {/* Comment */}
+        <button className="ppc-action-btn" onClick={onComment}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          {commentCount > 0 && commentCount}
+        </button>
+
+        {/* Save */}
         <button className={`ppc-action-btn${userSaved ? ' saved' : ''}`} onClick={() => onReact('save')}>
           <svg viewBox="0 0 24 24" fill={userSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
           {saveCount > 0 && saveCount}
-        </button>
-
-        <button className="ppc-action-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-          </svg>
         </button>
       </div>
     </div>
