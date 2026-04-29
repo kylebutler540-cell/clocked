@@ -4028,27 +4028,27 @@ body[data-comments-open] .mobile-only-header {
 
 /* 1 = Very Bad — red */
 .dp-slider-opt-selected[data-rating='1'] { border-color: #EF4444 !important; background: rgba(239,68,68,0.1) !important; }
-.dp-slider-opt-selected[data-rating='1'] .dp-slider-emoji { background: #EF4444; border-radius: 50%; padding: 4px; }
+.dp-slider-opt-selected[data-rating='1'] .dp-slider-emoji { }
 .dp-slider-opt-selected[data-rating='1'] .dp-slider-label { color: #EF4444; }
 
 /* 2 = Bad — orange */
 .dp-slider-opt-selected[data-rating='2'] { border-color: #F97316 !important; background: rgba(249,115,22,0.1) !important; }
-.dp-slider-opt-selected[data-rating='2'] .dp-slider-emoji { background: #F97316; border-radius: 50%; padding: 4px; }
+.dp-slider-opt-selected[data-rating='2'] .dp-slider-emoji { }
 .dp-slider-opt-selected[data-rating='2'] .dp-slider-label { color: #F97316; }
 
 /* 3 = Okay — yellow/amber */
 .dp-slider-opt-selected[data-rating='3'] { border-color: #EAB308 !important; background: rgba(234,179,8,0.1) !important; }
-.dp-slider-opt-selected[data-rating='3'] .dp-slider-emoji { background: #EAB308; border-radius: 50%; padding: 4px; }
+.dp-slider-opt-selected[data-rating='3'] .dp-slider-emoji { }
 .dp-slider-opt-selected[data-rating='3'] .dp-slider-label { color: #CA8A04; }
 
 /* 4 = Good — green */
 .dp-slider-opt-selected[data-rating='4'] { border-color: #22C55E !important; background: rgba(34,197,94,0.1) !important; }
-.dp-slider-opt-selected[data-rating='4'] .dp-slider-emoji { background: #22C55E; border-radius: 50%; padding: 4px; }
+.dp-slider-opt-selected[data-rating='4'] .dp-slider-emoji { }
 .dp-slider-opt-selected[data-rating='4'] .dp-slider-label { color: #16A34A; }
 
 /* 5 = Great — darker green */
 .dp-slider-opt-selected[data-rating='5'] { border-color: #15803D !important; background: rgba(21,128,61,0.1) !important; }
-.dp-slider-opt-selected[data-rating='5'] .dp-slider-emoji { background: #15803D; border-radius: 50%; padding: 4px; }
+.dp-slider-opt-selected[data-rating='5'] .dp-slider-emoji { }
 .dp-slider-opt-selected[data-rating='5'] .dp-slider-label { color: #15803D; }
 
 /* Subtle colored underline on hover (unselected) to hint the scale */
