@@ -56,7 +56,10 @@ router.get('/', optionalAuth, async (req, res) => {
     const { cursor, employer_place_id, rating, search, sort, location, userId, has_poll } = req.query;
     const isTopRated = sort === 'top';
 
-    const where = {};
+    const where = {
+      // Always exclude daily prompt system posts from the home feed
+      NOT: { anonymous_user_id: 'dp-system-user' },
+    };
     if (employer_place_id) where.employer_place_id = employer_place_id;
     if (userId) where.anonymous_user_id = userId;
     if (rating && ['BAD', 'NEUTRAL', 'GOOD'].includes(rating)) {
