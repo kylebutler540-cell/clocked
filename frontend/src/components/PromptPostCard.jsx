@@ -11,7 +11,7 @@ const CATEGORY_LABELS = {
   teamwork:   'Teamwork',
 };
 
-const SLIDER_LABELS = { '1': 'Very Bad', '2': 'Bad', '3': 'Okay', '4': 'Good', '5': 'Great' };
+const SLIDER_LABELS = { '1': '😡 Very Bad', '2': '😕 Bad', '3': '😐 Okay', '4': '🙂 Good', '5': '😄 Great' };
 const SLIDER_COLORS = { '1': '#EF4444', '2': '#F97316', '3': '#EAB308', '4': '#22C55E', '5': '#15803D' };
 
 function ResultBar({ label, pct, color, isUserAnswer }) {

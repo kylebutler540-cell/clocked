@@ -163,7 +163,6 @@ export default function DailyPromptsFeed() {
           ))}
         </div>
       ) : null}
-    </div>
 
       {/* Comment Sheet */}
       {commentSheet && (
