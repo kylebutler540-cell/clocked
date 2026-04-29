@@ -131,12 +131,17 @@ export default function DailyPrompts() {
       const res = await api.get('/daily-prompts/today', { params: { industry: ind || 'general' } });
       setPromptData(res.data);
       if (res.data.userResponse) setSelected(res.data.userResponse);
+      // Already voted today — go straight to the feed
+      if (res.data.hasVotedToday) {
+        navigate('/daily-prompts/feed', { replace: true });
+        return;
+      }
     } catch {
       setError('Could not load today\'s prompt. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!firstVisit) fetchPrompt(industry);
