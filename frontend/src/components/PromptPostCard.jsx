@@ -38,16 +38,23 @@ function ResultBar({ label, pct, color, isUserAnswer }) {
     return () => clearTimeout(t);
   }, [pct]);
 
+  // Parse emoji from label (first char if it's an emoji)
+  const emojiMatch = label.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u);
+  const emoji = emojiMatch ? emojiMatch[0] : null;
+  const text = emoji ? label.slice(emoji.length).trim() : label;
+
   return (
     <div className={`ppc-result-row${isUserAnswer ? ' ppc-result-row-mine' : ''}`}>
-      <span className="ppc-result-label">
+      {emoji && <span className="ppc-result-emoji">{emoji}</span>}
+      <span className="ppc-result-label" title={text}>
         {isUserAnswer && <span className="ppc-result-check">✓ </span>}
-        {label}
+        {text}
       </span>
+      {/* Bar always renders — gray background, colored fill up to pct% */}
       <div className="ppc-result-bar-wrap">
         <div
           className="ppc-result-bar-fill"
-          style={{ width: `${animPct}%`, background: isUserAnswer ? color : `${color}55` }}
+          style={{ width: `${animPct}%`, background: isUserAnswer ? color : `${color}99` }}
         />
       </div>
       <span className="ppc-result-pct">{pct}%</span>

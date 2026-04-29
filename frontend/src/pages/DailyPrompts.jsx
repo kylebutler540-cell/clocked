@@ -87,19 +87,26 @@ function ResultBar({ label, pct, count, isSelected, color }) {
     return () => clearTimeout(t);
   }, [pct]);
 
+  // Split emoji prefix from label text
+  const emojiMatch = label.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u);
+  const emoji = emojiMatch ? emojiMatch[0] : null;
+  const text = emoji ? label.slice(emoji.length).trim() : label;
+
   return (
     <div className={`dp-result-row${isSelected ? ' dp-result-row-selected' : ''}`}>
-      <div className="dp-result-label">
+      {emoji && <span className="dp-result-emoji">{emoji}</span>}
+      <div className="dp-result-label" title={text}>
         {isSelected && <span className="dp-result-check">✓</span>}
-        <span>{label}</span>
+        <span className="dp-result-text">{text}</span>
       </div>
+      {/* Bar always renders, gray bg, colored fill only up to pct% */}
       <div className="dp-result-bar-wrap">
         <div
           className="dp-result-bar-fill"
-          style={{ width: `${animPct}%`, background: isSelected ? color || 'var(--purple)' : color ? `${color}30` : 'var(--bg-elevated)' }}
+          style={{ width: `${animPct}%`, background: isSelected ? (color || 'var(--purple)') : `${color}99` }}
         />
-        <span className="dp-result-pct">{pct}%</span>
       </div>
+      <span className="dp-result-pct">{pct}%</span>
     </div>
   );
 }
