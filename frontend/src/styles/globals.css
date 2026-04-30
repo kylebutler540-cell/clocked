@@ -4437,6 +4437,7 @@ body[data-comments-open] .mobile-only-header {
     column-gap: 8px;
     align-items: center;
     padding: 3px 0;
+    width: 100%;
   }
   .ppc-result-row {
     display: grid !important;
@@ -4444,6 +4445,7 @@ body[data-comments-open] .mobile-only-header {
     column-gap: 8px;
     align-items: center;
     padding: 2px 0;
+    width: 100%;
   }
 
   /* Bar shrinks freely — label always gets its full fixed width */
