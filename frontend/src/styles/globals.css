@@ -4422,3 +4422,24 @@ body[data-comments-open] .mobile-only-header {
   color: var(--text-secondary);
   text-align: right;
 }
+
+/* ── Daily Prompts result bars — mobile fix ─────────────────── */
+@media (max-width: 767px) {
+  .dp-result-bars {
+    grid-template-columns: 22px max-content minmax(0, 1fr) 32px;
+    column-gap: 8px;
+  }
+  .ppc-results {
+    grid-template-columns: 20px max-content minmax(0, 1fr) 28px;
+    column-gap: 8px;
+  }
+  .dp-result-bar-wrap,
+  .ppc-result-bar-wrap {
+    min-width: 0;
+  }
+  .dp-result-pct,
+  .ppc-result-pct {
+    font-size: 11px;
+    width: 28px;
+  }
+}
