@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,23 @@ export default function DailyPromptsFeed() {
 
   const [feed, setFeed] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!filterOpen) return;
+    function handleClick(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+    };
+  }, [filterOpen]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' | 'friends'
@@ -91,7 +108,7 @@ export default function DailyPromptsFeed() {
       </div>
 
       {/* Filter pill + dropdown */}
-      <div className="dpf-filter-wrap" style={{ position: 'relative', display: 'inline-block', marginBottom: 8 }}>
+      <div ref={filterRef} className="dpf-filter-wrap" style={{ position: 'relative', display: 'inline-block', marginBottom: 8 }}>
         <button
           className="dpf-filter-pill"
           onClick={() => setFilterOpen(v => !v)}
