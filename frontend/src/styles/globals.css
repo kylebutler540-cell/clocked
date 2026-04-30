@@ -4424,22 +4424,32 @@ body[data-comments-open] .mobile-only-header {
 }
 
 /* ── Daily Prompts result bars — mobile fix ─────────────────── */
+/* On mobile: per-row fixed-column grids so labels never compete with bars */
 @media (max-width: 767px) {
-  .dp-result-bars {
-    grid-template-columns: 22px max-content minmax(0, 1fr) 32px;
+  /* Parent becomes a simple column stack */
+  .dp-result-bars { display: flex !important; flex-direction: column; gap: 4px; }
+  .ppc-results    { display: flex !important; flex-direction: column; gap: 3px; }
+
+  /* Each row: fixed 120px label col so all bars start at the same point */
+  .dp-result-row {
+    display: grid !important;
+    grid-template-columns: 22px 120px 1fr 28px;
     column-gap: 8px;
+    align-items: center;
+    padding: 3px 0;
   }
-  .ppc-results {
-    grid-template-columns: 20px max-content minmax(0, 1fr) 28px;
+  .ppc-result-row {
+    display: grid !important;
+    grid-template-columns: 20px 110px 1fr 26px;
     column-gap: 8px;
+    align-items: center;
+    padding: 2px 0;
   }
+
+  /* Bar shrinks freely — label always gets its full fixed width */
   .dp-result-bar-wrap,
-  .ppc-result-bar-wrap {
-    min-width: 0;
-  }
-  .dp-result-pct,
-  .ppc-result-pct {
-    font-size: 11px;
-    width: 28px;
-  }
+  .ppc-result-bar-wrap { min-width: 0; }
+
+  .dp-result-text { font-size: 12px; }
+  .dp-result-pct, .ppc-result-pct { font-size: 11px; }
 }
