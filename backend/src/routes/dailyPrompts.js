@@ -326,12 +326,9 @@ router.get('/feed', optionalAuth, async (req, res) => {
       const reactionMap = {};
       reactions.forEach(r => { reactionMap[r.type] = Number(r.count); });
 
-      // Comment count
-      const commentCountRows = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*) as count FROM daily_prompt_comments WHERE prompt_date = $1 AND occupation = $2`,
-        dateStr, ind.key
-      );
-      const commentCount = Number(commentCountRows[0]?.count || 0);
+      // Comment count — from the real posts comments table (CommentSheet uses the post API)
+      // postId is resolved below; for now query after we have it
+      let commentCount = 0;
 
       // User-specific data
       let userResponse = null;
@@ -376,6 +373,14 @@ router.get('/feed', optionalAuth, async (req, res) => {
             `INSERT INTO daily_prompt_post_ids (prompt_date, occupation, post_id) VALUES ($1, $2, $3)`,
             dateStr, ind.key, postId
           );
+        }
+        // Count real comments on this post
+        if (postId) {
+          const ccRows = await prisma.$queryRawUnsafe(
+            `SELECT COUNT(*) as count FROM comments WHERE post_id = $1`,
+            postId
+          );
+          commentCount = Number(ccRows[0]?.count || 0);
         }
       } catch (e) {
         // non-fatal — comments just won't work for this post
