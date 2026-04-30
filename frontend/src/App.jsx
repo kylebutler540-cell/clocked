@@ -267,16 +267,34 @@ function BackButton() {
 const MAIN_TABS = new Set(['/polls', '/messages', '/profile', '/daily-prompts']);
 
 // Tabs with no top bar content on mobile — hide the header entirely to reclaim space
-const NO_HEADER_TABS = new Set(['/profile']);
+const NO_HEADER_TABS = new Set(); // nothing suppressed — all pages get a header
+
+function ProfileMobileHeader() {
+  const navigate = useNavigate();
+  return (
+    <header className="app-header mobile-top-bar" style={{ justifyContent: 'flex-start' }}>
+      <button
+        className="mobile-top-bar-btn mobile-top-bar-create"
+        onClick={() => navigate('/create')}
+        aria-label="Create post"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+    </header>
+  );
+}
 
 function PageHeader() {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/search';
+  const isProfile = location.pathname === '/profile';
   const title = PAGE_TITLES[location.pathname];
   const isMainTab = MAIN_TABS.has(location.pathname);
 
   if (isHome) return <MobileHeader />;
-  if (NO_HEADER_TABS.has(location.pathname)) return null;
+  if (isProfile) return <ProfileMobileHeader />;
 
   return (
     <header className="app-header" style={{ justifyContent: 'flex-start', gap: 12 }}>
