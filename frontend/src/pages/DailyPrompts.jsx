@@ -94,7 +94,8 @@ function ResultBar({ label, pct, count, isSelected, color }) {
 
   return (
     <div className={`dp-result-row${isSelected ? ' dp-result-row-selected' : ''}`}>
-      {emoji && <span className="dp-result-emoji">{emoji}</span>}
+      {/* Always render emoji cell for grid column alignment, even if empty */}
+      <span className="dp-result-emoji">{emoji || ''}</span>
       <div className="dp-result-label" title={text}>
         {isSelected && <span className="dp-result-check">✓</span>}
         <span className="dp-result-text">{text}</span>

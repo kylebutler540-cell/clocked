@@ -45,7 +45,7 @@ function ResultBar({ label, pct, color, isUserAnswer }) {
 
   return (
     <div className={`ppc-result-row${isUserAnswer ? ' ppc-result-row-mine' : ''}`}>
-      {emoji && <span className="ppc-result-emoji">{emoji}</span>}
+      <span className="ppc-result-emoji">{emoji || ''}</span>
       <span className="ppc-result-label" title={text}>
         {isUserAnswer && <span className="ppc-result-check">✓ </span>}
         {text}

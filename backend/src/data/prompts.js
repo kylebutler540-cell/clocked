@@ -774,8 +774,10 @@ const PROMPTS = [
  * Returns the same prompt for all users on the same calendar day.
  */
 function getTodayPrompt() {
-  const now = new Date();
-  const dayIndex = Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 86400000);
+  // Use ET date so prompt rotates at midnight Eastern, not midnight UTC
+  const etDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const [y, m, d] = etDateStr.split('-').map(Number);
+  const dayIndex = Math.floor(Date.UTC(y, m - 1, d) / 86400000);
   return PROMPTS[dayIndex % PROMPTS.length];
 }
 
@@ -797,14 +799,12 @@ function getPollOptions(prompt, industry) {
 }
 
 /**
- * Get today's date string YYYY-MM-DD (UTC).
+ * Get today's date string YYYY-MM-DD in US Eastern time.
+ * Prompts switch at midnight ET so users on the East Coast see consistent behavior.
  */
 function getTodayDateStr() {
-  const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  // Intl with en-CA gives YYYY-MM-DD format automatically
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
 }
 
 /**
