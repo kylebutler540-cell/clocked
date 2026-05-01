@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-22T22:45:06.402Z",
+  "updatedAt": "2026-04-29T18:50:29.973Z",
   "entries": {
     "memory:memory/2026-04-12.md:1:34": {
       "key": "memory:memory/2026-04-12.md:1:34",
@@ -226,18 +226,20 @@
       "endLine": 59,
       "source": "memory",
       "snippet": "- **Account merge on Google login:** When user signs in with Google, anonymous posts/comments get reassigned to Google user ID so ownership checks work. - **Mobile sidebar:** Added Saved link + location button to SideDrawer.jsx. Removed location pill from Home.jsx mobile. - **Onboarding:** Location prompt added if no location set. ## Lukas Preferences Learned Today - Wants a proactive Telegram ping (via message tool) when tasks complete — not just a reply in the thread - Always screenshot the browser to verify changes before sending the link - Keep replies short — no walls of explanation, just fix it and confirm - Every time something is deployed, open it in browser AND send the link in Tel",
-      "recallCount": 1,
+      "recallCount": 2,
       "dailyCount": 0,
       "groundedCount": 0,
-      "totalScore": 0.7129641582878199,
-      "maxScore": 0.7129641582878199,
+      "totalScore": 1.71296415828782,
+      "maxScore": 1,
       "firstRecalledAt": "2026-04-16T00:46:45.759Z",
-      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-26T21:39:52.520Z",
       "queryHashes": [
-        "b350580d9e81"
+        "b350580d9e81",
+        "70eab0f2bcee"
       ],
       "recallDays": [
-        "2026-04-15"
+        "2026-04-15",
+        "2026-04-26"
       ],
       "conceptTags": [
         "posts/comments",
@@ -257,18 +259,20 @@
       "endLine": 82,
       "source": "memory",
       "snippet": "6. Point theclocked.com DNS → Railway ## GitHub Account Info - Username: `kylebutler540-cell` - Email: `kylebutler540@gmail.com` ## Railway Account Info - Workspace ID: `b6b50510-101d-436f-8ad3-65d79cbdaaad` - Plan: Hobby ($5/mo) - Project: vivacious-upliftment - PostgreSQL service ID: `994c7b1e-2860-4fdf-bd09-9a5d0c606ebe` ## Chrome Remote Debugging - To connect browser tool to Chrome, must launch with: `--remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug-profile` - Then manually write port file: `echo \"9222\\n/devtools/browser/<id>\" > ~/Library/Application Support/Google/Chrome/DevToolsActivePort` - Port 9222 confirmed working when Chrome launched this way --- ## Evening Ses",
-      "recallCount": 1,
+      "recallCount": 2,
       "dailyCount": 0,
       "groundedCount": 0,
-      "totalScore": 0.7087666229027991,
-      "maxScore": 0.7087666229027991,
+      "totalScore": 1.7087666229027991,
+      "maxScore": 1,
       "firstRecalledAt": "2026-04-16T00:46:45.759Z",
-      "lastRecalledAt": "2026-04-16T00:46:45.759Z",
+      "lastRecalledAt": "2026-04-29T18:50:29.973Z",
       "queryHashes": [
-        "b350580d9e81"
+        "b350580d9e81",
+        "0e1e1d736438"
       ],
       "recallDays": [
-        "2026-04-15"
+        "2026-04-15",
+        "2026-04-29"
       ],
       "conceptTags": [
         "theclocked.com",
@@ -500,6 +504,165 @@
         "0.22",
         "high-confidence",
         "trading"
+      ]
+    },
+    "memory:memory/2026-03-06.md:26:44": {
+      "key": "memory:memory/2026-03-06.md:26:44",
+      "path": "memory/2026-03-06.md",
+      "startLine": 26,
+      "endLine": 44,
+      "source": "memory",
+      "snippet": "- Built a demo website for Service Professor (HTML/CSS, full design, ~10 min) - Still need to: pick a business name, build a pitch one-pager ## Setup completed - Telegram ✅ - Daily 7am morning briefing cron job set up ✅ (weather for 49546, business tip, daily goal, motivational line) - Mac mini energy settings configured to never sleep - Gmail NOT yet connected — reminder set for tomorrow morning ## My identity - Named **Kyle** by Lukas - Created SVG pfp (lightning bolt, dark blue/red) — sent via Telegram - Emoji: ⚡ ## Tomorrow - Set up Gmail - Continue business planning (name, pitch deck) - 7am morning text will fire automatically",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 2,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-26T21:39:52.520Z",
+      "lastRecalledAt": "2026-04-29T18:50:29.973Z",
+      "queryHashes": [
+        "70eab0f2bcee",
+        "0e1e1d736438"
+      ],
+      "recallDays": [
+        "2026-04-26",
+        "2026-04-29"
+      ],
+      "conceptTags": [
+        "html/css",
+        "one-pager",
+        "blue/red",
+        "built",
+        "demo",
+        "website",
+        "service",
+        "professor"
+      ]
+    },
+    "memory:memory/2026-03-06.md:1:32": {
+      "key": "memory:memory/2026-03-06.md:1:32",
+      "path": "memory/2026-03-06.md",
+      "startLine": 1,
+      "endLine": 32,
+      "source": "memory",
+      "snippet": "# 2026-03-06 - First Day with Lukas ## What happened - First session ever. Fresh workspace. - User introduced himself as **Lukas** (account set up under fake name \"Kyle Butler\") - Connected Telegram — bot token had issues initially (404 errors), eventually fixed - Old token revoked for security, new one set up by Lukas via terminal - Approved Lukas's Telegram user ID: 8649191004 ## About Lukas - 19 years old, Grand Rapids MI area, ZIP 49546 - Works at Service Professor (HVAC company) — parts runner/center role - Into BMWs (has a 540i, previously 330i), car tuning, hobby grade RC cars (Traxxas, Tekno, Team Associated) - Wants to start a business, interested in leveraging AI while most peopl",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 2,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-26T21:39:52.520Z",
+      "lastRecalledAt": "2026-04-29T18:50:29.973Z",
+      "queryHashes": [
+        "70eab0f2bcee",
+        "0e1e1d736438"
+      ],
+      "recallDays": [
+        "2026-04-26",
+        "2026-04-29"
+      ],
+      "conceptTags": [
+        "runner/center",
+        "first",
+        "day",
+        "lukas",
+        "what",
+        "happened",
+        "ever",
+        "fresh"
+      ]
+    },
+    "memory:memory/2026-04-25.md:1:28": {
+      "key": "memory:memory/2026-04-25.md:1:28",
+      "path": "memory/2026-04-25.md",
+      "startLine": 1,
+      "endLine": 28,
+      "source": "memory",
+      "snippet": "# Memory — 2026-04-25 ## Clocked — Trademark Filing (USPTO) - Filing \"Clocked\" as a trademark via USPTO Trademark Center - **Mark:** Standard character format (word only, no logo) - **Class:** 042 - **Description:** \"Providing online non-downloadable computer software platforms for posting, sharing, and browsing anonymous workplace reviews and social media services\" - **Filing basis:** Section 1(b) — Intent to Use (app not live yet, just theclocked.com landing page) - **Fee:** $350 - **Owner:** Lukas R Achterhof (middle initial is fine, legally acceptable) - **Signed:** /Lukas R Achterhof/ as Owner - **Status:** Draft saved on USPTO Trademark Center — NOT yet paid/submitted - Plan: Go to b",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-29T18:50:29.973Z",
+      "lastRecalledAt": "2026-04-29T18:50:29.973Z",
+      "queryHashes": [
+        "0e1e1d736438"
+      ],
+      "recallDays": [
+        "2026-04-29"
+      ],
+      "conceptTags": [
+        "non-downloadable",
+        "theclocked.com",
+        "paid/submitted",
+        "clocked",
+        "trademark",
+        "filing",
+        "uspto",
+        "via"
+      ]
+    },
+    "memory:memory/2026-04-25.md:23:31": {
+      "key": "memory:memory/2026-04-25.md:23:31",
+      "path": "memory/2026-04-25.md",
+      "startLine": 23,
+      "endLine": 31,
+      "source": "memory",
+      "snippet": "- Need for bank: Articles of Organization, EIN letter, Operating Agreement (maybe), driver's license, opening deposit - Recommended banks: Mercury (online, no fees), Chase Business Complete (branch) ## Business Expenses / Tax Notes - All business expenses (USPTO $350, Railway hosting, Claude billing, domain, etc.) are deductible - Reduce taxable income → less tax owed - Rule: run everything through business bank account, save all receipts - Lukas plans to connect Claude billing to business account for deductions",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-29T18:50:29.973Z",
+      "lastRecalledAt": "2026-04-29T18:50:29.973Z",
+      "queryHashes": [
+        "0e1e1d736438"
+      ],
+      "recallDays": [
+        "2026-04-29"
+      ],
+      "conceptTags": [
+        "need",
+        "bank",
+        "articles",
+        "organization",
+        "letter",
+        "operating",
+        "agreement",
+        "maybe"
+      ]
+    },
+    "memory:memory/2026-03-20.md:142:181": {
+      "key": "memory:memory/2026-03-20.md:142:181",
+      "path": "memory/2026-03-20.md",
+      "startLine": 142,
+      "endLine": 181,
+      "source": "memory",
+      "snippet": "- Lukas + buddy: **50/50** - Just two partners (no dad) ### LLC Formation Steps (for when ready) 1. Pick a business name (check availability at Michigan LARA) 2. File Articles of Organization with Michigan LARA online (~$50) 3. Get an EIN (free, takes 5 min at IRS.gov) 4. Open a business bank account (need EIN + Articles) 5. Draft a simple Operating Agreement (splits ownership, decision rights between partners) 6. Register for Michigan business taxes if needed ### Business Bank Account (Q17) - Not yet — will set up after LLC is formed - Straightforward once EIN is in hand ### Content Scope (Q18) - Any job, any industry — nothing excluded ### Small Businesses (Q19) - No special treatment",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-29T18:50:29.973Z",
+      "lastRecalledAt": "2026-04-29T18:50:29.973Z",
+      "queryHashes": [
+        "0e1e1d736438"
+      ],
+      "recallDays": [
+        "2026-04-29"
+      ],
+      "conceptTags": [
+        "50/50",
+        "irs.gov",
+        "lukas",
+        "buddy",
+        "two",
+        "partners",
+        "dad",
+        "llc"
       ]
     }
   }
