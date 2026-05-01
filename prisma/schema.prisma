@@ -27,6 +27,7 @@ model User {
   workplace_name    String?
   workplace_place_id String?
   workplace_address String?
+  workplaces        String[] @default([])
 
   posts         Post[]
   comments      Comment[]

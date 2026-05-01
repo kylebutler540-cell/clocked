@@ -96,7 +96,7 @@ export default function EditProfile() {
     if (!displayName.trim()) return addToast('Display name is required');
     const unErr = validateUsername(username);
     if (unErr) return addToast(unErr);
-    if (workplaces.length === 0) return addToast('At least one workplace is required');
+    if (workplaces.length === 0) return addToast('Add at least one job to save your profile');
 
     setSaving(true);
     try {
@@ -191,60 +191,34 @@ export default function EditProfile() {
               Jobs <span className="edit-profile-required">*</span>
             </label>
 
-            {workplaces.length === 0 ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', border: '1.5px dashed var(--border)' }}>
-                  <WorkplacePlaceholderIcon size={32} />
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>No jobs added — search below to add one.</span>
-                </div>
-                <EmployerSearch
-                  onSelect={(emp) => {
-                    if (!workplaces.find(w => w.place_id === emp.place_id && w.name === emp.name)) {
-                      setWorkplaces([...workplaces, emp]);
-                    }
-                  }}
-                  placeholder="Search your workplace..."
-                />
-              </>
-            ) : (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
-                  {workplaces.map((wp, idx) => (
-                    <div key={idx} className="edit-profile-workplace-selected">
-                      {wp.place_id
-                        ? <BusinessLogo placeId={wp.place_id} name={wp.name} size={32} borderRadius={6} />
-                        : <WorkplacePlaceholderIcon size={32} />}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wp.name}</div>
-                        {wp.address && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wp.address}</div>}
-                      </div>
-                      {idx > 0 && (
-                        <button type="button" onClick={() => setWorkplaces(workplaces.filter((_, i) => i !== idx))} className="edit-profile-clear">×</button>
-                      )}
+            {workplaces.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
+                {workplaces.map((wp, idx) => (
+                  <div key={idx} className="edit-profile-workplace-selected">
+                    {wp.place_id
+                      ? <BusinessLogo placeId={wp.place_id} name={wp.name} size={32} borderRadius={6} />
+                      : <WorkplacePlaceholderIcon size={32} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wp.name}</div>
+                      {wp.address && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wp.address}</div>}
                     </div>
-                  ))}
-                </div>
+                    <button type="button" onClick={() => setWorkplaces(workplaces.filter((_, i) => i !== idx))} className="edit-profile-clear">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-                {workplaces.length < 3 && (
-                  <>
-                    <EmployerSearch
-                      onSelect={(emp) => {
-                        if (!workplaces.find(w => w.place_id === emp.place_id && w.name === emp.name)) {
-                          setWorkplaces([...workplaces, emp]);
-                        }
-                      }}
-                      placeholder="Search to add another job..."
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setWorkplaces([...workplaces, { name: '', place_id: null, address: null }])}
-                      style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
-                    >
-                      + Add job
-                    </button>
-                  </>
-                )}
-              </>
+            {workplaces.length < 3 && (
+              <EmployerSearch
+                onSelect={(emp) => {
+                  const isDupe = workplaces.find(w =>
+                    (w.place_id && w.place_id === emp.place_id) || w.name === emp.name
+                  );
+                  if (!isDupe) setWorkplaces([...workplaces, emp]);
+                  else addToast('That job is already added');
+                }}
+                placeholder={workplaces.length === 0 ? 'Search your workplace...' : '+ Add another job...'}
+              />
             )}
           </div>
 

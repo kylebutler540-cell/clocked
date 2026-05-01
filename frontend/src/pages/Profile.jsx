@@ -290,14 +290,25 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, navigate, setFollo
             >{ownDisplayName}</span>
 
             {/* Workplace display — sits immediately right of name, display-only */}
-            <div
-              className={`profile-job-box${hasJob ? ' has-job' : ''}`}
-              title={hasJob ? workplaceNames : ''}
-            >
-              {hasJob
-                ? <BusinessLogo placeId={workplaces[0].place_id} name={workplaces[0].name} size={40} borderRadius={8} />
-                : <WorkplacePlaceholder size={36} />}
-            </div>
+            {workplaces.length === 1 ? (
+              <div
+                className={`profile-job-box has-job`}
+                title={workplaces[0].name}
+              >
+                <BusinessLogo placeId={workplaces[0].place_id} name={workplaces[0].name} size={40} borderRadius={8} />
+              </div>
+            ) : workplaces.length > 1 ? (
+              <div
+                style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1 }}
+                title={workplaceNames}
+              >
+                {workplaceNames}
+              </div>
+            ) : (
+              <div className="profile-job-box">
+                <WorkplacePlaceholder size={36} />
+              </div>
+            )}
 
             {/* Flex spacer pushes menu to the far right */}
             <div style={{ flex: 1 }} />
