@@ -165,6 +165,8 @@ async function run() {
         "post_id" TEXT NOT NULL,
         PRIMARY KEY ("prompt_date", "occupation")
       )`,
+      // Multi-job support: store array of workplaces
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "workplaces" TEXT[] DEFAULT ARRAY[]::TEXT[]`,
     ];
 
     for (const stmt of statements) {

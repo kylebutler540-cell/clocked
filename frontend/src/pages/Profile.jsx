@@ -253,7 +253,13 @@ function WorkplacePlaceholder({ size = 36 }) {
 }
 
 function OwnProfileHero({ user, ownDisplayName, isSubscribed, navigate, setFollowListModal }) {
-  const hasJob = !!user?.workplace_name;
+  const workplaces = user?.workplaces && Array.isArray(user.workplaces) && user.workplaces.length > 0
+    ? user.workplaces
+    : user?.workplace_name
+      ? [{ name: user.workplace_name, place_id: user.workplace_place_id, address: user.workplace_address }]
+      : [];
+  const hasJob = workplaces.length > 0;
+  const workplaceNames = workplaces.map(w => w.name).join(', ');
 
   return (
     <>
@@ -286,10 +292,10 @@ function OwnProfileHero({ user, ownDisplayName, isSubscribed, navigate, setFollo
             {/* Workplace display — sits immediately right of name, display-only */}
             <div
               className={`profile-job-box${hasJob ? ' has-job' : ''}`}
-              title={hasJob ? user.workplace_name : ''}
+              title={hasJob ? workplaceNames : ''}
             >
               {hasJob
-                ? <BusinessLogo placeId={user.workplace_place_id} name={user.workplace_name} size={40} borderRadius={8} />
+                ? <BusinessLogo placeId={workplaces[0].place_id} name={workplaces[0].name} size={40} borderRadius={8} />
                 : <WorkplacePlaceholder size={36} />}
             </div>
 
@@ -823,6 +829,14 @@ export default function Profile() {
     }
 
     const pubName = publicUser?.display_name || 'Anonymous';
+    const pubWorkplaces = publicUser?.workplaces && Array.isArray(publicUser.workplaces) && publicUser.workplaces.length > 0
+      ? publicUser.workplaces
+      : publicUser?.workplace_name
+        ? [{ name: publicUser.workplace_name, place_id: publicUser.workplace_place_id, address: publicUser.workplace_address }]
+        : [];
+    const pubHasJob = pubWorkplaces.length > 0;
+    const pubWorkplaceNames = pubWorkplaces.map(w => w.name).join(', ');
+
     return (
       <div className="profile-page">
         {/* Profile hero: avatar left, info right, buttons below */}
@@ -834,6 +848,11 @@ export default function Profile() {
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pubName}</div>
               {publicUser?.username && (
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>@{publicUser.username}</div>
+              )}
+              {pubHasJob && (
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {pubWorkplaceNames}
+                </div>
               )}
               <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
                 <button

@@ -49,11 +49,15 @@ export default function EditProfile() {
   const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
-  const [workplace, setWorkplace] = useState(
-    user?.workplace_place_id
-      ? { place_id: user.workplace_place_id, name: user.workplace_name, address: user.workplace_address }
-      : null
-  );
+  const [workplaces, setWorkplaces] = useState(() => {
+    if (user?.workplaces && Array.isArray(user.workplaces) && user.workplaces.length > 0) {
+      return user.workplaces;
+    }
+    if (user?.workplace_place_id) {
+      return [{ place_id: user.workplace_place_id, name: user.workplace_name, address: user.workplace_address }];
+    }
+    return [];
+  });
   const [usernameError, setUsernameError] = useState('');
   const [saving, setSaving] = useState(false);
   const [cropRawUrl, setCropRawUrl] = useState(null);
@@ -92,7 +96,7 @@ export default function EditProfile() {
     if (!displayName.trim()) return addToast('Display name is required');
     const unErr = validateUsername(username);
     if (unErr) return addToast(unErr);
-    if (!workplace) return addToast('Workplace is required');
+    if (workplaces.length === 0) return addToast('At least one workplace is required');
 
     setSaving(true);
     try {
@@ -101,9 +105,7 @@ export default function EditProfile() {
         username,
         avatar_url: avatarUrl || null,
         bio: bio.trim() || null,
-        workplace_name: workplace.name,
-        workplace_place_id: workplace.place_id,
-        workplace_address: workplace.address || '',
+        workplaces,
       });
       if (res.data.user && setUser) setUser(res.data.user);
       addToast('Profile saved!');
@@ -183,32 +185,65 @@ export default function EditProfile() {
             )}
           </div>
 
-          {/* Workplace */}
+          {/* Workplaces (multi-job support) */}
           <div className="edit-profile-field">
             <label className="edit-profile-label">
-              Workplace <span className="edit-profile-required">*</span>
+              Jobs <span className="edit-profile-required">*</span>
             </label>
-            {workplace ? (
-              <div className="edit-profile-workplace-selected">
-                {workplace.place_id
-                  ? <BusinessLogo placeId={workplace.place_id} name={workplace.name} size={32} borderRadius={6} />
-                  : <WorkplacePlaceholderIcon size={32} />}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{workplace.name}</div>
-                  {workplace.address && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{workplace.address}</div>}
-                </div>
-                <button type="button" onClick={() => setWorkplace(null)} className="edit-profile-clear">×</button>
-              </div>
-            ) : (
+
+            {workplaces.length === 0 ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', border: '1.5px dashed var(--border)' }}>
                   <WorkplacePlaceholderIcon size={32} />
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>No workplace selected — search below to add one.</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>No jobs added — search below to add one.</span>
                 </div>
                 <EmployerSearch
-                  onSelect={emp => setWorkplace(emp)}
+                  onSelect={(emp) => {
+                    if (!workplaces.find(w => w.place_id === emp.place_id && w.name === emp.name)) {
+                      setWorkplaces([...workplaces, emp]);
+                    }
+                  }}
                   placeholder="Search your workplace..."
                 />
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
+                  {workplaces.map((wp, idx) => (
+                    <div key={idx} className="edit-profile-workplace-selected">
+                      {wp.place_id
+                        ? <BusinessLogo placeId={wp.place_id} name={wp.name} size={32} borderRadius={6} />
+                        : <WorkplacePlaceholderIcon size={32} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wp.name}</div>
+                        {wp.address && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{wp.address}</div>}
+                      </div>
+                      {idx > 0 && (
+                        <button type="button" onClick={() => setWorkplaces(workplaces.filter((_, i) => i !== idx))} className="edit-profile-clear">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {workplaces.length < 3 && (
+                  <>
+                    <EmployerSearch
+                      onSelect={(emp) => {
+                        if (!workplaces.find(w => w.place_id === emp.place_id && w.name === emp.name)) {
+                          setWorkplaces([...workplaces, emp]);
+                        }
+                      }}
+                      placeholder="Search to add another job..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setWorkplaces([...workplaces, { name: '', place_id: null, address: null }])}
+                      style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                    >
+                      + Add job
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>

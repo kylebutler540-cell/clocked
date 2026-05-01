@@ -1,0 +1,206 @@
+Build the "Daily Prompts Feed Screen" feature for the Clocked app.
+
+## Repo layout
+- Backend: /Users/kylebutler/.openclaw/workspace/clocked/app/backend/src/
+- Frontend: /Users/kylebutler/.openclaw/workspace/clocked/app/frontend/src/
+- Migrations: /Users/kylebutler/.openclaw/workspace/clocked/app/backend/src/migrate.js
+- Daily prompts route: /Users/kylebutler/.openclaw/workspace/clocked/app/backend/src/routes/dailyPrompts.js
+- Daily prompts data: /Users/kylebutler/.openclaw/workspace/clocked/app/backend/src/data/prompts.js
+- CSS: /Users/kylebutler/.openclaw/workspace/clocked/app/frontend/src/styles/globals.css
+
+Read these files carefully before making any changes.
+
+## Part 1 — Database (migrate.js)
+
+Add these new SQL statements to the statements array in migrate.js BEFORE the closing bracket of the array:
+
+1. Fix the unique index on prompt_responses. The current index is on (prompt_date, user_id) but now we need one per industry. Add:
+   - DROP INDEX IF EXISTS "prompt_responses_date_user_key"
+   - CREATE UNIQUE INDEX IF NOT EXISTS "prompt_responses_date_user_industry_key" ON "prompt_responses"("prompt_date", "user_id", "industry")
+
+2. Create the reactions table for daily prompt post engagement:
+   - CREATE TABLE IF NOT EXISTS "daily_prompt_reactions" with columns: id TEXT PK, prompt_date TEXT, occupation TEXT, user_id TEXT, type TEXT, created_at TIMESTAMP default NOW
+   - CREATE UNIQUE INDEX IF NOT EXISTS "dpr_unique" ON "daily_prompt_reactions"("prompt_date", "occupation", "user_id", "type")
+   - DO block to add FK from user_id to users(id) ON DELETE CASCADE, catching duplicate_object
+
+## Part 2 — Backend (dailyPrompts.js)
+
+Read the existing file first. Add these new routes:
+
+### GET /api/daily-prompts/feed
+
+Returns the feed for today's prompt — one entry per occupation type.
+
+The INDUSTRIES list (same as frontend):
+- general / General / emoji globe
+- restaurant / Food and Restaurant / fork emoji
+- retail / Retail and Sales / cart emoji  
+- hvac / Trades and HVAC / wrench emoji
+- office / Office and Corporate / briefcase emoji
+- warehouse / Warehouse and Logistics / box emoji
+- healthcare / Healthcare / hospital emoji
+
+For each industry, call getPromptText(prompt, industry.key) and getPollOptions(prompt, industry.key).
+
+Query results per industry:
+SELECT response_value, COUNT(*) as count FROM prompt_responses WHERE prompt_date = $1 AND industry = $2 GROUP BY response_value
+
+Query reaction counts per industry:
+SELECT type, COUNT(*) as count FROM daily_prompt_reactions WHERE prompt_date = $1 AND occupation = $2 GROUP BY type
+
+If user is authenticated, also:
+- Check their response for each industry: SELECT response_value FROM prompt_responses WHERE prompt_date=$1 AND user_id=$2 AND industry=$3 LIMIT 1
+- Check their reactions: SELECT type FROM daily_prompt_reactions WHERE prompt_date=$1 AND occupation=$2 AND user_id=$3
+
+Get userOccupation from req.query.occupation or default to 'general'.
+
+Put user's occupation post FIRST in the posts array, then the rest in order.
+
+Set isPinned: true only on the user's occupation post.
+
+Response shape (JSON):
+{
+  date: string,
+  promptId: number,
+  userOccupation: string,
+  posts: [
+    {
+      occupation: string,
+      occupationLabel: string,
+      occupationEmoji: string,
+      question: string,
+      hook: string,
+      responseType: string,
+      userResponse: string or null,
+      results: object (keyed by response value, each has count and pct),
+      totalResponses: number,
+      likeCount: number,
+      saveCount: number,
+      userLiked: boolean,
+      userSaved: boolean,
+      isPinned: boolean
+    }
+  ]
+}
+
+Build results the same way as the existing GET /today handler.
+
+Use optionalAuth middleware.
+
+### POST /api/daily-prompts/feed/:date/:occupation/react
+
+Body: { type: "like" or "save" }
+Use requireAuth.
+Toggle the reaction: if it exists, delete it; if not, insert it.
+Use uuidv4() for new reaction ids.
+After toggle, query current counts for that date+occupation.
+Return: { liked: boolean, saved: boolean, likeCount: number, saveCount: number }
+
+## Part 3 — Frontend
+
+### New component: PromptPostCard.jsx
+
+Path: /Users/kylebutler/.openclaw/workspace/clocked/app/frontend/src/components/PromptPostCard.jsx
+
+Props: post (the post object from feed), onReact(type) callback
+
+The card should show:
+- If isPinned: a "Your Answer" pill badge in the top-right corner (green)
+- Occupation tag: emoji + label (small pill, muted)
+- Question text (large, bold)
+- If userResponse is "yes": show a YES pill with green styling (border #15803D, bg rgba(21,128,61,0.1), color #15803D)
+- If userResponse is "no": show a NO pill with red styling (border #DC2626, bg rgba(220,38,38,0.1), color #DC2626)
+- Results bars:
+  - For yesno type: YES bar green (#22C55E), NO bar red (#EF4444)
+  - Show label, bar, percentage side by side
+  - Animate width on mount using useEffect + setTimeout
+  - Show total response count below bars
+- Engagement row at bottom:
+  - Like button: heart SVG icon + likeCount. Class "ppc-action-btn liked" when userLiked
+  - Save button: bookmark SVG icon + saveCount. Class "ppc-action-btn saved" when userSaved
+  - Share button: arrow SVG icon (no action needed, placeholder)
+  - All call onReact with the appropriate type on click
+
+Use plain inline SVG paths for icons. No external icon libraries.
+
+For slider/poll responseTypes: show result bars per option without the yes/no pill.
+
+Apply CSS classes: ppc (wrapper), ppc-pinned-badge, ppc-occupation, ppc-question, ppc-answer-pill yes/no, ppc-results, ppc-result-row, ppc-result-label, ppc-result-bar-wrap, ppc-result-bar-fill, ppc-result-pct, ppc-total, ppc-actions, ppc-action-btn, liked, saved.
+
+### Update DailyPrompts.jsx
+
+Add state near other state declarations:
+  const [feed, setFeed] = useState(null);
+  const [feedLoading, setFeedLoading] = useState(false);
+
+Add fetchFeed function that calls GET /daily-prompts/feed with ?occupation=industry param.
+
+Add useEffect that triggers fetchFeed when hasResponded becomes true:
+  useEffect(() => { if (hasResponded) fetchFeed(); }, [hasResponded]);
+
+Add handlePromptReact function that calls POST /daily-prompts/feed/:date/:occupation/react and updates the feed state post in-place.
+
+In the results section (inside the hasResponded branch), BELOW the existing dp-results div, add:
+
+{feedLoading && <div className="dp-feed-loading"><div className="spinner" /></div>}
+{feed && !feedLoading && (
+  <div className="dp-feed-section">
+    <div className="dp-feed-title">How everyone answered today</div>
+    {feed.posts.map(post => (
+      <PromptPostCard key={post.occupation} post={post} onReact={(type) => handlePromptReact(post.occupation, type)} />
+    ))}
+  </div>
+)}
+
+Import PromptPostCard at the top of DailyPrompts.jsx.
+
+### Add CSS to globals.css
+
+Append these classes to the END of globals.css:
+
+.dp-feed-section { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.dp-feed-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.dp-feed-loading { display: flex; justify-content: center; padding: 20px; }
+
+.ppc { background: var(--bg-elevated); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+.ppc.pinned { border-color: #15803D; }
+.ppc-pinned-badge { position: absolute; top: 12px; right: 12px; background: rgba(21,128,61,0.1); color: #15803D; border: 1px solid #15803D; border-radius: 20px; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+.ppc-occupation { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--text-muted); background: var(--bg-base); border-radius: 20px; padding: 3px 10px; width: fit-content; }
+.ppc-question { font-size: 15px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
+.ppc-answer-pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 20px; border: 1.5px solid; font-size: 13px; font-weight: 700; padding: 4px 12px; width: fit-content; }
+.ppc-answer-pill.yes { background: rgba(21,128,61,0.1); border-color: #15803D; color: #15803D; }
+.ppc-answer-pill.no { background: rgba(220,38,38,0.1); border-color: #DC2626; color: #DC2626; }
+.ppc-results { display: flex; flex-direction: column; gap: 6px; }
+.ppc-result-row { display: flex; align-items: center; gap: 8px; }
+.ppc-result-label { font-size: 12px; font-weight: 700; width: 28px; flex-shrink: 0; color: var(--text-muted); }
+.ppc-result-bar-wrap { flex: 1; height: 8px; background: var(--bg-base); border-radius: 4px; overflow: hidden; }
+.ppc-result-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.ppc-result-pct { font-size: 12px; font-weight: 700; color: var(--text-secondary); width: 32px; text-align: right; flex-shrink: 0; }
+.ppc-actions { display: flex; gap: 16px; padding-top: 4px; border-top: 1px solid var(--border); margin-top: 4px; }
+.ppc-action-btn { display: flex; align-items: center; gap: 5px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 13px; font-weight: 600; padding: 4px 0; transition: color 0.15s; -webkit-tap-highlight-color: transparent; }
+.ppc-action-btn.liked { color: #EF4444; }
+.ppc-action-btn.saved { color: #A855F7; }
+.ppc-action-btn:hover { color: var(--text-secondary); }
+.ppc-action-btn svg { width: 18px; height: 18px; }
+.ppc-total { font-size: 11px; color: var(--text-muted); margin-top: -4px; }
+
+## Deploy
+
+When all edits are done:
+1. cd /Users/kylebutler/.openclaw/workspace/clocked/app
+2. git add backend/src/migrate.js backend/src/routes/dailyPrompts.js frontend/src/pages/DailyPrompts.jsx frontend/src/components/PromptPostCard.jsx frontend/src/styles/globals.css
+3. git commit -m "feat: daily prompts feed with per-occupation post cards, engagement reactions"
+4. git push origin main
+5. cd frontend && railway up --service frontend
+
+Notification route for completion:
+- channel: webchat
+- target: openclaw-control-ui
+
+When the task is completely finished, run:
+openclaw message send --channel webchat --target "openclaw-control-ui" --message "Daily Prompts feed built and deployed — per-occupation post cards with yes/no pills, results bars, like/save reactions, and pinned user post."
+
+If the task fails fatally, run:
+openclaw message send --channel webchat --target "openclaw-control-ui" --message "Daily Prompts feed build FAILED — check agent logs."
+
+Do not use openclaw system event. Do not rely on heartbeat. Do not skip the completion/failure message.
