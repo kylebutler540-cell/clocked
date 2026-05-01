@@ -26,15 +26,40 @@ const PROFILE_SELECT = {
   workplace_name: true,
   workplace_place_id: true,
   workplace_address: true,
-  workplaces: true,
 };
+
+// Read workplaces via raw SQL — bypasses Prisma schema version issues
+async function getRawWorkplaces(userId) {
+  try {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT workplaces FROM users WHERE id = $1`, userId
+    );
+    const arr = rows[0]?.workplaces || [];
+    return arr.map(w => { try { return typeof w === 'string' ? JSON.parse(w) : w; } catch { return null; } }).filter(Boolean);
+  } catch { return []; }
+}
+
+// Write workplaces via raw SQL — bypasses Prisma schema version issues
+async function setRawWorkplaces(userId, workplacesArray) {
+  // workplacesArray is [{name,place_id,address}, ...], store as JSON strings
+  const jsonStrings = workplacesArray.slice(0, 3).map(w => JSON.stringify({
+    name: w.name || '',
+    place_id: w.place_id || null,
+    address: w.address || null,
+  }));
+  await prisma.$executeRawUnsafe(
+    `UPDATE users SET workplaces = $1::text[] WHERE id = $2`,
+    jsonStrings,
+    userId
+  );
+}
 
 const ADMIN_EMAILS = ['kylebutler540@gmail.com', 'clockedreports@gmail.com'];
 
-function formatUser(user) {
+function formatUser(user, workplacesOverride) {
   let workplaces = [];
-  if (user.workplaces && Array.isArray(user.workplaces) && user.workplaces.length > 0) {
-    workplaces = user.workplaces.map(w => JSON.parse(w));
+  if (workplacesOverride !== undefined) {
+    workplaces = workplacesOverride;
   } else if (user.workplace_name) {
     workplaces = [{
       name: user.workplace_name,
@@ -178,39 +203,29 @@ router.post('/login', async (req, res) => {
 // Get public user info by userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.params.userId },
-      select: {
-        anon_number: true,
-        display_name: true,
-        username: true,
-        avatar_url: true,
-        follower_count: true,
-        following_count: true,
-        workplace_name: true,
-        workplace_place_id: true,
-        workplace_address: true,
-        workplaces: true,
-      },
-    });
+    const [user, rawWorkplaces] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: req.params.userId },
+        select: {
+          anon_number: true,
+          display_name: true,
+          username: true,
+          avatar_url: true,
+          follower_count: true,
+          following_count: true,
+          workplace_name: true,
+          workplace_place_id: true,
+          workplace_address: true,
+        },
+      }),
+      getRawWorkplaces(req.params.userId),
+    ]);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Format workplaces with backwards compat
-    let workplaces = [];
-    if (user.workplaces && Array.isArray(user.workplaces) && user.workplaces.length > 0) {
-      workplaces = user.workplaces.map(w => JSON.parse(w));
-    } else if (user.workplace_name) {
-      workplaces = [{
-        name: user.workplace_name,
-        place_id: user.workplace_place_id || null,
-        address: user.workplace_address || null,
-      }];
-    }
+    const workplaces = rawWorkplaces.length > 0 ? rawWorkplaces
+      : (user.workplace_name ? [{ name: user.workplace_name, place_id: user.workplace_place_id || null, address: user.workplace_address || null }] : []);
 
-    res.json({
-      ...user,
-      workplaces,
-    });
+    res.json({ ...user, workplaces });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch user' });
@@ -220,15 +235,18 @@ router.get('/user/:userId', async (req, res) => {
 // Get current user
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    // Fetch fresh user data to ensure workplaces is included
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: PROFILE_SELECT,
-    });
-    const postCount = await prisma.post.count({ where: { anonymous_user_id: req.user.id } });
-    res.json({ user: { ...formatUser(user), post_count: postCount } });
-  } catch {
-    res.json({ user: { ...formatUser(req.user), post_count: 0 } });
+    const [user, postCount, workplaces] = await Promise.all([
+      prisma.user.findUnique({ where: { id: req.user.id }, select: PROFILE_SELECT }),
+      prisma.post.count({ where: { anonymous_user_id: req.user.id } }),
+      getRawWorkplaces(req.user.id),
+    ]);
+    // If raw workplaces empty, fall back to legacy workplace_name
+    const resolvedWorkplaces = workplaces.length > 0 ? workplaces
+      : (user.workplace_name ? [{ name: user.workplace_name, place_id: user.workplace_place_id || null, address: user.workplace_address || null }] : []);
+    res.json({ user: { ...formatUser(user, resolvedWorkplaces), post_count: postCount } });
+  } catch (err) {
+    console.error('/me error:', err);
+    res.json({ user: { ...formatUser(req.user, []), post_count: 0 } });
   }
 });
 
@@ -268,25 +286,17 @@ router.patch('/profile', requireAuth, async (req, res) => {
       updateData.bio = bio ? bio.slice(0, 150).trim() : null;
     }
 
-    // Handle workplaces array (new multi-job support)
+    // Handle workplaces — sync legacy columns AND store in raw workplaces column
+    let newWorkplacesArray = undefined; // undefined = don't update workplaces
     if (workplaces !== undefined) {
-      if (Array.isArray(workplaces) && workplaces.length > 0) {
-        // Limit to 3 jobs
-        const limited = workplaces.slice(0, 3);
-        // Convert to JSON strings for storage in TEXT[] array
-        updateData.workplaces = limited.map(w => JSON.stringify({
-          name: w.name || '',
-          place_id: w.place_id || null,
-          address: w.address || null,
-        }));
-        // Sync first job to legacy columns
-        if (limited[0]) {
-          updateData.workplace_name = limited[0].name || null;
-          updateData.workplace_place_id = limited[0].place_id || null;
-          updateData.workplace_address = limited[0].address || null;
-        }
+      const limited = Array.isArray(workplaces) ? workplaces.slice(0, 3) : [];
+      newWorkplacesArray = limited;
+      // Sync first job to legacy columns (backwards compat)
+      if (limited.length > 0) {
+        updateData.workplace_name = limited[0].name || null;
+        updateData.workplace_place_id = limited[0].place_id || null;
+        updateData.workplace_address = limited[0].address || null;
       } else {
-        updateData.workplaces = [];
         updateData.workplace_name = null;
         updateData.workplace_place_id = null;
         updateData.workplace_address = null;
@@ -296,24 +306,31 @@ router.patch('/profile', requireAuth, async (req, res) => {
       updateData.workplace_name = workplace_name || null;
       updateData.workplace_place_id = workplace_place_id || null;
       updateData.workplace_address = workplace_address || null;
-      // Also update workplaces array from legacy fields
-      if (workplace_name) {
-        updateData.workplaces = [JSON.stringify({
-          name: workplace_name,
-          place_id: workplace_place_id || null,
-          address: workplace_address || null,
-        })];
-      } else {
-        updateData.workplaces = [];
-      }
+      newWorkplacesArray = workplace_name
+        ? [{ name: workplace_name, place_id: workplace_place_id || null, address: workplace_address || null }]
+        : [];
     }
 
-    const updated = await prisma.user.update({
+    // Update non-workplaces fields via Prisma
+    await prisma.user.update({
       where: { id: req.user.id },
       data: updateData,
     });
 
-    res.json({ user: formatUser(updated) });
+    // Update workplaces via raw SQL (bypasses any Prisma schema version issues)
+    if (newWorkplacesArray !== undefined) {
+      await setRawWorkplaces(req.user.id, newWorkplacesArray);
+    }
+
+    // Re-fetch fresh data to return accurate response
+    const [freshUser, savedWorkplaces] = await Promise.all([
+      prisma.user.findUnique({ where: { id: req.user.id }, select: PROFILE_SELECT }),
+      getRawWorkplaces(req.user.id),
+    ]);
+    const resolvedWorkplaces = savedWorkplaces.length > 0 ? savedWorkplaces
+      : (freshUser.workplace_name ? [{ name: freshUser.workplace_name, place_id: freshUser.workplace_place_id || null, address: freshUser.workplace_address || null }] : []);
+
+    res.json({ user: formatUser(freshUser, resolvedWorkplaces) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update profile' });
