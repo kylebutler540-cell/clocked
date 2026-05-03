@@ -277,11 +277,10 @@ router.patch('/profile', requireAuth, async (req, res) => {
     }
 
     // Handle workplaces — write all jobs via Prisma (String[] column)
+    // Use { set: [...] } syntax — the only reliable way to update scalar lists in Prisma
     if (workplaces !== undefined) {
       const limited = Array.isArray(workplaces) ? workplaces.slice(0, 3) : [];
-      // Store as JSON strings in the String[] column
-      updateData.workplaces = serializeWorkplaces(limited);
-      // Keep legacy single-workplace columns in sync for backwards compat
+      updateData.workplaces = { set: serializeWorkplaces(limited) };
       updateData.workplace_name = limited.length > 0 ? (limited[0].name || null) : null;
       updateData.workplace_place_id = limited.length > 0 ? (limited[0].place_id || null) : null;
       updateData.workplace_address = limited.length > 0 ? (limited[0].address || null) : null;
@@ -290,9 +289,9 @@ router.patch('/profile', requireAuth, async (req, res) => {
       updateData.workplace_name = workplace_name || null;
       updateData.workplace_place_id = workplace_place_id || null;
       updateData.workplace_address = workplace_address || null;
-      updateData.workplaces = workplace_name
+      updateData.workplaces = { set: workplace_name
         ? serializeWorkplaces([{ name: workplace_name, place_id: workplace_place_id || null, address: workplace_address || null }])
-        : [];
+        : [] };
     }
 
     // Single Prisma update covers all fields including workplaces
