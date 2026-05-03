@@ -76,7 +76,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Health check — also used as keep-alive ping (no DB hit needed)
 app.get('/health', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: 'v5-polls' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: 'v6-wp-fix' });
 });
 
 // Routes
