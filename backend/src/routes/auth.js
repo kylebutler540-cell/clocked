@@ -276,32 +276,51 @@ router.patch('/profile', requireAuth, async (req, res) => {
       updateData.bio = bio ? bio.slice(0, 150).trim() : null;
     }
 
-    // Handle workplaces — write all jobs via Prisma (String[] column)
-    // Use { set: [...] } syntax — the only reliable way to update scalar lists in Prisma
+    // Determine new workplaces array
+    let newWorkplacesArray = null; // null = not being updated
     if (workplaces !== undefined) {
-      const limited = Array.isArray(workplaces) ? workplaces.slice(0, 3) : [];
-      updateData.workplaces = { set: serializeWorkplaces(limited) };
-      updateData.workplace_name = limited.length > 0 ? (limited[0].name || null) : null;
-      updateData.workplace_place_id = limited.length > 0 ? (limited[0].place_id || null) : null;
-      updateData.workplace_address = limited.length > 0 ? (limited[0].address || null) : null;
+      newWorkplacesArray = Array.isArray(workplaces) ? workplaces.slice(0, 3) : [];
+      updateData.workplace_name = newWorkplacesArray.length > 0 ? (newWorkplacesArray[0].name || null) : null;
+      updateData.workplace_place_id = newWorkplacesArray.length > 0 ? (newWorkplacesArray[0].place_id || null) : null;
+      updateData.workplace_address = newWorkplacesArray.length > 0 ? (newWorkplacesArray[0].address || null) : null;
     } else if (workplace_name !== undefined) {
-      // Backwards compat: old single-workplace API
       updateData.workplace_name = workplace_name || null;
       updateData.workplace_place_id = workplace_place_id || null;
       updateData.workplace_address = workplace_address || null;
-      updateData.workplaces = { set: workplace_name
-        ? serializeWorkplaces([{ name: workplace_name, place_id: workplace_place_id || null, address: workplace_address || null }])
-        : [] };
+      newWorkplacesArray = workplace_name
+        ? [{ name: workplace_name, place_id: workplace_place_id || null, address: workplace_address || null }]
+        : [];
     }
 
-    // Single Prisma update covers all fields including workplaces
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: updateData,
-    });
+    console.log('[PATCH /profile] updateData:', JSON.stringify(updateData));
+    console.log('[PATCH /profile] newWorkplacesArray:', JSON.stringify(newWorkplacesArray));
 
-    // Re-fetch to return accurate response
+    // Update non-workplace fields via Prisma
+    await prisma.user.update({ where: { id: req.user.id }, data: updateData });
+
+    // Write workplaces column via raw SQL with explicit per-item parameters
+    // This avoids all Prisma scalar list / pg driver array serialization issues
+    if (newWorkplacesArray !== null) {
+      const jsonStrings = newWorkplacesArray.map(w => JSON.stringify({
+        name: w.name || '',
+        place_id: w.place_id || null,
+        address: w.address || null,
+      }));
+      console.log('[PATCH /profile] writing workplaces to DB:', JSON.stringify(jsonStrings));
+      if (jsonStrings.length === 0) {
+        await prisma.$executeRawUnsafe(`UPDATE users SET workplaces = ARRAY[]::TEXT[] WHERE id = $1`, req.user.id);
+      } else if (jsonStrings.length === 1) {
+        await prisma.$executeRawUnsafe(`UPDATE users SET workplaces = ARRAY[$2::TEXT] WHERE id = $1`, req.user.id, jsonStrings[0]);
+      } else if (jsonStrings.length === 2) {
+        await prisma.$executeRawUnsafe(`UPDATE users SET workplaces = ARRAY[$2::TEXT,$3::TEXT] WHERE id = $1`, req.user.id, jsonStrings[0], jsonStrings[1]);
+      } else {
+        await prisma.$executeRawUnsafe(`UPDATE users SET workplaces = ARRAY[$2::TEXT,$3::TEXT,$4::TEXT] WHERE id = $1`, req.user.id, jsonStrings[0], jsonStrings[1], jsonStrings[2]);
+      }
+    }
+
+    // Re-fetch and return
     const freshUser = await prisma.user.findUnique({ where: { id: req.user.id }, select: PROFILE_SELECT });
+    console.log('[PATCH /profile] freshUser.workplaces:', JSON.stringify(freshUser.workplaces), 'workplace_name:', freshUser.workplace_name);
     res.json({ user: formatUser(freshUser) });
   } catch (err) {
     console.error(err);
